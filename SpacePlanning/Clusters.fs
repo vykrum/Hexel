@@ -55,16 +55,14 @@ module HexShapes =
         // oc : List of occupied cells
         // ic : Increment
         let ic = 3
-        let initialCells = 
-            List.filter (fun x -> 
-                List.contains x (List.append ce oc 
-                |> prm)) (prm ce) 
-            |> List.truncate (List.length ct) 
-            |> List.map (fun x -> cls x ic oc) 
-            |> List.scan (fun x -> List.except x) []
-            |> List.tail
-        
-        initialCells
+        List.filter (fun x -> 
+            List.contains x (List.append ce oc 
+            |> prm)) (prm ce) 
+        |> List.truncate (List.length ct) 
+        |> List.map (fun x -> cls x ic oc) 
+        |> List.scan (fun x -> List.except x) []
+        |> List.tail 
+      
 
     // Tuples to coordinates
     let tupXY tup  =
