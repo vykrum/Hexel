@@ -49,17 +49,17 @@ module HexShapes =
                 |> List.contains false) ce
     
     // Incremental cells at multiple clusters
-    let mcl (ct : int) (ce : (float*float)list) (oc : (float*float)list) =
+    let mcl (ct : int) (hc : (float*float)list) (oc : (float*float)list) =
         // ct : Cluster count
-        // ce : Host cluster
-        // oc : List of occupied cells
+        // hc : Host cluster
+        // oc : Occupied cells
         // ic : Increment
         let ic = 3
         let a =
             // Required number of base cells
             List.filter (fun x -> 
-                List.contains x (List.append ce oc 
-                |> prm)) (prm ce) 
+                List.contains x (List.append hc oc 
+                |> prm)) (prm hc) 
             |> List.truncate  ct
             // Mini clusters of specified count around base cells
             |> List.map (fun x -> cls x ic oc)
@@ -74,6 +74,8 @@ module HexShapes =
     let tupXY tup  =
         let hexCl = tup |> List.unzip
         [ fst(hexCl) ; snd(hexCl) ]
+
+    let tupLst tup = List.map (fun x -> tupXY x) tup
 
     let aa = List.map (fun x -> tupXY x) (mcl 3 (cls(0.0,0.0) 15 []) [])
     //let zz = cls ( 0.0,0.0) 40 []
