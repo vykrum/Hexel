@@ -44,38 +44,38 @@ module HexShapes =
         // ce : All cells in cluster
 
         List.filter (fun x -> 
-            adj x 
-            |> List.map (fun x -> 
+            adj x |> List.map (fun x -> 
                 List.contains x ce) 
                 |> List.contains false) ce
     
-    // Incremental cells of multiple clusters
-    let mlt (ct : (int)list) (ce : (float*float)list) (oc : (float*float)list) =
-        // ct : List of cell counts
-        // ce : List of initial cells
+    // Incremental cells at multiple clusters
+    let mcl (ct : int) (ce : (float*float)list) (oc : (float*float)list) =
+        // ct : Cluster count
+        // ce : Host cluster
         // oc : List of occupied cells
         // ic : Increment
         let ic = 3
         let a =
+            // Required number of base cells
             List.filter (fun x -> 
                 List.contains x (List.append ce oc 
                 |> prm)) (prm ce) 
-            |> List.truncate (List.length ct) 
+            |> List.truncate  ct
+            // Mini clusters of specified count around base cells
             |> List.map (fun x -> cls x ic oc)
 
         let b = 
             List.scan (fun x -> List.append x) [] a 
-            |> List.truncate (List.length ct)
+            |> List.truncate ct
 
         List.map2 (fun x y -> List.except x y) b a
-       
 
     // Tuples to coordinates
     let tupXY tup  =
         let hexCl = tup |> List.unzip
         [ fst(hexCl) ; snd(hexCl) ]
 
-    let aa = mlt [10..10..30] (cls(0.0,0.0) 15 []) []
+    let aa = List.map (fun x -> tupXY x) (mcl 3 (cls(0.0,0.0) 15 []) [])
     //let zz = cls ( 0.0,0.0) 40 []
     //let ll = zz.Length
     //let cc = prm zz 
