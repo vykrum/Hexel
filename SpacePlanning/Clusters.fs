@@ -48,28 +48,34 @@ module HexShapes =
             |> List.map (fun x -> 
                 List.contains x ce) 
                 |> List.contains false) ce
-
+    
+    // Incremental cells of multiple clusters
     let mlt (ct : (int)list) (ce : (float*float)list) (oc : (float*float)list) =
         // ct : List of cell counts
         // ce : List of initial cells
         // oc : List of occupied cells
         // ic : Increment
         let ic = 3
-        List.filter (fun x -> 
-            List.contains x (List.append ce oc 
-            |> prm)) (prm ce) 
-        |> List.truncate (List.length ct) 
-        |> List.map (fun x -> cls x ic oc) 
-        |> List.scan (fun x -> List.except x) []
-        |> List.tail 
-      
+        let a =
+            List.filter (fun x -> 
+                List.contains x (List.append ce oc 
+                |> prm)) (prm ce) 
+            |> List.truncate (List.length ct) 
+            |> List.map (fun x -> cls x ic oc)
+
+        let b = 
+            List.scan (fun x -> List.append x) [] a 
+            |> List.truncate (List.length ct)
+
+        List.map2 (fun x y -> List.except x y) b a
+       
 
     // Tuples to coordinates
     let tupXY tup  =
         let hexCl = tup |> List.unzip
         [ fst(hexCl) ; snd(hexCl) ]
 
-    let aa = mlt [10;20;30] (adj(0.0,0.0)) []
+    let aa = mlt [10..10..30] (cls(0.0,0.0) 15 []) []
     //let zz = cls ( 0.0,0.0) 40 []
     //let ll = zz.Length
     //let cc = prm zz 
