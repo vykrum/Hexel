@@ -48,13 +48,14 @@ module HexShapes =
                 List.contains x ce) 
                 |> List.contains false) ce
     
-    // Incremental cells at multiple clusters
-    let mcl (ct : int) (hc : (float*float)list) (oc : (float*float)list) =
+    // Incremental cells at multiple clusters (start)
+    let mcs (ar : (int)list) (hc : (float*float)list) (oc : (float*float)list) =
         // ct : Cluster count
         // hc : Host cluster
         // oc : Occupied cells
         // ic : Increment
-        let ic = 3
+        let ic = 6
+        let ct = List.length ar
         let a =
             // Required number of base cells
             List.filter (fun x -> 
@@ -68,7 +69,9 @@ module HexShapes =
             List.scan (fun x -> List.append x) [] a 
             |> List.truncate ct
 
-        List.map2 (fun x y -> List.except x y) b a
+        let c = List.map2 (fun x y -> List.except x y) b a
+        c
+        
 
     // Tuples to coordinates
     let tupXY tup  =
@@ -77,7 +80,7 @@ module HexShapes =
 
     let tupLst tup = List.map (fun x -> tupXY x) tup
 
-    let aa = List.map (fun x -> tupXY x) (mcl 3 (cls(0.0,0.0) 15 []) [])
+    let aa = List.map (fun x -> List.length x) (mcs [5;6;7] (cls(0.0,0.0) 15 []) [])
     //let zz = cls ( 0.0,0.0) 40 []
     //let ll = zz.Length
     //let cc = prm zz 
