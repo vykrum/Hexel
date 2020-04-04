@@ -16,7 +16,7 @@ module HexShapes =
         (hxx,hxy) ||> List.zip
     
     // Cell cluster by specified count
-    let cls (x : double , y : double) (ct : int) oc =
+    let cls (ct : int) oc (x : double , y : double)  =
         // ct : Number of cells required
         // oc : List of occupied cells (can be none)
 
@@ -49,29 +49,47 @@ module HexShapes =
                 |> List.contains false) ce
     
     // Incremental cells at multiple clusters (start)
-    let mcs (ar : (int)list) (hc : (float*float)list) (oc : (float*float)list) =
+    let mci (ar : (int)list) (hc : (float*float)list) (oc : (float*float)list) =
         // ct : Cluster count
         // hc : Host cluster
         // oc : Occupied cells
         // ic : Increment
-        let ic = 6
+        let ic = 2
         let ct = List.length ar
-        let a =
+        let aa hc oc=
             // Required number of base cells
             List.filter (fun x -> 
                 List.contains x (List.append hc oc 
                 |> prm)) (prm hc) 
             |> List.truncate  ct
             // Mini clusters of specified count around base cells
-            |> List.map (fun x -> cls x ic oc)
+            |> List.map (fun x -> cls ic oc x)
 
-        let b = 
-            List.scan (fun x -> List.append x) [] a 
+        let bb hc oc = 
+            List.scan (fun x -> List.append x) [] (aa hc oc )
             |> List.truncate ct
 
-        let c = List.map2 (fun x y -> List.except x y) b a
-        c
-        
+        let cc hc oc = List.map2 (fun x y -> List.except x y) (bb hc oc) (aa hc oc)
+
+        cc hc oc
+
+    let mcs (ct : int) (hc : (float*float)list) =  
+        //Cluster of specified count and host cluster
+        let clh ic hc oc =
+            (hc @ oc)
+            |> prm
+            |> List.head
+            |> cls ic (hc @ oc)
+            |> List.append (hc @ oc)
+        //a 10 hc []   
+        let st = 
+            let ic = 3
+            List.replicate ct (List.truncate 1 (prm hc))
+            |> List.scan (fun x y -> clh ic x y) (List.truncate 1 (prm hc))
+            |> List.map (fun x -> List.distinct x)
+        let rr = List.map2 (fun x y -> List.except x y) (List.truncate ct st) (List.tail st)  
+        rr
+    
 
     // Tuples to coordinates
     let tupXY tup  =
@@ -80,8 +98,15 @@ module HexShapes =
 
     let tupLst tup = List.map (fun x -> tupXY x) tup
 
-    let aa = List.map (fun x -> List.length x) (mcs [5;6;7] (cls(0.0,0.0) 15 []) [])
-    //let zz = cls ( 0.0,0.0) 40 []
+    let fd = (cls 7 [] (0.0,0.0) )
+    let cc = mcs 3 fd
+    //let ca = mcs cc cc
+
+    
+    //let f = List.replicate 3 ([(0.0,0.0)])|> List.scan (fun x -> (mcs x))([(0.0,0.0)]) |> List.tail
+    // |> List.scan (fun x -> mcs)
+    //let aa = mci [5;6;7] (cls 7 (0.0,0.0) []) (cls 15 (1.86,1.074)[])
+    //let zz = cls 40 ( 0.0,0.0) []
     //let ll = zz.Length
     //let cc = prm zz 
     //let lg = cc.Length
