@@ -1,8 +1,15 @@
 ﻿
 namespace Clusters
+module Tup =
+ //Convert for export
+// Tuples to coordinates
+   let tupXY tup  =
+       let hexCl = tup |> List.unzip
+       [ fst(hexCl) ; snd(hexCl) ]
+
+   let tupLst tup = List.map (fun x -> tupXY x) tup
 
 module Hexel =
-
     // Core and six adjacent cells
     let adj (x : int, y: int) =
         // x : x coordinate
@@ -54,31 +61,24 @@ module Hexel =
                 |> List.contains false) ce
 
     // Incremental cells at multiple clusters (start)
-    let mcs (ct : int) (hc : (int*int)list) =
-        // hc : Host cluster
-        // ct : Number of sub clusters
+    let cl (ct : int) (oc : (int*int)list) (hc : (int*int)list)  = 
+                let cl1 hc oc = 
+                                List.except oc (List.map (fun x -> adj x) hc 
+                                |> List.concat 
+                                |> List.distinct) 
+                                |> prm
 
-        //Cluster of specified count and host cluster
-        let clh ic hc oc =
-            (hc @ oc)
-            |> prm
-            |> List.head
-            |> cls ic (hc @ oc)
-            |> List.append (hc @ oc)
-        //Multiple clusters with common host 
-        let mlc = 
-            let ic = 3
-            List.replicate ct hc
-            |> List.scan (fun x y -> clh ic x y) hc
-            |> List.map (fun x -> List.distinct x)
-        List.map2 (fun x y -> List.except x y) (List.truncate ct mlc) (List.tail mlc)
+                let rec cl2 ct hc oc = 
+                                        match (List.length (cl1 hc oc) > ct) with
+                                        | true -> [List.truncate ct ((cl1 hc oc)); hc]
+                                        | false -> cl2 ct (hc @ (List.truncate 1 (cl1 hc oc))) oc
+                
+                cl2 ct hc oc
 
-    // Tuples to coordinates
-    let tupXY tup  =
-        let hexCl = tup |> List.unzip
-        [ fst(hexCl) ; snd(hexCl) ]
-
-    let tupLst tup = List.map (fun x -> tupXY x) tup
-
-    let fd = (cls 1 [] (0,0) )
-    let cc = mcs 100 fd
+    //let hg = cls 15 [0,0] (0,0)
+    let hg1 = cl 1 [][0,0] |> List.head
+    //let gh = hg |> List.distinct |> List.length
+    let gh1 = hg1 |> List.distinct |> List.length
+    //let r = List.map (fun x -> List.length x) (cl 24 [] hg )
+    let r1 = (cl 500 [] (cl 100 [][0,0] |> List.head) )
+    let gv = cl 1 [][0,0]
