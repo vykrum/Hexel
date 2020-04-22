@@ -5,8 +5,6 @@ VisualStudioVersion = 16.0.29521.150
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "SpacePlanning", "SpacePlanning\SpacePlanning.fsproj", "{8359AB9F-D3DE-4FFD-87B7-08CA792E7D51}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Bolero.Client", "..\..\Bolero\src\Bolero.Client\Bolero.Client.fsproj", "{137D3245-4487-4DEC-9709-49021FD96B79}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,10 +15,6 @@ Global
 		{8359AB9F-D3DE-4FFD-87B7-08CA792E7D51}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8359AB9F-D3DE-4FFD-87B7-08CA792E7D51}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8359AB9F-D3DE-4FFD-87B7-08CA792E7D51}.Release|Any CPU.Build.0 = Release|Any CPU
-		{137D3245-4487-4DEC-9709-49021FD96B79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{137D3245-4487-4DEC-9709-49021FD96B79}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{137D3245-4487-4DEC-9709-49021FD96B79}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{137D3245-4487-4DEC-9709-49021FD96B79}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

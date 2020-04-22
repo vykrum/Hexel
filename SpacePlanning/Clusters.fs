@@ -14,17 +14,8 @@ module Hexel =
     let adj (x : int, y: int) =
         // x : x coordinate
         // y : y coordinate
-
         let hxx = [ 0; -1; -2; -1; 1; 2; 1 ] |> List.map (fun i -> x + i)
-                
-        //let hxx = [ 0; 0.0; 0.93; 0.93; 0.0; -0.93; -0.93 ]
-        //        |> List.map (fun i -> Math.Round(x + i,3))
-
         let hxy = [ 0; -2; 0; 2; 2; 0; -2 ] |> List.map (fun i -> y + i)
-                
-        //let hxy = [ 0; 1.074; 0.537; -0.537; -1.074; -0.537; 0.537 ]
-        //        |> List.map (fun i -> Math.Round(y + i, 3))
-
         (hxx,hxy) ||> List.zip
 
     // Cell cluster by specified count
@@ -51,7 +42,7 @@ module Hexel =
 
         cl ct ls oc
 
-    // Perimeter cells in cluster
+    // Perimeter cells
     let prm (ce : (int*int)list) =
         // ce : All cells in cluster
 
@@ -60,25 +51,24 @@ module Hexel =
                 List.contains x ce) 
                 |> List.contains false) ce
 
+    // Concentric cells 
+    let con hc oc = 
+        List.except oc (List.map (fun x -> adj x) hc 
+        |> List.concat 
+        |> List.distinct) 
+        |> prm
+
     // Incremental cells at multiple clusters (start)
     let cl (ct : int) (oc : (int*int)list) (hc : (int*int)list)  = 
-                let cl1 hc oc = 
-                                List.except oc (List.map (fun x -> adj x) hc 
-                                |> List.concat 
-                                |> List.distinct) 
-                                |> prm
-
-                let rec cl2 ct hc oc = 
-                                        match (List.length (cl1 hc oc) > ct) with
-                                        | true -> [List.truncate ct ((cl1 hc oc)); hc]
-                                        | false -> cl2 ct (hc @ (List.truncate 1 (cl1 hc oc))) oc
                 
+                let rec cl2 ct hc oc = 
+                                        match (List.length (con hc oc) > ct) with
+                                        | true -> [List.truncate ct ((con hc oc)); hc]
+                                        //For corridors shift hc @ to end in the line below
+                                        | false -> cl2 ct (hc @ (List.truncate 1 (con hc oc))) oc 
+
                 cl2 ct hc oc
 
-    //let hg = cls 15 [0,0] (0,0)
-    let hg1 = cl 1 [][0,0] |> List.head
-    //let gh = hg |> List.distinct |> List.length
-    let gh1 = hg1 |> List.distinct |> List.length
-    //let r = List.map (fun x -> List.length x) (cl 24 [] hg )
-    let r1 = (cl 500 [] (cl 100 [][0,0] |> List.head) )
-    let gv = cl 1 [][0,0]
+    let gv = cl 50 [] [(0,0)]
+
+
