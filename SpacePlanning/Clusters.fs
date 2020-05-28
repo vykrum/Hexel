@@ -1,5 +1,5 @@
-﻿
-namespace Clusters
+﻿namespace Clusters
+
 module Tup =
  //Convert for export
 // Tuples to coordinates
@@ -58,9 +58,12 @@ module Hexel =
         |> List.distinct) 
         |> prm
 
-    // Incremental cells at multiple clusters (start)
+    // Start Cells of Clusters
     let cl (ct : int) (oc : (int*int)list) (hc : (int*int)list)  = 
-                
+        // ct : Cluster Count
+        // oc : Occupied Cells
+        // hc : Host Cells
+
                 let rec cl2 ct hc oc = 
                                         match (List.length (con hc oc) > ct) with
                                         | true -> [List.truncate ct ((con hc oc)); hc]
@@ -69,6 +72,6 @@ module Hexel =
 
                 cl2 ct hc oc
 
-    let gv = cl 50 [] [(0,0)]
+    let gv = cl 1 [] [(0,0)]
 
 
