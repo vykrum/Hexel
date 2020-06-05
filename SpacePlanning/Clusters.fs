@@ -51,27 +51,27 @@ module Hexel =
                 List.contains x ce) 
                 |> List.contains false) ce
 
-    // Concentric cells 
+    // Concentric cells
     let con hc oc = 
         List.except oc (List.map (fun x -> adj x) hc 
         |> List.concat 
         |> List.distinct) 
         |> prm
 
-    // Start Cells of Clusters
-    let cl (ct : int) (oc : (int*int)list) (hc : (int*int)list)  = 
+    // Start Cells of Sub Cluster
+    let rec scl (ct : int) (oc : (int * int)list) (hc : (int * int)list) = 
         // ct : Cluster Count
         // oc : Occupied Cells
         // hc : Host Cells
+        match (List.length (con hc oc) > ct) with
+        //Check if perimeter has adequate host cells
+        | true -> [List.truncate ct ((con hc oc)); hc]
+        //Increase host cluster count to satisfy First Cell Count
+        //For corridors shift hc @ to end in the line below
+        | false -> scl ct (hc @ (List.truncate 1 (con hc oc))) oc
+    
 
-                let rec cl2 ct hc oc = 
-                                        match (List.length (con hc oc) > ct) with
-                                        | true -> [List.truncate ct ((con hc oc)); hc]
-                                        //For corridors shift hc @ to end in the line below
-                                        | false -> cl2 ct (hc @ (List.truncate 1 (con hc oc))) oc 
 
-                cl2 ct hc oc
-
-    let gv = cl 1 [] [(0,0)]
+    let gv = scl 10 [] [(0,0)]
 
 
