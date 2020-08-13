@@ -7,7 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Program.fs" />
+    <None Include="Script1.fsx" />
+   
     <Compile Include="Clusters.fs" />
   </ItemGroup>
 
