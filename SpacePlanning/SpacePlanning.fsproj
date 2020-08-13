@@ -1,17 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
     <OutputType>Library</OutputType>
-    <LangVersion>preview</LangVersion>
+    <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
-
   <ItemGroup>
     <None Include="Script1.fsx" />
-   
     <Compile Include="Clusters.fs" />
+    <Compile Include="types.fs" />
   </ItemGroup>
-
-  <ItemGroup />
-
 </Project>
