@@ -70,8 +70,11 @@ module Hexel =
         //For corridors shift hc @ to end in the line below
         | false -> scl ct (hc @ (List.truncate 1 (con hc oc))) oc
     
+    let clc (ar :int list) (oc : (int * int)list) (hc : (int * int)list) =
+        let sc1 = scl (List.length ar) oc hc
+        let sc2 = List.map (fun x -> scl 1 (oc @ List.tail hc) (x :: []) |> List.head) sc1.[0]
+        
+        sc2
 
-
-    let gv = scl 10 [] [(0,0)]
-
-
+    let gv = scl 3 [] [(0,0)]
+    let gb = clc [10;15;5] [] [(0,0)]
