@@ -36,5 +36,4 @@ let incCls (occ : Hxl list) (hxl : Hxl list) =
 
 // Cluster
 
-
 incCls [0,0,0; -1,-2,0] [-1,2,0; 1,2,0; 2,0,0]
