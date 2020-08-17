@@ -19,18 +19,21 @@ let prmHxl (ce : Hxl list) =
             List.contains x ce) 
             |> List.contains false) ce
 
-//Incremental Hexel
-let incHxl (hxl : Hxl list) (occ : Hxl list) : Hxl list= 
-    let inc = hxl 
-            |> prmHxl 
-            |> List.head 
+// Incremental Hexel
+let incHxl (occ : Hxl list) (hxl : Hxl): Hxl list = 
+    let inc = hxl
             |> adjHxl 
-            |> List.except (hxl @ occ) 
+            |> List.except (hxl :: occ) 
             |> List.head 
-    List.append hxl [inc] 
+    [inc ; hxl]
 
-List.fold (fun a b -> a + string(b)) "" [1;2;3;4;5]
+// Incremental Cluster
+let incCls (occ : Hxl list) (hxl : Hxl list) = 
+        let a = List.scan incHxl occ hxl
+                |> List.tail
+                |> List.map List.head
+        List.map2 (fun x y -> x :: [y]) a hxl
 
-//let clsHxl (hxls,cnts : Hxl * int list ) (occ : Hxl list) = 
-
-incHxl [-3,-2,0; -4,-4,0; -5,-2,0] [0,0,0; -1,-2,0; -2,0,0; -1,2,0; 1,2,0; 2,0,0; 1,-2,0; -2,-4,0; -3,-2,0]
+incCls [0,0,0; -1,-2,0; -2,0,0] [-1,2,0; 1,2,0; 2,0,0]
+// incHxl [-4,-4,0; -5,-2,0]  (-3,-2,0)
+adjHxl (0,0,0)
