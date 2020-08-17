@@ -1,6 +1,6 @@
 type Hxl = int * int * int
 
-//Surrounding Hexels
+// Surrounding Hexels
 let adjHxl (hxl : Hxl) =
     let a,b,c = hxl
     let x = [-1; -2; -1; 1; 2; 1] 
@@ -11,13 +11,12 @@ let adjHxl (hxl : Hxl) =
             |> List.map (fun w -> w + c)
     List.zip3 x y z |> List.map Hxl
 
-// Perimeter cells
-let prmHxl (ce : Hxl list) =
-    // ce : All cells in cluster
+// Perimeter Hexels
+let prmHxl (hxl : Hxl list) = 
     List.filter (fun x -> 
         adjHxl x |> List.map (fun x -> 
-            List.contains x ce) 
-            |> List.contains false) ce
+            List.contains x hxl) 
+            |> List.contains false) hxl
 
 // Incremental Hexel
 let incHxl (occ : Hxl list) (hxl : Hxl): Hxl list = 
@@ -32,8 +31,10 @@ let incCls (occ : Hxl list) (hxl : Hxl list) =
         let a = List.scan incHxl occ hxl
                 |> List.tail
                 |> List.map List.head
-        List.map2 (fun x y -> x :: [y]) a hxl
+        //List.map2 (fun x y -> x :: [y]) a hxl
+        a
 
-incCls [0,0,0; -1,-2,0; -2,0,0] [-1,2,0; 1,2,0; 2,0,0]
-// incHxl [-4,-4,0; -5,-2,0]  (-3,-2,0)
-adjHxl (0,0,0)
+// Cluster
+
+
+incCls [0,0,0; -1,-2,0] [-1,2,0; 1,2,0; 2,0,0]
