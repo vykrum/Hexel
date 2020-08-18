@@ -5,7 +5,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Clusters.fs" />
-    <Compile Include="types.fs" />
     <Compile Include="Helix.fsx" />
   </ItemGroup>
 </Project>
