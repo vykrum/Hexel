@@ -177,12 +177,23 @@ let hxlAdj (ocp : Hxl list) (org : Hxl) : Hxl list =
     let xy1 = List.map (fun q -> q.x,q.y ) ocp
     List.partition (fun q -> List.contains (q.x,q.y) xy1) hx2 |> snd
 
-let hxlInc (ocp : Hxl list) (org : Hxl list) = 
-    List.scan (fun x y -> (hxlAdj x y |> List.take 1)) ocp org
+let hxlInc (ocp : Hxl list) (org : Hxl) = 
+    let inc = org
+            |> hxlAdj ocp
+            |> List.except (org :: ocp) 
+            |> List.head 
+    [inc ; org]
+
+let hxlClu (occ : Hxl list) (hxl : Hxl list) = 
+      List.scan hxlInc occ hxl
+            |> List.tail
+            |> List.map List.head
 
 
 // let bx = List.map ( fun x -> (x.x,x.y))ax
-(* let bx = (hxlInc [] (hxlAdj [] A |> List.take 4) |> List.concat |> List.map (fun x -> (x.x,x.y))) @ ((hxlAdj [] A |> List.take 4) |> List.map (fun x -> (x.x,x.y)))
+let bx = hxlClu [] (A::hxlAdj [] A) |> List.map ( fun x -> (x.x,x.y))
+let cx = (A::hxlAdj [] A) |> List.map ( fun x -> (x.x,x.y))
+let ax = cx @ bx
 let wr = new System.IO.StreamWriter("Csv.csv") 
-bx |> List.map(string) |> String.concat("") |> wr.Write
-wr.Close () *)
+ax |> List.map(string) |> String.concat("") |> wr.Write
+wr.Close ()
