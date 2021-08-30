@@ -1,0 +1,188 @@
+#!fsharp
+
+// Label
+type Lbl = Lbl of id:string * x:int * y:int 
+
+type Hxl = Hex of hx: Lbl list
+
+// Units
+let A = Lbl ( "A", 1, 2 )
+let B = Lbl ( "B", 2, 0 )
+let C = Lbl ( "C", 1, -2 )
+let D = Lbl ( "D", -1, -2 )
+let E = Lbl ( "E", -2, 0 )
+let F = Lbl ( "F", -1, 2 )
+
+// Adjacent
+let hxlAdj (org : Lbl list) = 
+    List.map ( fun x -> org @ [x] ) [A;B;C;D;E;F]
+        
+// Labels
+let rec hxl_ID (hxl : Lbl list ) = 
+    let id a = match a with Lbl (id=x) -> x
+    List.map id hxl
+
+// XY
+let hxl_XY (hxl : Lbl list) = 
+    let valX a = match a with Lbl (x=x) -> x
+    let valY a = match a with Lbl (y=y) -> y
+    List.map valX hxl |> List.sum, List.map valY hxl |> List.sum
+
+// Available
+let hxlAvl (org : Lbl list) (ocp : Lbl list list) = 
+    // Adjacent
+    let ocAd = hxlAdj org
+    // Occupied
+    let ocXY = ocp |> List.map hxl_XY
+    // Adjacent minus Occupied
+    List.partition (fun x -> List.contains (x |> hxl_XY) ocXY) ocAd |> snd
+
+// Core and Perimeter
+let hxlPrm (hxl : Lbl list list) = 
+    let prm1 hxl1 cls1 = List.forall (fun x -> List.contains x cls1) (hxlAdj hxl1)
+    List.partition (fun x -> prm1 x hxl) hxl
+
+// Perimeter Minimum
+let prmMin (hxl : Lbl list list) (ocp : Lbl list list) (min : int) = 
+    let rec mnm hx op mn ac= 
+        match hx with
+        | a when List.length hx >= mn -> a 
+        | x::y when List.length (hxlPrm ac |> snd) < mn -> mnm (hx @ (hxlAvl x op)) (op@hx) mn (hx @ (hxlAvl x op))
+        | _ -> ac
+    let hx1 = mnm hxl ocp min []
+    let hx2 = hxlPrm hx1 |> snd |> List.skip min
+    List.except hx2 hx1 |> List.take min
+
+
+
+
+(* let hxlSng (cnt : int list) (hst : Lbl list list) (ocp : Lbl list list) = 
+    //Perimeter Lblels
+    let prm = hxlPrm hst
+    // Branch count
+    let brnCnt = List.length cnt
+    // Ensure minimum host hexel count
+    let hxHst = match prm with 
+                | [] when List.length ocp > 0 -> 
+                    List.take brnCnt ocp
+                | [] when List.length ocp = 0 -> 
+                    List.take brnCnt [[];[A];[B];[C];[D];[E];[F]]
+                | a when List.length prm < List.length cnt -> 
+                    a @ hxlAvl (List.head a) (ocp @ a) 
+                    |> List.distinct
+                    |> hxlPrm
+                    |> List.take brnCnt
+                | _ -> prm 
+                    |> List.take brnCnt
+    hxHst *)
+
+//hxlPrm [[];[A];[B];[C];[D];[E];[F]]
+//hxlAvl [A;B] [[A;A];[B];[A;F]] |> hxl_ID
+//let a = hxlSng [90;5;8] [[A];[B];[C];[D]] [] |> List.map hxl_ID 
+let a = prmMin [[A;A;A];[B];[C]] [] 6 |> List.map hxl_ID
+a
+(* let wr = new System.IO.StreamWriter("Csv.csv") 
+a |> List.map(string) |> String.concat("") |> wr.Write
+wr.Close () *)
+
+#!fsharp
+
+// Components
+type Lbl = Lbl of id: string * x:int * y:int 
+type Hxl = Hex of hx: Lbl list
+type Clu = Cls of cl: Hxl list
+
+// Constructors
+let hxlCst x = match x with Hex (a) -> a
+let cluCst x = match x with Cls (a) -> a
+
+// Units
+let A = Lbl ( "A", 1, 2 )
+let B = Lbl ( "B", 2, 0 )
+let C = Lbl ( "C", 1, -2 )
+let D = Lbl ( "D", -1, -2 )
+let E = Lbl ( "E", -2, 0 )
+let F = Lbl ( "F", -1, 2 )
+
+// Adjacent
+let hxlAdj (org : Hxl) = 
+    List.map ( fun x -> Hex(hxlCst org @ [x]) ) [A;B;C;D;E;F]
+        
+// Labels
+let rec hxl_ID (hxl : Hxl ) = 
+    let id a = match a with Lbl (id=x) -> x
+    List.map id (hxlCst hxl) |> String.concat ""
+
+// XY
+let hxl_XY (hxl : Hxl) = 
+    let valX a = match a with Lbl (x=x) -> x
+    let valY a = match a with Lbl (y=y) -> y
+    List.map valX (hxlCst hxl) |> List.sum, List.map valY (hxlCst hxl) |> List.sum
+
+// Available
+let hxlAvl (org : Hxl) (ocp : Hxl list) = 
+    // Adjacent
+    let ocAd = hxlAdj org
+    // Occupied
+    let ocXY = ocp |> List.map hxl_XY
+    // Adjacent minus Occupied
+    List.partition (fun x -> List.contains (x |> hxl_XY) ocXY) ocAd |> snd
+
+// Cluster Core and Perimeter
+let hxlPrm (hxl : Clu) = 
+    let prm1 hxl1 cls1 = List.forall (fun x -> List.contains x cls1) (hxlAdj hxl1)
+    List.partition (fun x -> prm1 x (cluCst hxl)) (cluCst hxl)
+
+// Cluster Perimeter Minimum
+let prmMin (hxl : Clu) (ocp : Hxl list) (min : int) = 
+    let rec mnm (hx:Clu) op mn ac= 
+        match (cluCst hx) with
+        | a when List.length (cluCst hx) >= mn -> a 
+        | x::y when List.length (hxlPrm ac |> snd) < mn -> 
+            mnm (Cls((cluCst hx) @ (hxlAvl x op))) (op@(cluCst hx)) mn (Cls((cluCst hx) @ (hxlAvl x op)))
+        | _ -> cluCst ac
+    let hx1 = mnm hxl ocp min (Cls([]))
+    let hx2 = hxlPrm (Cls(hx1)) |> snd |> List.skip min
+    Cls(List.except hx2 hx1 |> List.take min)
+    
+
+//hxlAvl (Hex ([A;B;C])) [Hex([A;B;C;A]);Hex([B])] |> List.map hxl_ID
+prmMin (Cls([Hex([A;B;C;A]);Hex([B])])) [] 5 |> cluCst |> List.map hxl_ID
+
+#!fsharp
+
+// Components
+type Hxl = {id : string; x : int; y : int}
+type Clu = {id : string option; cr: Hxl list; pr: Hxl list}
+
+// Units
+let A = {id = "A"; x = 1; y = 2}
+let B = {id = "B"; x = 2; y = 0}
+let C = {id = "C"; x = 1; y = -2}
+let D = {id = "D"; x = -1; y = -2}
+let E = {id = "E"; x = -2; y = 0}
+let F = {id = "F"; x = -1; y = 2}
+
+// Adjacent
+let hxlAdj (ocp : Hxl list) (org : Hxl) : Hxl list = 
+    let hx1 = [A;B;C;D;E;F]
+    let id1 = List.map (fun (q:Hxl) -> q.id) hx1
+    let x01 = List.map (fun (q:Hxl) -> q.x) hx1
+    let y01 = List.map (fun (q:Hxl) -> q.y) hx1
+    let {Hxl.id = a ; Hxl.x = b; Hxl.y = c} = org
+    let id2 = List.map ( fun q -> String.concat "" [a;q]) id1
+    let x02 = List.map ( fun q -> List.sum [b;q]) x01
+    let y02 = List.map ( fun q -> List.sum [c;q]) y01
+    let hx2 = List.map3 (fun p q r -> {id = p; x = q; y = r}) id2 x02 y02
+    let xy1 = List.map (fun q -> q.x,q.y ) ocp
+    List.partition (fun q -> List.contains (q.x,q.y) xy1) hx2 |> snd
+
+let hxlInc (ocp : Hxl list) (org : Hxl list) = 
+    List.scan (fun x y -> (hxlAdj x y |> List.take 1)) ocp org
+
+
+// let bx = List.map ( fun x -> (x.x,x.y))ax
+(* let bx = (hxlInc [] (hxlAdj [] A |> List.take 4) |> List.concat |> List.map (fun x -> (x.x,x.y))) @ ((hxlAdj [] A |> List.take 4) |> List.map (fun x -> (x.x,x.y)))
+let wr = new System.IO.StreamWriter("Csv.csv") 
+bx |> List.map(string) |> String.concat("") |> wr.Write
+wr.Close () *)
