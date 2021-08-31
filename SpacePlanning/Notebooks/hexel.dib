@@ -163,6 +163,11 @@ let D = {id = "D"; x = -1; y = -2}
 let E = {id = "E"; x = -2; y = 0}
 let F = {id = "F"; x = -1; y = 2}
 
+// Unique
+let hxlAvl (ocp : Hxl list) (org : Hxl list) = 
+    let xy1 = List.map (fun q -> q.x,q.y ) ocp
+    List.partition (fun q -> List.contains (q.x,q.y) xy1) org |> snd
+
 // Adjacent
 let hxlAdj (ocp : Hxl list) (org : Hxl) : Hxl list = 
     let hx1 = [A;B;C;D;E;F]
@@ -174,26 +179,24 @@ let hxlAdj (ocp : Hxl list) (org : Hxl) : Hxl list =
     let x02 = List.map ( fun q -> List.sum [b;q]) x01
     let y02 = List.map ( fun q -> List.sum [c;q]) y01
     let hx2 = List.map3 (fun p q r -> {id = p; x = q; y = r}) id2 x02 y02
-    let xy1 = List.map (fun q -> q.x,q.y ) ocp
-    List.partition (fun q -> List.contains (q.x,q.y) xy1) hx2 |> snd
+    hxlAvl ocp hx2
 
-let hxlInc (ocp : Hxl list) (org : Hxl) = 
-    let inc = org
-            |> hxlAdj ocp
-            |> List.except (org :: ocp) 
-            |> List.head 
-    [inc ; org]
-
-let hxlClu (occ : Hxl list) (hxl : Hxl list) = 
-      List.scan hxlInc occ hxl
-            |> List.tail
-            |> List.map List.head
+// Increment
+let hxlInc (occ : Hxl list) (org : Hxl list) = 
+    List.scan (fun x y-> 
+        (hxlAdj (occ @ org @ x) y) 
+        |> List.take 1 ) occ org 
+        |> List.tail 
 
 
-// let bx = List.map ( fun x -> (x.x,x.y))ax
-let bx = hxlClu [] (A::hxlAdj [] A) |> List.map ( fun x -> (x.x,x.y))
-let cx = (A::hxlAdj [] A) |> List.map ( fun x -> (x.x,x.y))
-let ax = cx @ bx
-let wr = new System.IO.StreamWriter("Csv.csv") 
-ax |> List.map(string) |> String.concat("") |> wr.Write
-wr.Close ()
+// let bx = List.map ( fun x -> (x.x,x.y))ax 
+// let ax = hxlAdj [A] A
+// let bx = hxlInc (A::ax) ax |> List.map List.head
+// let cx = (ax @ bx) |> List.map ( fun x -> (x.x,x.y))
+// let wr = new System.IO.StreamWriter("Csv.csv") 
+// cx |> List.map(string) |> String.concat("") |> wr.Write
+// wr.Close ()
+
+#!fsharp
+
+List.scan (fun x y -> x @ [y]) ["a";"b";"c";"d";"e"] ["A";"B"] 

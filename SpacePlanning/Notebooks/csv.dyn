@@ -84,11 +84,11 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "a = List.TakeEveryNthItem(String.ToNumber(String.TrimWhitespace(String.Split(st,[\"(\",\")\",\",\"]))),2,[1,0]);\nPolygon.ByPoints(Point.ByCoordinates([0,1,1,0,-1,-1],[1.5,0.5,-0.5,-1.5,-0.5,0.5])).Transform(CoordinateSystem.ByOrigin(List.FirstItem(a),List.LastItem(a)));",
+      "Code": "a = List.TakeEveryNthItem(String.ToNumber(String.TrimWhitespace(String.Split(st,[\"(\",\")\",\",\"]))),2,[1,0]);\nb = Polygon.ByPoints(Point.ByCoordinates([0,1,1,0,-1,-1],[1.5,0.5,-0.5,-1.5,-0.5,0.5])).Transform(CoordinateSystem.ByOrigin(List.FirstItem(a),List.LastItem(a)));\nc = List.Chop(b,6);",
       "Id": "015a7df1369949e2a6e0eb9628afd6e2",
       "Inputs": [
         {
-          "Id": "57969cf194e144deaa96556cca6e4452",
+          "Id": "803342cfe70144afa5135bf1590d344c",
           "Name": "st",
           "Description": "st",
           "UsingDefaultValue": false,
@@ -99,7 +99,7 @@
       ],
       "Outputs": [
         {
-          "Id": "97ec8f5a99f04f80b8f0af3766300023",
+          "Id": "8f1f988c2865446b96c6a9ea53ca4392",
           "Name": "",
           "Description": "a",
           "UsingDefaultValue": false,
@@ -108,9 +108,18 @@
           "KeepListStructure": false
         },
         {
-          "Id": "1a443205c87a49b99e365677ee544e8d",
+          "Id": "18c532aef7084e298393540bbc0545da",
           "Name": "",
-          "Description": "Value of expression at line 2",
+          "Description": "b",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "5fcd91bb556c427eb61ce79e3a4686de",
+          "Name": "",
+          "Description": "c",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -123,13 +132,13 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "List.TakeItems(a,6);",
-      "Id": "f51d4e2dc1a741d689da9c65317c2a06",
+      "Code": "d[0];",
+      "Id": "054063c98ac84e3882e2ab25466f9614",
       "Inputs": [
         {
-          "Id": "c08af6a6c0f84316b0487b4dbf7c3093",
-          "Name": "a",
-          "Description": "a",
+          "Id": "b38b51d5b0a14adfa36542b4bd18eec2",
+          "Name": "d",
+          "Description": "d",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -138,7 +147,7 @@
       ],
       "Outputs": [
         {
-          "Id": "f3580a25b9524eaf975f238eba17f57d",
+          "Id": "b410dcf09f574806ba273ba4d20f64c7",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -153,13 +162,13 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "List.TakeItems(a,-6);",
-      "Id": "921c0dbdb109443f887b0c5f00eb3863",
+      "Code": "d[1];",
+      "Id": "200d858cb3844d2dba4fdc7b9d9f73ae",
       "Inputs": [
         {
-          "Id": "13db8c38c3cf4ada81853347184b42e1",
-          "Name": "a",
-          "Description": "a",
+          "Id": "d8e5bf5057e04558b040c1e6350d7e1d",
+          "Name": "d",
+          "Description": "d",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -168,7 +177,7 @@
       ],
       "Outputs": [
         {
-          "Id": "f14c1b4f418d454db613b22bb2d2849d",
+          "Id": "3860ac7fc0044d68b16a63d04c17a343",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -189,18 +198,18 @@
     },
     {
       "Start": "b724cd9d7fb344478455da507ce27fa9",
-      "End": "57969cf194e144deaa96556cca6e4452",
-      "Id": "40c5d43acab945cd9f8eec80c440e13d"
+      "End": "803342cfe70144afa5135bf1590d344c",
+      "Id": "238761394e6443358236bd3b343e5b50"
     },
     {
-      "Start": "1a443205c87a49b99e365677ee544e8d",
-      "End": "c08af6a6c0f84316b0487b4dbf7c3093",
-      "Id": "32c5dfcfa97a4adaacf65ef01362d52e"
+      "Start": "5fcd91bb556c427eb61ce79e3a4686de",
+      "End": "b38b51d5b0a14adfa36542b4bd18eec2",
+      "Id": "5cc6309276984afc8b0480b380dad1be"
     },
     {
-      "Start": "1a443205c87a49b99e365677ee544e8d",
-      "End": "13db8c38c3cf4ada81853347184b42e1",
-      "Id": "311663c993844525ad8d12f6b38a7ac4"
+      "Start": "5fcd91bb556c427eb61ce79e3a4686de",
+      "End": "d8e5bf5057e04558b040c1e6350d7e1d",
+      "Id": "9fc0957c885d47dda5716af7aeedcd72"
     }
   ],
   "Dependencies": [],
@@ -276,29 +285,29 @@
         "Y": 235.9824284726636
       },
       {
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Name": "Code Block",
-        "Id": "f51d4e2dc1a741d689da9c65317c2a06",
+        "Id": "054063c98ac84e3882e2ab25466f9614",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 960.9734309842238,
-        "Y": 178.50609099020488
+        "X": 1031.0,
+        "Y": 336.0
       },
       {
         "ShowGeometry": true,
         "Name": "Code Block",
-        "Id": "921c0dbdb109443f887b0c5f00eb3863",
+        "Id": "200d858cb3844d2dba4fdc7b9d9f73ae",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 962.086560648371,
-        "Y": 401.000939969257
+        "X": 793.58819518769428,
+        "Y": 459.52602475549372
       }
     ],
     "Annotations": [],
-    "X": 216.12968582224121,
-    "Y": 19.193014628062627,
-    "Zoom": 0.40990440668632333
+    "X": -63.651131624654823,
+    "Y": -114.4701572421796,
+    "Zoom": 0.57548671790794559
   }
 }
