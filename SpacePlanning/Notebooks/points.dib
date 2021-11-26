@@ -1,0 +1,17 @@
+#!fsharp
+
+type xy = {X:int;Y:int}
+let x1 = Seq.initInfinite (fun x -> x * 2)
+let y1 = Seq.initInfinite (fun y -> (y * 4) + 1)
+let x2 = Seq.initInfinite (fun x -> (x * 2) + 1)
+let y2 = Seq.initInfinite (fun y -> (y * 4) - 1) |> Seq.tail
+let xc = 5
+let yc = 5
+let xx1 = [for i in List.init xc (fun x -> x * 2) -> 
+                [for j in List.init yc (fun y -> 
+                    (y * 4) + 1) -> {X=i;Y=j}] ]
+let xx2 = [for i in List.init xc (fun x -> (x * 2) + 1) -> 
+                [for j in List.init (yc+1) (fun y -> (y * 4) - 1) 
+                |> List.tail -> {X=i;Y=j}] ]
+let a = [xx1;xx2]|>List.transpose |> List.concat
+a
