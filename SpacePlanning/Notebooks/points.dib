@@ -1,17 +1,33 @@
 #!fsharp
 
-type xy = {X:int;Y:int}
+// XY Infinite Grid
 let x1 = Seq.initInfinite (fun x -> x * 2)
 let y1 = Seq.initInfinite (fun y -> (y * 4) + 1)
 let x2 = Seq.initInfinite (fun x -> (x * 2) + 1)
 let y2 = Seq.initInfinite (fun y -> (y * 4) - 1) |> Seq.tail
+
+// XY Limited Grid
+type xy = {X:int;Y:int}
 let xc = 5
 let yc = 5
-let xx1 = [for i in List.init xc (fun x -> x * 2) -> 
+let xy1 = [for i in List.init xc (fun x -> x * 2) -> 
                 [for j in List.init yc (fun y -> 
                     (y * 4) + 1) -> {X=i;Y=j}] ]
-let xx2 = [for i in List.init xc (fun x -> (x * 2) + 1) -> 
-                [for j in List.init (yc+1) (fun y -> (y * 4) - 1) 
-                |> List.tail -> {X=i;Y=j}] ]
-let a = [xx1;xx2]|>List.transpose |> List.concat
-a
+let xy2 = [for i in List.init xc (fun x -> (x * 2) + 1) -> 
+                [for j in List.init (yc+1) (fun y -> 
+                    (y * 4) - 1) 
+                    |> List.tail -> {X=i;Y=j}] ]
+let a = [xy1;xy2]|>List.transpose |> List.concat
+
+// XY Valid Hexel Origins
+let hxVlOr (a : xy) = 
+    match (a.X % 2 = 0) with 
+    | true -> {X = a.X ; Y = a.Y - (a.Y % 4) + 1}
+    | false -> {X = a.X ; Y = a.Y - (a.Y % 4) + 3}
+    
+// XY Adjacent Hexel Origins
+let hxAdOr (a : xy) = 
+    List.map2 (fun x y -> {X = a.X + x; Y = a.Y + y}) 
+        [-2;-1;1;2;1;-1] [0;2;2;0;-2;-2] 
+
+hxVlOr {X=0;Y=0}
