@@ -12,11 +12,11 @@ let xc = 5
 let yc = 5
 let xy1 = [for i in List.init xc (fun x -> x * 2) -> 
                 [for j in List.init yc (fun y -> 
-                    (y * 4) + 1) -> {X=i;Y=j}] ]
+                    (y * 4) + 1) -> {X = i ; Y = j}] ]
 let xy2 = [for i in List.init xc (fun x -> (x * 2) + 1) -> 
-                [for j in List.init (yc+1) (fun y -> 
+                [for j in List.init (yc + 1) (fun y -> 
                     (y * 4) - 1) 
-                    |> List.tail -> {X=i;Y=j}] ]
+                    |> List.tail -> {X = i ; Y = j}] ]
 let a = [xy1;xy2]|>List.transpose |> List.concat
 
 // XY Valid Hexel Origins
