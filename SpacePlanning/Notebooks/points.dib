@@ -60,20 +60,29 @@ let hxClsOg (ct : int) (og : xy) (oc : xy list) =
     cl ct (hxAdjOg og) oc [] |> List.distinct
 
 // Clusters (Multiple) Hexel Origins XY
-let hxClmOg (ct : int list) (og : xy list) (oc : xy list) = 
+let hxClmOg (ct : int list) (hs : xy list) (oc : xy list) = 
     
     let hxCl01 (ct : int list) (og : xy list) (oc : xy list) =
         let og1 = List.map2 (fun x y -> [x] @ [y]) og (hxIncOg og oc)
         List.map2 (fun x y -> 
                 match y with
                 | [] -> []
-                | y when (x < 2) -> [List.head y]
+                | y when (x < 3) -> [List.head y]
                 | _ -> y) ct og1
-    hxCl01 ct og oc
+
+    let rec hxCl02 (ct : int list) (hs : xy list) (oc : xy list) (ac : xy list list) = 
+        let ct1 = List.map (fun x -> x + 1) ct
+        match (List.concat ac |> List.length) < (List.sum ct1) with 
+        | true -> hxCl02 ct1 
+                    (List.map (fun x  -> List.last x) (hxCl01 ct1 hs oc)) 
+                    (oc @ (ac |> List.concat)|> List.distinct) 
+                    (List.map2 (fun x y -> (x @ y) ) ac (hxCl01 ct1 hs oc))
+        | false -> List.map (fun x -> List.tail x) ac
+
+    hxCl02 ct hs oc (List.map (fun x -> List.except [x] [x]) hs)
 
 
 //hxAdjOg { X = 0; Y =1 }
 //hxClsOg 5 {X=0;Y=1} (hxAdjOg {X = 2; Y =1})
 //hxIncOg ((hxAdjOg {X=0;Y=1})|> List.take 3) ([{X= -3;Y=3};{X= -4;Y=1}])
-hxClmOg [2;1;5] [{X=0;Y=1};{X= -2;Y=1};{X=0;Y=1};{X= -1;Y=3};{X=1;Y=3}] [{X= -3;Y=3};{X= -4;Y=1}]
-hxAdjOg {X=0;Y=1}
+hxClmOg [2;7;5;5;7] ([{X=0;Y=1};{X= -2;Y=1};{X= -1;Y=3};{X=1;Y=3};{X=2;Y=1}]) ([{X= -3;Y=3};{X= -4;Y=1}]) |>  List.map (fun x -> List.length x)
