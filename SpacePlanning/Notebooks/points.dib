@@ -108,14 +108,85 @@ let hxAdjOg (og : xy) =
 
 // Increment Hexel Origins XY
 let hxIncOg (hs : xy list list) (oc : xy list) = 
-    [for i in hs -> List.map (fun x -> 
+    let a = [for i in hs ->
+                    match i with 
+                    | [] -> i
+                    | _ -> 
+                            List.map (fun x -> 
                                     let x1 = hxAdjOg x 
                                             |> List.except (oc @ (List.concat hs)) 
-                                            |> List.take 1
-                                    let oc = oc @ (List.concat hs) @ x1
+                                            |> List.head
+                                    let oc = oc @ (List.concat hs) @ [x1]
                                     x1
                                     ) i]
+    List.map2 (fun x y ->  x @ y) hs a
+    
 
+
+(* let hxClsOg (ct : int list) (hs : xy list list) (oc : xy list) = 
+    let hxCl01 (ct : int list) (og : xy list list) (oc : xy list) =
+        let og1 = List.map2 (fun x y -> [x] @ [y]) og (hxIncOg og oc)
+        List.map2 (fun x y -> 
+                match x with
+                | y when (x < 1) -> []
+                | _ -> 
+                    let ct = List.map(fun x -> x-1)
+                    [y |> List.last] ) ct og1 
+    //hxCl01 ct hs oc
+    let rec hxCl02 (ct : int list) (hs : xy list list) (oc : xy list) (ac : xy list list) = 
+        
+        match (List.concat ac |> List.length) < (List.sum ct) with 
+        | true -> hxCl02 ct
+                    (List.map (fun x -> List.last x) (hxCl01 ct hs oc)) 
+                    (oc @ (ac |> List.concat)|> List.distinct) 
+                    (List.map2 (fun x y -> (x @ y) ) ac ((hxCl01 ct hs oc)|> List.concat))
+        | false -> List.map (fun x -> List.tail x) ac
+    hxCl02 ct hs oc (List.map (fun x -> List.except [x] [x]) (hs|>List.concat)) *)
 
 //hxAdjOg { X = 0; Y =1 }
-hxIncOg [[{X=0;Y=1}];[{X= -2;Y=1}];[{X= -1;Y=3}]] [{X= -3;Y=3};{X= -4;Y=1}]
+let occ = [{X= -3;Y=3};{X= -4;Y=1}]
+//let hs1 = [[{X=0;Y=1}];[{X= -2;Y=1}];[{X= -1;Y=3}]]
+let hs1 = [[];[{X= -2;Y=1}];[{X= -1;Y=3}]]
+let aa1 = hxIncOg hs1 occ
+//let aa2 = hxIncOg aa1 ((List.concat hs1)@occ)
+//hxClsOg [1;2;3] hs1 occ
+aa1
+
+#!fsharp
+
+type XY = {X : int ; Y : int ; C : bool}
+
+let hxVldOg (og : XY) = 
+    match (og.X % 2 = 0) with 
+    | true -> { X = og.X ; Y = og.Y - (og.Y % 4) + 1 ; C = false }
+    | false -> { X = og.X ; Y = og.Y - (og.Y % 4) + 3 ; C = false }
+
+// Adjacent Hexel Origins XY
+let hxAdjOg (og : XY) = 
+    List.map2 (fun x y -> { X = og.X + x; Y = og.Y + y ; C = false})
+        [-2;-1;1;2;1;-1] [0;2;2;0;-2;-2]
+
+// Core Hexel Check
+let hxCrChk (og : XY) (oc : XY list) = 
+    match og.C with 
+    | true -> og
+    | false -> match List.except oc (hxAdjOg og) |> List.length = 0 with 
+                | true -> {og with C = true}
+                | false -> og
+
+let hxIncOg (hs : XY list list) (oc : XY list) = 
+    let a = [for i in hs -> match i with 
+                            | [] -> []
+                            | _ -> 
+                                    let x1 = hxAdjOg i.[0]
+                                            |> List.except (oc @ (List.concat hs)) 
+                                            |> List.head
+                                    let oc = oc @ (List.concat hs) @ [x1]
+                                    [x1]
+                                    ]
+    List.map2 (fun x y ->  x @ y) hs a
+
+
+
+//hxCrChk { X = 0; Y =1; C = false } (hxAdjOg { X = 0; Y =1; C = false })
+hxIncOg [[{X=0;Y=1;C=false}];[{X= -2;Y=1;C=false}];[{X= -1;Y=3;C=false}]] ([{X= -3;Y=3;C=false};{X= -4;Y=1;C=false}])
