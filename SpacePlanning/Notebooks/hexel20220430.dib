@@ -1,0 +1,37 @@
+#!fsharp
+
+// Coordinates and Core bool (perimeter cell or not)
+type XYZ = {X : int ; Y : int ; Z : double ; C : bool}
+
+// Convert invalid coordinates to valid hexel grid coordinates
+let hxVldOg (og : XYZ) = 
+    match (og.X % 2 = 0) with 
+    | true -> { X = og.X ; Y = og.Y - (og.Y % 4) + 1 ; Z = og.Z ; C = false }
+    | false -> { X = og.X ; Y = og.Y - (og.Y % 4) + 3 ; Z = og.Z ; C = false }
+
+// Adjacent Hexel Origins XY
+let hxAdjOg (og : XYZ) = 
+    List.map2 (fun x y -> { X = og.X + x; Y = og.Y + y ; Z = og.Z ; C = false })
+        [-2;-1;1;2;1;-1] [0;2;2;0;-2;-2]
+
+// Incremental hexel
+let hxIncOg (og : XYZ) (oc : XYZ list) = 
+    og |> hxAdjOg |> List.except oc |> List.head
+
+let rec hxInOgs (og : XYZ list) (oc : XYZ list) = 
+    match og with 
+    | [] -> []
+    | a :: b -> 
+                let c = hxIncOg a oc
+                let oc = c :: oc
+                c :: hxInOgs b oc
+            
+                
+
+// Sample initial host origins 
+let smplCl = {X=1;Y=4;Z=1;C=false} |> hxVldOg |> hxAdjOg
+let smplOg = smplCl |> List.take 3
+
+//hxIncOg (smplCl |>List.head) (smplCl)
+hxInOgs smplOg smplCl
+//smplOg
