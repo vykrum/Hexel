@@ -1,22 +1,28 @@
 #!fsharp
 
-// Coordinates and Core bool (perimeter cell or not)
-type XYZ = {X : int ; Y : int ; Z : double ; C : bool}
+// Coordinates and Host bool
+type XYZ = {X : int ; Y : int ; Z : double ; H : bool}
 
 // Convert invalid coordinates to valid hexel grid coordinates
 let hxVldOg (og : XYZ) = 
     match (og.X % 2 = 0) with 
-    | true -> { X = og.X ; Y = og.Y - (og.Y % 4) + 1 ; Z = og.Z ; C = false }
-    | false -> { X = og.X ; Y = og.Y - (og.Y % 4) + 3 ; Z = og.Z ; C = false }
+    | true -> { X = og.X ; Y = og.Y - (og.Y % 4) + 1 ; Z = og.Z ; H = true }
+    | false -> { X = og.X ; Y = og.Y - (og.Y % 4) + 3 ; Z = og.Z ; H = true }
 
 // Adjacent Hexel Origins XY
 let hxAdjOg (og : XYZ) = 
-    List.map2 (fun x y -> { X = og.X + x; Y = og.Y + y ; Z = og.Z ; C = false })
+    List.map2 (fun x y -> { X = og.X + x; Y = og.Y + y ; Z = og.Z ; H = true })
         [-2;-1;1;2;1;-1] [0;2;2;0;-2;-2]
 
-// Incremental hexel
+// Incremental hexel (returns H false if not valid host)
 let hxIncOg (og : XYZ) (oc : XYZ list) = 
-    og |> hxAdjOg |> List.except oc |> List.head
+    match og.H with 
+    | true -> 
+        let a = og |> hxAdjOg |> List.except oc |> List.tryHead
+        match a with 
+        | None -> {og with H = false}
+        | Some a-> Some a |> Option.get
+    | false -> og
 
 let rec hxInOgs (og : XYZ list) (oc : XYZ list) = 
     match og with 
@@ -37,13 +43,14 @@ let hxMlOgs (og : XYZ list) (oc : XYZ list) (ct : int) =
     hxMlOg1 og  oc ct |> List.except oc
 
 // Sample initial host origins 
-let smplOr = {X=0;Y=0;Z=0;C=false}
-let smplC1 =  smplOr |> hxVldOg |> hxAdjOg
+let smplOr = {X=0;Y=0;Z=0;H=true} |> hxVldOg
+let smplC1 = smplOr |> hxAdjOg
 let smplC2 = smplOr :: smplC1
 let smplOg = smplC1 |> List.take 3
 
-//hxIncOg (smplCl |>List.head) (smplC2)
+//hxIncOg (smplC1 |>List.head) (smplC2)
 //hxInOgs smplOg smplC2
 //smplC2
 //smplOg
-hxMlOgs smplOg smplC2 6 
+//hxMlOgs smplOg smplC2 6
+hxIncOg smplOr smplC2
