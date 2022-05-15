@@ -9,20 +9,35 @@ type Hxl = { A : bool; B : bool; C : XYZ }
 // Valid Hexel Coordinates
 let xyzVldLoc (loc : XYZ) : XYZ = 
     match (loc.X % 2 = 0) with 
-    | true -> { X = loc.X ; Y = loc.Y - (loc.Y % 4) + 1 ; Z = loc.Z }
-    | false -> { X = loc.X ; Y = loc.Y - (loc.Y % 4) + 3 ; Z = loc.Z }
+    | true -> {
+                    X = loc.X
+                    Y = loc.Y - (loc.Y % 4) + 1
+                    Z = loc.Z 
+                }
+    | false -> { 
+                    X = loc.X 
+                    Y = loc.Y - (loc.Y % 4) + 3
+                    Z = loc.Z 
+                }
 
 // Adjacent Hexel Locations
 let xyzAdjLoc (loc : Hxl) : XYZ list = 
     match loc.A with 
-    | true -> List.map2 (fun x y -> { X = loc.C.X + x; Y = loc.C.Y + y ; Z = loc.C.Z })
-                [-2;-1;1;2;1;-1] [0;2;2;0;-2;-2]
+    | true -> List.map2 (fun x y -> { 
+                                        X = loc.C.X + x
+                                        Y = loc.C.Y + y
+                                        Z = loc.C.Z 
+                                    }
+                        )
+                        [-2;-1;1;2;1;-1] [0;2;2;0;-2;-2]
     | false -> []
 
 // Host Availability
 let hxlHstAvl (loc : Hxl) (occ : Hxl list) : Hxl = 
     let xyzOc1 = List.map (fun x -> x.C) occ
-    let lgt = xyzOc1 |> List.except (loc.C :: xyzAdjLoc loc) |> List.length
+    let lgt = xyzOc1 
+                |> List.except (loc.C :: xyzAdjLoc loc) 
+                |> List.length
     match (lgt = 0) with 
     | true -> { loc with A = false }
     | false -> loc
@@ -34,15 +49,22 @@ let hxlIncLoc (loc : Hxl) (occ : Hxl list) : Hxl =
                 let xyzOc1 = List.map (fun x -> x.C) occ
                 match loc.A with 
                 | true -> 
-                    let inc = loc |> xyzAdjLoc |> List.except xyzOc1 |> List.tryHead
+                    let inc = loc 
+                            |> xyzAdjLoc 
+                            |> List.except xyzOc1 
+                            |> List.tryHead
                     match inc with 
                     | None -> { loc with A = false }
-                    | Some inc-> hxlHstAvl { A = true; B = false; C = Some inc |> Option.get } occ
+                    | Some inc-> hxlHstAvl { 
+                                                A = true
+                                                B = false
+                                                C = Some inc |> Option.get 
+                                            } occ
                 | false -> loc
     | false -> loc
     
 // Incremental Hexels
-let hxlIncLcs (loc : Hxl list list) (occ : Hxl list) = 
+let hxlIncLcs (loc : Hxl list list) (occ : Hxl list) : Hxl list list= 
     let rec hxInOgs1 (loc : Hxl list) (occ : Hxl list) = 
         match loc with 
         | [] -> []
@@ -51,14 +73,21 @@ let hxlIncLcs (loc : Hxl list list) (occ : Hxl list) =
                     let occ = c :: occ
                     hxInOgs1 b occ @ [c]
     
-    let avl = loc |> List.concat |> List.map (fun x -> x.A) |> List.contains false
+    let avl = loc 
+                    |> List.concat 
+                    |> List.map (fun x -> x.A) 
+                    |> List.contains false
     match avl with 
     | true -> loc
     | false -> 
-                let inc = hxInOgs1 (List.map (fun x -> List.head x) loc) occ |> List.chunkBySize 1
-                [loc;inc] |> List.transpose |> List.map (fun x -> List.concat x) |> List.map (fun x -> List.distinct x)
+                let inc = hxInOgs1 (List.map (fun x -> List.head x) loc) occ 
+                         |> List.chunkBySize 1
+                [loc;inc] 
+                |> List.transpose 
+                |> List.map (fun x -> List.concat x) 
+                |> List.map (fun x -> List.distinct x)
 
-let hxlMulLcs (loc : Hxl list list) (occ : Hxl list) = 
+//let hxlMulLcs (loc : Hxl list list) (occ : Hxl list) = 
 
 
 // Test Zone
