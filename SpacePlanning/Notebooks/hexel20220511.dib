@@ -1,37 +1,25 @@
 #!fsharp
 
 // Coordinates and Host bool
-type XYZ = { X : int ; Y : int ; Z : double ; H : bool }
+type XYZ = { X : int ; Y : int ; Z : double }
 
 // Convert invalid coordinates to valid hexel grid coordinates
 let hxVldOg (og : XYZ) = 
     match (og.X % 2 = 0) with 
-    | true -> { X = og.X ; Y = og.Y - (og.Y % 4) + 1 ; Z = og.Z ; H = true }
-    | false -> { X = og.X ; Y = og.Y - (og.Y % 4) + 3 ; Z = og.Z ; H = true }
+    | true -> { X = og.X ; Y = og.Y - (og.Y % 4) + 1 ; Z = og.Z }
+    | false -> { X = og.X ; Y = og.Y - (og.Y % 4) + 3 ; Z = og.Z }
 
 // Adjacent Hexel Origins XY
 let hxAdjOg (og : XYZ) = 
-    List.map2 (fun x y -> { X = og.X + x; Y = og.Y + y ; Z = og.Z ; H = true })
+    List.map2 (fun x y -> { X = og.X + x; Y = og.Y + y ; Z = og.Z })
         [-2;-1;1;2;1;-1] [0;2;2;0;-2;-2]
 
-// Check if valid host
-let hxVldHs (og : XYZ) (oc : XYZ list) = 
-    let og1 = { og with H = true }
-    let oc1 = List.map (fun x -> { x with XYZ.H = true }) oc
-    let lgt = oc1 |> List.except (og1 :: hxAdjOg og1) |> List.length
-    match (lgt = 0) with 
-    | true -> { og with H = false }
-    | false -> og
-
-// Incremental hexel (Cannot host? H = false)
+// Incremental hexel 
 let hxIncOg (og : XYZ) (oc : XYZ list) = 
-    match og.H with 
-    | true -> 
-        let ic = og |> hxAdjOg |> List.except oc |> List.tryHead
-        match ic with 
-        | None -> { og with H = false }
-        | Some ic-> Some ic |> Option.get
-    | false -> og
+    let ic = og |> hxAdjOg |> List.except oc |> List.tryHead
+    match ic with 
+    | None -> og 
+    | Some ic-> Some ic |> Option.get
 
 let hxInOgs (og : XYZ list) (oc : XYZ list) = 
     let rec hxInOgs1 (og : XYZ list) (oc : XYZ list) = 
@@ -41,15 +29,13 @@ let hxInOgs (og : XYZ list) (oc : XYZ list) =
                     let c = hxIncOg a oc
                     let oc = c :: oc
                     c :: hxInOgs1 b oc
+                    
     let ic1 = hxInOgs1 og oc
-    let oc1 = oc @ ic1 |> List.distinct
-    let oc2 = List.map (fun x -> hxVldHs x oc1) oc1
-    let og1 = List.map (fun x -> hxVldHs x oc1) og
-    [og1 ; ic1] |> List.transpose
+    [og ; ic1] |> List.transpose
 
 
 // Sample initial host origins 
-let smplOr = { X=0;Y=0;Z=0;H=true } |> hxVldOg
+let smplOr = { X=0;Y=0;Z=0 } |> hxVldOg
 let smplC1 = smplOr |> hxAdjOg
 let smplC2 = smplOr :: smplC1
 let smplOg = smplC1 |> List.take 3

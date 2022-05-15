@@ -33,7 +33,7 @@ let hxIncOg (og : XYZ) (oc : XYZ list) =
         | Some ic-> Some ic |> Option.get
     | false -> og
 
-let hxInOgs (og : XYZ list) (oc : XYZ list) = 
+let hxInOgs (og : XYZ list list) (oc : XYZ list) = 
     let rec hxInOgs1 (og : XYZ list) (oc : XYZ list) = 
         match og with 
         | [] -> []
@@ -41,18 +41,21 @@ let hxInOgs (og : XYZ list) (oc : XYZ list) =
                     let c = hxIncOg a oc
                     let oc = c :: oc
                     c :: hxInOgs1 b oc
-    let ic1 = hxInOgs1 og oc
-    let oc1 = oc @ ic1 |> List.distinct
-    let oc2 = List.map (fun x -> hxVldHs x oc1) oc1
-    let og1 = List.map (fun x -> hxVldHs x oc1) og
-    [og1 ; ic1] |> List.transpose
+    let og0 = List.map( fun x -> List.map (fun x -> { x with XYZ.H = true }) x ) og
+    let oc0 = List.map (fun x -> { x with XYZ.H = true }) oc
+    let ic1 = hxInOgs1 (List.map (fun x -> List.head x) og0) oc0
+    let ic2 = List.map (fun x -> { x with XYZ.H = true }) ic1 
+    let og1 = [og0 ; (ic2 |> List.chunkBySize 1)] |> List.transpose |> List.map (fun x -> List.distinct x)
+    let oc1 = oc0 @ ic2 |> List.distinct
+    let og2 = List.map (fun x -> List.map (fun x -> hxVldHs x oc1)x) (List.map (fun x -> List.concat x)og1)
+    og2
 
 
 // Sample initial host origins 
 let smplOr = { X=0;Y=0;Z=0;H=true } |> hxVldOg
 let smplC1 = smplOr |> hxAdjOg
 let smplC2 = smplOr :: smplC1
-let smplOg = smplC1 |> List.take 3
+let smplOg = smplC1 |> List.take 3 |> List.chunkBySize 1
 
 
 //hxIncOg smplOr smplC2
@@ -61,12 +64,12 @@ let a = hxInOgs smplOg smplC2
 let b = List.map (fun x -> List.head x) a
 let c = List.concat [smplC2 ; List.concat a] |> List.distinct
 
-let d = hxInOgs b c
+let d = hxInOgs a c
 let e = List.map (fun x -> List.head x) d
 let f = List.concat [c ;List.concat d] |> List.distinct
 
-//hxInOgs e f
-d
+hxInOgs d f
+
 //smplC2
 //smplOg
 //hxMlOgs (hxInOgs smplOg smplC2) smplC2 6

@@ -1,0 +1,129 @@
+#!fsharp
+
+// Coordinates and Host bool
+type XYZ = { X : int ; Y : int ; Z : double }
+
+// Available, Boundary, Coordinates
+type Hxl = { A : bool ; B : bool ; C : XYZ}
+
+// Convert invalid coordinates to valid hexel grid coordinates
+let hxVldOg (og : XYZ) = 
+    match (og.X % 2 = 0) with 
+    | true -> { X = og.X ; Y = og.Y - (og.Y % 4) + 1 ; Z = og.Z }
+    | false -> { X = og.X ; Y = og.Y - (og.Y % 4) + 3 ; Z = og.Z }
+
+// Adjacent Hexel Origins XY
+let hxAdjOg (og : XYZ) = 
+    List.map2 (fun x y -> { X = og.X + x; Y = og.Y + y ; Z = og.Z })
+        [-2;-1;1;2;1;-1] [0;2;2;0;-2;-2]
+
+// Check if valid host
+let hxVldHs (og : Hxl) (oc : Hxl list) = 
+    
+    let lgt = oc |> List.except (og :: hxAdjOg og) |> List.length
+    match (lgt = 0) with 
+    | true -> { og with H = false }
+    | false -> og
+
+// Incremental hexel (Cannot host? H = false)
+let hxIncOg (og : XYZ) (oc : XYZ list) = 
+    match og.H with 
+    | true -> 
+        let ic = og |> hxAdjOg |> List.except oc |> List.tryHead
+        match ic with 
+        | None -> { og with H = false }
+        | Some ic-> Some ic |> Option.get
+    | false -> og
+
+let hxInOgs (og : XYZ list list) (oc : XYZ list) = 
+    let rec hxInOgs1 (og : XYZ list) (oc : XYZ list) = 
+        match og with 
+        | [] -> []
+        | a :: b -> 
+                    let c = hxIncOg a oc
+                    let oc = c :: oc
+                    c :: hxInOgs1 b oc
+    let og0 = List.map( fun x -> List.map (fun x -> { x with XYZ.H = true }) x ) og
+    let oc0 = List.map (fun x -> { x with XYZ.H = true }) oc
+    let ic1 = hxInOgs1 (List.map (fun x -> List.head x) og0) oc0
+    let ic2 = List.map (fun x -> { x with XYZ.H = true }) ic1 
+    let og1 = [og0 ; (ic2 |> List.chunkBySize 1)] |> List.transpose |> List.map (fun x -> List.distinct x)
+    let oc1 = oc0 @ ic2 |> List.distinct
+    let og2 = List.map (fun x -> List.map (fun x -> hxVldHs x oc1)x) (List.map (fun x -> List.concat x)og1)
+    og2
+
+
+// Sample initial host origins 
+let smplOr = { X=0;Y=0;Z=0;H=true } |> hxVldOg
+let smplC1 = smplOr |> hxAdjOg
+let smplC2 = smplOr :: smplC1
+let smplOg = smplC1 |> List.take 3 |> List.chunkBySize 1
+
+
+//hxIncOg smplOr smplC2
+//hxInOgs smplOg smplC2
+let a = hxInOgs smplOg smplC2
+let b = List.map (fun x -> List.head x) a
+let c = List.concat [smplC2 ; List.concat a] |> List.distinct
+
+let d = hxInOgs a c
+let e = List.map (fun x -> List.head x) d
+let f = List.concat [c ;List.concat d] |> List.distinct
+
+hxInOgs d f
+
+//smplC2
+//smplOg
+//hxMlOgs (hxInOgs smplOg smplC2) smplC2 6
+//[smplOg ; smplC2 ; hxInOgs smplOg smplC2]
+
+#!fsharp
+
+// Coordinates
+type XYZ = { X : int ; Y : int ; Z : double }
+
+// Available, Boundary, Coordinates
+type Hxl = { A : bool ; B : bool ; C : XYZ }
+
+// Valid Hexel Coordinates
+let xyzVldLoc (loc : XYZ) : XYZ = 
+    match (loc.X % 2 = 0) with 
+    | true -> { X = loc.X ; Y = loc.Y - (loc.Y % 4) + 1 ; Z = loc.Z }
+    | false -> { X = loc.X ; Y = loc.Y - (loc.Y % 4) + 3 ; Z = loc.Z }
+
+// Adjacent Hexel Locations
+let xyzAdjLoc (loc : Hxl) : XYZ list = 
+    match loc.A with 
+    | true -> List.map2 (fun x y -> { X = loc.C.X + x; Y = loc.C.Y + y ; Z = loc.C.Z })
+                [-2;-1;1;2;1;-1] [0;2;2;0;-2;-2]
+    | false -> []
+
+// Host Availability
+let hxlHstAvl (loc : Hxl) (occ : Hxl list) : Hxl = 
+    let xyzOc1 = List.map (fun x -> x.C) occ
+    let lgt = xyzOc1 |> List.except (loc.C :: xyzAdjLoc loc) |> List.length
+    match (lgt = 0) with 
+    | true -> { loc with A = false }
+    | false -> loc
+
+// Incremental Hexel
+let hxIncOg (loc : Hxl) (occ : Hxl list) = 
+    match (loc.A) with 
+    | true -> 
+                let xyzOc1 = List.map (fun x -> x.C) occ
+                match loc.A with 
+                | true -> 
+                    let inc = loc |> xyzAdjLoc |> List.except xyzOc1 |> List.tryHead
+                    match inc with 
+                    | None -> { loc with A = false }
+                    | Some inc-> hxlHstAvl { A = true; B = false; C = Some inc |> Option.get } occ
+                | false -> loc
+    | false -> loc
+
+
+// Sample initial host origins 
+let smXyLc1 = { X=0;Y=0;Z=0 } |> xyzVldLoc
+let smHxLc1 = { A = true; B = true; C = smXyLc1}
+let smHxOc1 = xyzAdjLoc smHxLc1 |> List.map (fun x -> {A = true; B = true; C = x})
+let smHxOc2 = smHxLc1 :: smHxOc1
+hxlHstAvl smHxLc1 smHxOc2
