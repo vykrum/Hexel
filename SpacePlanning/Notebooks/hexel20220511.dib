@@ -31,7 +31,7 @@ let hxInOgs (og : XYZ list) (oc : XYZ list) =
                     c :: hxInOgs1 b oc
                     
     let ic1 = hxInOgs1 og oc
-    [og ; ic1] |> List.transpose
+    [og ; ic1] |> List.transpose |> List.map (fun x -> List.distinct x)
 
 
 // Sample initial host origins 
@@ -51,8 +51,8 @@ let d = hxInOgs b c
 let e = List.map (fun x -> List.head x) d
 let f = List.concat [c ;List.concat d] |> List.distinct
 
-//hxInOgs e f
-d
+hxInOgs e f
+
 //smplC2
 //smplOg
 //hxMlOgs (hxInOgs smplOg smplC2) smplC2 6
