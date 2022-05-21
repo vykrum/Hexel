@@ -64,7 +64,7 @@ let hxlIncLoc (loc : Hxl) (occ : Hxl list) : Hxl =
     | false -> loc
     
 // Incremental Hexels
-let hxlIncLcs (loc : Hxl list list) (occ : Hxl list) : Hxl list list= 
+let hxlIncLcs (loc : Hxl list list) (occ : Hxl list) : Hxl list list = 
     let rec hxInOgs1 (loc : Hxl list) (occ : Hxl list) = 
         match loc with 
         | [] -> []
@@ -73,23 +73,31 @@ let hxlIncLcs (loc : Hxl list list) (occ : Hxl list) : Hxl list list=
                     let occ = c :: occ
                     hxInOgs1 b occ @ [c]
     
-    let avl = loc 
-                    |> List.concat 
-                    |> List.map (fun x -> x.A) 
-                    |> List.contains false
-    match avl with 
-    | true -> loc
-    | false -> 
-                let inc = hxInOgs1 (List.map (fun x -> List.head x) loc) occ 
-                         |> List.chunkBySize 1
-                [loc;inc] 
-                |> List.transpose 
-                |> List.map (fun x -> List.concat x) 
-                |> List.map (fun x -> List.distinct x)
+    let av1 = List.map (fun x -> List.filter (fun x -> x.A = true)x) loc
+    let lg1 = List.map (fun x -> List.isEmpty x) av1 
+            |> List.contains true
+    match lg1 with 
+    | true -> []
+    | false ->  let in1 = hxInOgs1 (List.map (fun x -> List.head x) av1) occ 
+                                    |> List.chunkBySize 1
+                let lc1 = [loc;in1] 
+                        |> List.transpose 
+                        |> List.map (fun x -> List.concat x) 
+                        |> List.map (fun x -> List.distinct x)
+                // Mark availability of output hexels
+                let oc1 = (lc1 |> List.concat) @ occ
+                List.map (fun x -> (List.map (fun x -> hxlHstAvl x oc1))x) lc1
 
-//let hxlMulLcs (loc : Hxl list list) (occ : Hxl list) = 
-
-
+(* let hxlMulLcs (loc : Hxl list list) (occ : Hxl list) (cnt : int) = 
+    
+    let rec hxMlLc (loc : Hxl list list) (occ : Hxl list) (cnt : int) (acc : Hxl list list) = 
+        match ((List.head acc |> List.length) < cnt) with
+        | true -> 
+                    let occ = occ @ (List.concat (hxlIncLcs loc occ))
+                    let acc = hxlIncLcs loc occ
+                    hxMlLc (hxlIncLcs loc occ) occ cnt acc
+        | false -> acc
+    hxMlLc loc occ cnt (hxlIncLcs loc occ) *)
 // Test Zone
 // Sample initial host origins 
 let smXyLc1 = { X=0;Y=0;Z=0 } |> xyzVldLoc
@@ -98,3 +106,4 @@ let smHxOc1 = xyzAdjLoc smHxLc1 |> List.map (fun x -> {A = true; B = false; C = 
 let smHxOc2 = smHxLc1 :: smHxOc1
 let smHxLc2 = List.take 3 smHxOc1 |> List.chunkBySize 1
 hxlIncLcs smHxLc2 smHxOc2
+//hxlMulLcs smHxLc2 smHxOc2 5 |> List.concat |> List.distinct
