@@ -1,87 +1,84 @@
 namespace Hexel
 
 // Coordinates
-type xyz = { X : int; Y : int; Z : double }
+type xyz = { X : int
+             Y : int
+             Z : double }
 
 // Available, Boundary, Coordinates
-type hxl = { A : bool; B : bool; C : xyz }
+type hxl = { A : bool
+             B : bool
+             C : xyz }
 
-module Cluster =
+module Cluster = 
     // Valid Hexel Coordinates
-    let xyzVldLoc (loc : xyz) : xyz = 
-        match (loc.X % 2 = 0) with 
-        | true -> {
-                        X = loc.X
-                        Y = loc.Y - (loc.Y % 4) + 1
-                        Z = loc.Z 
-                    }
-        | false -> { 
-                        X = loc.X 
-                        Y = loc.Y - (loc.Y % 4) + 3
-                        Z = loc.Z 
-                    }
+    let xyzVldXyz (xyz : xyz) : xyz = 
+        match (xyz.X % 2 = 0) with 
+        | true -> { xyz with Y = xyz.Y - (xyz.Y % 4) + 1 }
+        | false -> { xyz with Y = xyz.Y - (xyz.Y % 4) + 3 }
 
-    // Adjacent Hexel Locations
-    let xyzAdjLoc (loc : hxl) : xyz list = 
-        match loc.A with 
+    // Adjacent Hexels
+    let xyzAdjXyz (hxl : hxl) : xyz list = 
+        let vldHxl = {hxl with C = xyzVldXyz (hxl.C)}
+        match vldHxl.A with 
         | true -> List.map2 (fun x y -> { 
-                                            X = loc.C.X + x
-                                            Y = loc.C.Y + y
-                                            Z = loc.C.Z 
+                                            X = hxl.C.X + x
+                                            Y = hxl.C.Y + y
+                                            Z = hxl.C.Z 
                                         }
                             )
                             [-2;-1;1;2;1;-1] [0;2;2;0;-2;-2]
         | false -> []
 
     // Host Availability
-    let hxlHstAvl (loc : hxl) (occ : hxl list) : hxl = 
+    let hxlHstAvl (hxl : hxl) (occ : hxl list) : hxl = 
         let xyzOc1 = List.map (fun x -> x.C) occ
         let lgt = xyzOc1 
-                    |> List.except (loc.C :: xyzAdjLoc loc) 
+                    |> List.except (hxl.C :: xyzAdjXyz hxl) 
                     |> List.length
         match (lgt = 0) with 
-        | true -> { loc with A = false }
-        | false -> loc
+        | true -> { hxl with A = false }
+        | false -> hxl
 
     // Incremental Hexel
-    let hxlIncLoc (loc : hxl) (occ : hxl list) : hxl = 
-        match (loc.A) with 
+    let hxlIncXyz (hxl : hxl) (occ : hxl list) : hxl = 
+        match (hxl.A) with 
         | true -> 
                     let xyzOc1 = List.map (fun x -> x.C) occ
-                    match loc.A with 
+                    match hxl.A with 
                     | true -> 
-                        let inc = loc 
-                                |> xyzAdjLoc 
+                        let inc = hxl 
+                                |> xyzAdjXyz 
                                 |> List.except xyzOc1 
                                 |> List.tryHead
                         match inc with 
-                        | None -> { loc with A = false }
+                        | None -> { hxl with A = false }
                         | Some inc-> hxlHstAvl { 
                                                     A = true
                                                     B = false
                                                     C = Some inc |> Option.get 
                                                 } occ
-                    | false -> loc
-        | false -> loc
+                    | false -> hxl
+        | false -> hxl
         
     // Incremental Hexels
-    let hxlIncLcs (loc : hxl list list) (occ : hxl list) :  hxl list list list= 
-        let rec hxInOgs1 (loc : hxl list) (occ : hxl list) = 
-            match loc with 
+    let hxlInXyzs (hxl : hxl list list) (occ : hxl list) :  hxl list list list= 
+        let rec hxInOgs1 (hxl : hxl list) (occ : hxl list) = 
+            match hxl with 
             | [] -> []
             | a :: b -> 
-                        let c = hxlIncLoc a occ
+                        let c = hxlIncXyz a occ
                         let occ = c :: occ
                         hxInOgs1 b occ @ [c]
         
-        let av1 = List.map (fun x -> List.filter (fun x -> x.A = true)x) loc
+        let av1 = List.map (fun x -> List.filter (fun x -> x.A = true)x) hxl
         let lg1 = List.map (fun x -> List.isEmpty x) av1 
                 |> List.contains true
         match lg1 with 
         | true -> []
         | false ->  let in1 = hxInOgs1 (List.map (fun x -> List.head x) av1) occ 
                                         |> List.chunkBySize 1
-                    let lc1 = [loc;in1] 
+                    let lc1 = [hxl;in1] 
                             |> List.transpose 
                             |> List.map (fun x -> List.concat x) 
                             |> List.map (fun x -> List.distinct x)
@@ -91,5 +88,14 @@ module Cluster =
                     [lc2 ; [oc1]]
 
 
-//let b = hxCrChk { X = 0; Y =1; Z = 0; C = false } a
-//hxIncOg [[{X=0;Y=1;Z=0;C=false}];[{X= -2;Y=1;Z=0;C=false}];[{X= -1;Y=3;Z=0;C=false}]] ([{X= -3;Y=3;Z=0;C=false};{X= -4;Y=1;Z=0;C=false}])
+
+    // Test Zone
+    // Sample initial host origins 
+    let smXyLc1 = { X=0;Y=0;Z=0 } |> xyzVldXyz
+    let smHxLc1 = { A = true; B = false; C = smXyLc1}
+    let smHxOc1 = xyzAdjXyz smHxLc1 |> List.map (fun x -> {A = true; B = false; C = x})
+    let smHxOc2 = smHxLc1 :: smHxOc1
+    let smHxLc2 = List.take 3 smHxOc1 |> List.chunkBySize 1
+    let a = (hxlInXyzs smHxLc2 smHxOc2).[1].[0]
+    //hxlMubloc cnt
+    //hxlMulLcs smHxLc2 smHxOc2 10 
