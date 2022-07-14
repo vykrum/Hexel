@@ -104,10 +104,7 @@ module Cluster =
                                         |> List.map (fun x -> List.concat x) 
                                         |> List.map (fun x -> List.distinct x)
                                 lc1
-        // Mark availability of output hexels
-        //let oc1 = ((hx1 |> List.concat) @ occ) |> List.distinct
-        //let oc2 = List.map (fun x -> hxlHstAvl x oc1) oc1
-        //let lc2 = List.map (fun x -> (List.map (fun x -> hxlHstAvl x oc2))x) hx1
+
         hx1 |> List.map (fun x -> hxlAvlChk x) |> List.map (fun x -> List.concat x)
     
     // Multiple Increments
