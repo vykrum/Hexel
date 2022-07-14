@@ -141,11 +141,11 @@ module Cluster =
     let a2 = hxlIncHx2 a1 o2
     let o3 = [List.concat a2 ; o2] |> List.concat
     let a3 = hxlIncHx2 a2 o3
-    //let o4 = [List.concat a3 ; o3] |> List.concat
-    //let a4 = hxlIncHx2 a3 o4
-    //let o5 = [List.concat a4 ; o4] |> List.concat
-    //let a5 = hxlIncHx2 a4 o5
+    let o4 = [List.concat a3 ; o3] |> List.concat
+    let a4 = hxlIncHx2 a3 o4
+    let o5 = [List.concat a4 ; o4] |> List.concat
+    let a5 = hxlIncHx2 a4 o5
     //let b = hxlIncHx3 smHxLc2 smHxOc2 5
     //hxlMulLcs smHxLc2 smHxOc2 10
     a3
-Cluster.a3
+Cluster.a5
