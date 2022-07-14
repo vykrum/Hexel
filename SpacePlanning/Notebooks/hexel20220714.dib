@@ -39,7 +39,7 @@ module Cluster =
         | true -> { hxl with A = false }
         | false -> hxl
 
-
+    // Duplicate check
     let hxlAvlChk (hxl : hxl list) =
         hxl 
         |> List.groupBy (fun x -> x.C) 
@@ -49,8 +49,6 @@ module Cluster =
                                             |> List.distinct
                                     | false -> x )
         
-
-
     // Unique Hexels
     let hxlUnqAvl (hxl : hxl list) : hxl list  = 
         let hxl1 = List.groupBy(fun x -> x.C) hxl
@@ -61,7 +59,6 @@ module Cluster =
                 |> List.map (fun x -> x = false)
         List.map2 (fun x y -> {A = y ; B = false ; C = x}) xyz1 avl1
         
-
     // Incremental Hexel
     let hxlIncHx1 (hxl : hxl) (occ : hxl list) : hxl = 
         let hx1 = hxlHstAvl hxl occ
@@ -147,5 +144,5 @@ module Cluster =
     let a5 = hxlIncHx2 a4 o5
     //let b = hxlIncHx3 smHxLc2 smHxOc2 5
     //hxlMulLcs smHxLc2 smHxOc2 10
-    a3
+    a5
 Cluster.a5
