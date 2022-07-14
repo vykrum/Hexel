@@ -33,13 +33,13 @@ module Cluster =
     // Host Availability
     let hxlHstAvl (hxl : hxl) (occ : hxl list) : hxl = 
         let xyzOc1 = List.map (fun x -> x.C) occ
-        let lgt = xyzOc1 
-                    |> List.except (hxl.C :: xyzAdjXyz hxl) 
+        let lgt =  List.except (hxl.C :: xyzAdjXyz hxl) xyzOc1
                     |> List.length
         match (lgt = 0) with 
         | true -> { hxl with A = false }
         | false -> hxl
 
+<<<<<<< HEAD
     let hxlAvlChk (hxl : hxl list) =
         hxl 
         |> List.groupBy (fun x -> x.C) 
@@ -50,6 +50,18 @@ module Cluster =
                                     | false -> x )
         
 
+=======
+    // Unique Hexels
+    let hxlUnqAvl (hxl : hxl list) : hxl list  = 
+        let hxl1 = List.groupBy(fun x -> x.C) hxl
+        let xyz1 = List.map (fun ( x, _ ) -> x) hxl1
+        let avl1 = List.map (fun ( _, x ) -> x) hxl1
+                |> List.map (fun x -> List.map (fun x -> x.A)x)
+                |> List.map (fun x -> List.contains false x)
+                |> List.map (fun x -> x = false)
+        List.map2 (fun x y -> {A = y ; B = false ; C = x}) xyz1 avl1
+        
+>>>>>>> 4c2fc340a237911249a6f6a556b9c735d0a0b163
     // Incremental Hexel
     let hxlIncHx1 (hxl : hxl) (occ : hxl list) : hxl = 
         let hx1 = hxlHstAvl hxl occ
@@ -69,8 +81,13 @@ module Cluster =
                                                     B = false
                                                     C = Some inc |> Option.get 
                                                 } occ
+<<<<<<< HEAD
                     | false -> hxl
         | false -> hx1
+=======
+                    | false -> {hxl with A = false}
+        | false -> {hxl with A = false}
+>>>>>>> 4c2fc340a237911249a6f6a556b9c735d0a0b163
         
     // Incremental Hexels
     let hxlIncHx2 (hxl : hxl list list) (occ : hxl list)  = 
@@ -85,6 +102,7 @@ module Cluster =
         let av1 = List.map (fun x -> List.filter (fun x -> x.A = true)x) hxl
         let lg1 = List.map (fun x -> List.isEmpty x) av1 
                 |> List.contains true
+<<<<<<< HEAD
         let hx1 = match lg1 with 
                     | true -> []
                     | false ->  let hd1 = List.map (fun x -> List.head x) av1
@@ -101,6 +119,23 @@ module Cluster =
         //let lc2 = List.map (fun x -> (List.map (fun x -> hxlHstAvl x oc2))x) hx1
         hx1 |> List.map (fun x -> hxlAvlChk x) |> List.map (fun x -> List.concat x)
     
+=======
+        match lg1 with 
+        | true -> []
+        | false ->  let hd1 = List.map (fun x -> List.head x) av1
+                    let in1 = hxInOgs1 hd1 occ [] |> List.chunkBySize 1
+                                        
+                    let lc1 = [hxl;in1] 
+                            |> List.transpose 
+                            |> List.map (fun x -> List.concat x) 
+                            |> List.map (fun x -> List.distinct x)
+                    // Mark availability of output hexels
+                    let oc1 = ((lc1 |> List.concat) @ occ) |> hxlUnqAvl
+                    let lc2 = List.map (fun x -> (List.map (fun x -> hxlHstAvl x oc1))x) lc1 
+                            |> List.map (fun x -> hxlUnqAvl x)
+                    lc2
+
+>>>>>>> 4c2fc340a237911249a6f6a556b9c735d0a0b163
     // Multiple Increments
     let hxlIncHx3 (hxl : hxl list list) (occ : hxl list) (cnt : int) : hxl list list = 
         
@@ -110,7 +145,7 @@ module Cluster =
             | false -> hxl
             | true -> 
                     let hxl = hxlIncHx2 hxl occ
-                    let occ = [occ; (hxlIncHx2 hxl occ) |> List.concat] |> List.concat |> List.distinct
+                    let occ = [occ; (hxlIncHx2 hxl occ) |> List.concat] |> List.concat |> hxlUnqAvl |> List.distinct
                     hxIncHx3  hxl occ cnt
         hxIncHx3 hxl occ cnt
     
@@ -120,7 +155,7 @@ module Cluster =
     let smXyLc1 = { X=0;Y=0;Z=0 } |> xyzVldXyz
     let smHxLc1 = { A = true; B = false; C = smXyLc1}
     let smHxOc1 = xyzAdjXyz smHxLc1 |> List.map (fun x -> {A = true; B = false; C = x})
-    let smHxOc2 = smHxLc1 :: smHxOc1
+    let smHxOc2 = smHxLc1 :: smHxOc1 |> List.map (fun x -> hxlHstAvl x smHxOc1 )
     let smHxLc2 = List.take 3 smHxOc1 |> List.chunkBySize 1
     let a = hxlIncHx2 smHxLc2 smHxOc2
     let o1 = [List.concat a ; smHxOc2] |> List.concat |> List.distinct
@@ -133,7 +168,13 @@ module Cluster =
     //let a4 = hxlIncHx2 a3 o4
     //let o5 = [List.concat a4 ; o4] |> List.concat
     //let a5 = hxlIncHx2 a4 o5
+<<<<<<< HEAD
     //let b = hxlIncHx3 smHxLc2 smHxOc2 5
     //hxlMulLcs smHxLc2 smHxOc2 10
     a3
 Cluster.a3
+=======
+    let b = hxlIncHx3 smHxLc2 smHxOc2 7
+    //hxlMulLcs smHxLc2 smHxOc2 10 
+Cluster.b.[0]
+>>>>>>> 4c2fc340a237911249a6f6a556b9c735d0a0b163
