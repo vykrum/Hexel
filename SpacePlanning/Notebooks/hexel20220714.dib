@@ -10,7 +10,7 @@ type hxl = { A : bool
              B : bool
              C : xyz }
 
-module Cluster = 
+module Coxel = 
     // Valid Hexel Coordinates
     let xyzVldXyz (xyz : xyz) : xyz = 
         match (xyz.X % 2 = 0) with 
@@ -116,7 +116,7 @@ module Cluster =
             | false -> hxl
             | true -> 
                     let hxl = hxlIncHx2 hxl occ
-                    let occ = [occ; (hxlIncHx2 hxl occ) |> List.concat] |> List.concat |> hxlUnqAvl |> List.distinct
+                    let occ = [List.concat hxl ; occ] |> List.concat |> List.distinct
                     hxIncHx3  hxl occ cnt
         hxIncHx3 hxl occ cnt
     
@@ -127,7 +127,7 @@ module Cluster =
     let smHxLc1 = { A = true; B = false; C = smXyLc1}
     let smHxOc1 = xyzAdjXyz smHxLc1 |> List.map (fun x -> {A = true; B = false; C = x})
     let smHxOc2 = smHxLc1 :: smHxOc1 |> List.map (fun x -> hxlHstAvl x smHxOc1 )
-    let smHxLc2 = List.take 3 smHxOc1 |> List.chunkBySize 1
+    let smHxLc2 = List.take 5 smHxOc1 |> List.chunkBySize 1
     let a = hxlIncHx2 smHxLc2 smHxOc2
     let o1 = [List.concat a ; smHxOc2] |> List.concat |> List.distinct
     let a1 = hxlIncHx2 a o1
@@ -135,11 +135,12 @@ module Cluster =
     let a2 = hxlIncHx2 a1 o2
     let o3 = [List.concat a2 ; o2] |> List.concat
     let a3 = hxlIncHx2 a2 o3
-    let o4 = [List.concat a3 ; o3] |> List.concat
-    let a4 = hxlIncHx2 a3 o4
-    let o5 = [List.concat a4 ; o4] |> List.concat
-    let a5 = hxlIncHx2 a4 o5
-    //let b = hxlIncHx3 smHxLc2 smHxOc2 5
-    //hxlMulLcs smHxLc2 smHxOc2 10
-    a5
-Cluster.a5
+    //let o4 = [List.concat a3 ; o3] |> List.concat
+    //let a4 = hxlIncHx2 a3 o4
+    //let o5 = [List.concat a4 ; o4] |> List.concat
+    //let a5 = hxlIncHx2 a4 o5
+    let b = hxlIncHx3 smHxLc2 smHxOc2 15 |> List.map (fun x -> List.map (fun x -> x.C) x )
+    b
+let d = Coxel.a3 |> List.map (fun y -> List.map (fun x -> x.C)y)
+Coxel.b.[4]
+//d.[0]
