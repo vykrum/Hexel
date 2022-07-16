@@ -1,24 +1,25 @@
 #!fsharp
 
 // Coordinates
-type xyz = { X : int
+type Xyz = { X : int
              Y : int
              Z : double }
 
 // Available, Boundary, Coordinates
-type hxl = { A : bool
+type Hxl = { A : bool
              B : bool
-             C : xyz }
+             C : Xyz }
 
+// Coxel : Collection of Hexels
 module Coxel = 
     // Valid Hexel Coordinates
-    let xyzVldXyz (xyz : xyz) : xyz = 
+    let xyzVldXyz (xyz : Xyz) : Xyz = 
         match (xyz.X % 2 = 0) with 
         | true -> { xyz with Y = xyz.Y - (xyz.Y % 4) + 1 }
         | false -> { xyz with Y = xyz.Y - (xyz.Y % 4) + 3 }
 
     // Adjacent Hexels
-    let xyzAdjXyz (hxl : hxl) : xyz list = 
+    let xyzAdjXyz (hxl : Hxl) : Xyz list = 
         let vldHxl = {hxl with C = xyzVldXyz (hxl.C)}
         match vldHxl.A with 
         | true -> List.map2 (fun x y -> { 
@@ -31,7 +32,7 @@ module Coxel =
         | false -> []
 
     // Host Availability
-    let hxlHstAvl (hxl : hxl) (occ : hxl list) : hxl = 
+    let hxlHstAvl (hxl : Hxl) (occ : Hxl list) : Hxl = 
         let xyzOc1 = List.map (fun x -> x.C) occ
         let lgt =  List.except (hxl.C :: xyzAdjXyz hxl) xyzOc1
                     |> List.length
@@ -40,17 +41,17 @@ module Coxel =
         | false -> hxl
 
     // Duplicate check
-    let hxlAvlChk (hxl : hxl list) =
+    let hxlAvlChk (hxl : Hxl list) =
         hxl 
         |> List.groupBy (fun x -> x.C) 
         |> List.map (fun(_,x) -> List.distinct x) 
         |> List.map (fun x -> match (List.length x > 1) with
-                                    | true -> List.map (fun a -> { (a:hxl) with A = false })x 
+                                    | true -> List.map (fun a -> { (a:Hxl) with A = false })x 
                                             |> List.distinct
                                     | false -> x )
         
     // Unique Hexels
-    let hxlUnqAvl (hxl : hxl list) : hxl list  = 
+    let hxlUnqAvl (hxl : Hxl list) : Hxl list  = 
         let hxl1 = List.groupBy(fun x -> x.C) hxl
         let xyz1 = List.map (fun ( x, _ ) -> x) hxl1
         let avl1 = List.map (fun ( _, x ) -> x) hxl1
@@ -60,7 +61,7 @@ module Coxel =
         List.map2 (fun x y -> {A = y ; B = false ; C = x}) xyz1 avl1
         
     // Incremental Hexel
-    let hxlIncHx1 (hxl : hxl) (occ : hxl list) : hxl = 
+    let hxlIncHx1 (hxl : Hxl) (occ : Hxl list) : Hxl = 
         let hx1 = hxlHstAvl hxl occ
         match (hx1.A) with 
         | true -> 
@@ -81,9 +82,9 @@ module Coxel =
                     | false -> hxl
         | false -> hx1
         
-    // Incremental Hexels
-    let hxlIncHx2 (hxl : hxl list list) (occ : hxl list)  = 
-        let rec hxInOgs1 (hxl : hxl list) (occ : hxl list) (acc : hxl list) = 
+    // Simultaneous Increment
+    let hxlIncHx2 (hxl : Hxl list list) (occ : Hxl list)  = 
+        let rec hxInOgs1 (hxl : Hxl list) (occ : Hxl list) (acc : Hxl list) = 
             match hxl with 
             | [] -> acc
             | a :: b -> 
@@ -107,10 +108,10 @@ module Coxel =
 
         hx1 |> List.map (fun x -> hxlAvlChk x) |> List.map (fun x -> List.concat x)
     
-    // Multiple Increments
-    let hxlIncHx3 (hxl : hxl list list) (occ : hxl list) (cnt : int) : hxl list list = 
+    // Simultaneous Increase
+    let hxlIncHx3 (hxl : Hxl list list) (occ : Hxl list) (cnt : int) : Hxl list list = 
         
-        let rec hxIncHx3 (hxl : hxl list list) (occ : hxl list) (cnt : int) = 
+        let rec hxIncHx3 (hxl : Hxl list list) (occ : Hxl list) (cnt : int) = 
             let ttl = (List.length hxl) * cnt
             match (List.length (List.concat hxl) < ttl) || (List.length (List.concat hxl) = 0) with 
             | false -> hxl
@@ -139,8 +140,7 @@ module Coxel =
     //let a4 = hxlIncHx2 a3 o4
     //let o5 = [List.concat a4 ; o4] |> List.concat
     //let a5 = hxlIncHx2 a4 o5
-    let b = hxlIncHx3 smHxLc2 smHxOc2 15 |> List.map (fun x -> List.map (fun x -> x.C) x )
+    let b = hxlIncHx3 smHxLc2 smHxOc2 50
     b
-let d = Coxel.a3 |> List.map (fun y -> List.map (fun x -> x.C)y)
-Coxel.b.[4]
-//d.[0]
+
+Coxel.b
