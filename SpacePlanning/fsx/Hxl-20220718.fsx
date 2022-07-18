@@ -1,19 +1,20 @@
 // Hexel
-type Loc = int * int * double
+type Lcn = 
+    int * int * double
 
 type Hxl = 
-    | Host of Loc
-    | Nost of Loc
+    | Avbl of Lcn
+    | Ocpd of Lcn
 
 let hos hst =
     match hst with 
-    | Host _ -> true
-    | Nost _ -> false
+    | Avbl _ -> true
+    | Ocpd _ -> false
 
 let xyz hxl = 
     match hxl with 
-    | Host c -> c
-    | Nost c -> c
+    | Avbl c -> c
+    | Ocpd c -> c
 
 let vld hxl = 
     let xyz = xyz hxl
@@ -22,30 +23,30 @@ let vld hxl =
         | (x,y,z) when (x % 2 = 0) -> (x, y - (y % 4) + 1, z)
         | (x,y,z) -> (x, y - (y%4) + 3, z)
     match hxl with 
-    | Host _ -> Host vld
-    | Nost _ -> Nost vld
+    | Avbl _ -> Avbl vld
+    | Ocpd _ -> Ocpd vld
     
 // Adjacent Hexels
 let adj (hst : Hxl) = 
     // Adjacent Hexels
     match hst with 
-    | Host (x1,y1,z1) -> 
+    | Avbl (x1,y1,z1) -> 
         List.map2 (fun a b -> 
-            Host ((a+x1), (b+y1), z1)) 
+            Avbl ((a+x1), (b+y1), z1)) 
             [0; -2; -1; 1; 2; 1; -1] 
             [0; 0; 2; 2; 0; -2; -2]
-    | Nost _ -> [hst]
+    | Ocpd _ -> [hst]
 
-// Host
+// Update Availability
 let chk (hst : Hxl) (occ : Hxl list) = 
     let xyzO = List.map (fun x -> xyz x)occ
     let xyzA  = List.map (fun x -> xyz x) (adj hst)
     let xyzB = List.except xyzO xyzA
 
     match hst with 
-    | Nost _ -> hst
-    | Host (x,y,z) when (List.length xyzB) = 0 -> Nost (x,y,z)
-    | Host _ -> hst
+    | Ocpd _ -> hst
+    | Avbl (x,y,z) when (List.length xyzB) = 0 -> Ocpd (x,y,z)
+    | Avbl _ -> hst
 
 // Incremental Hexel
 let inc (hst : Hxl) (occ : Hxl list) = 
@@ -54,10 +55,10 @@ let inc (hst : Hxl) (occ : Hxl list) =
     let xyzB1 = List.except ((List.head xyzA1)::xyzO1) xyzA1
     
     let in1 = match hst with 
-                | Nost _ -> adj hst |> List.head
-                | Host (x,y,z) when (List.length xyzB1) = 0 -> 
-                    adj (Nost (x,y,z)) |> List.head
-                | Host _ -> adj (Host (xyzB1|> List.head)) |> List.head
+                | Ocpd _ -> adj hst |> List.head
+                | Avbl (x,y,z) when (List.length xyzB1) = 0 -> 
+                    adj (Ocpd (x,y,z)) |> List.head
+                | Avbl _ -> adj (Avbl (xyzB1|> List.head)) |> List.head
     [chk hst (in1::occ);in1]
 
 // Simultaneous Increment
@@ -72,37 +73,26 @@ let inr (hst : Hxl list) (occ : Hxl list) =
                         inc1 b occ acc
     inc1 hs1 occ []
 
-// Multiple Increment    
+// Multiple Uniform Increment    
 let mlt (hst : Hxl list) (occ : Hxl list) (cnt : int) = 
     let rec inc (hst : Hxl list) (occ : Hxl list) (cnt : int) (acc : Hxl list list)= 
         match cnt with 
         | 1 -> acc
         | cnt -> 
-                        let hst = inr hst occ
-                        let acc = List.map(fun x -> 
-                            List.concat x) (List.transpose([acc;(List.chunkBySize 1 hst)]))
-                        let occ = List.concat [occ; List.concat acc]
-                        inc hst occ (cnt-1) acc
+                        let hs1 = List.map(fun a -> List.filter (hos) a) acc
+                        let hs2 = List.map2 (fun x y -> match x with 
+                                                        | [] -> List.head y
+                                                        | x -> List.head x) hs1 acc
+                        let hs3 = inr hs2 (hs2@occ@(List.concat acc))
+                        let hst = List.map (fun x -> chk x (hs3@occ@(List.concat acc))) hs3
+                        let ac1 = List.map(fun x -> List.concat x) (List.transpose([acc;(List.chunkBySize 1 hst)]))
+                        let acc = List.map(fun x -> (List.map(fun a -> chk a (occ@(List.concat acc)@hst)))x)ac1
+                        inc hst (occ@(List.concat acc)@hst) (cnt-1) acc
     let hs1 = List.map (fun x -> chk x (hst@occ)) hst
-    inc hs1 occ cnt (List.chunkBySize 1 hs1)
+    List.map (fun x -> List.distinct x) (inc hs1 occ cnt (List.chunkBySize 1 hs1))
 
 //Testing
-let oc1 = (adj (vld (Host(0,0,0))))
-let hs1 = oc1.[0..3]
-//let ad0 = adj (hs1.[1])
-//let ad1 = inc (hs1.[3]) oc1
+let oc1 = (adj (vld (Avbl(0,0,0))))
+let hs1 = oc1.[1..5]
 let in1 = inr hs1 oc1 
-let in2 = mlt hs1 oc1 6
-(* let a hst occ acc = 
-    
-    let hs1 = inr hst occ
-    let hs2 = List.map(fun a -> List.map (fun x -> chk x (occ @ (List.concat hs1)))a) hs1
-    let hs3 = List.map(fun a -> List.filter (host) a) hs2
-    let hst = List.map2 (fun x y -> match x with 
-                                                    | [] -> List.head y
-                                                    | x -> List.head x) hs3 hs2
-    let occ = [hst;List.concat acc;oc1] |> List.concat |> List.distinct
-    let acc = List.map(fun x -> List.concat x) (List.transpose([acc ; List.map(fun x -> List.tail x) hs2]))
-    hs2
-
-a hs1 oc1 (List.chunkBySize 1 hs0) *)
+let in2 = mlt hs1 oc1 15
