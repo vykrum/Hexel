@@ -81,4 +81,4 @@ let oc1 = adj (vld (Host(0,0,0)))
 let hs1 = oc1.[0..3]
 //let ad1 = inc (hs1.[4]) oc1
 let in1 = inr hs1 oc1 
-let in2 = mlt hs1 oc1 8
+//let in2 = mlt hs1 oc1 8
