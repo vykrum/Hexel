@@ -6,26 +6,11 @@ type Hxl =
     | Avbl of Lcn
     | Ocpd of Lcn
 
-let hos hst =
-    match hst with 
-    | Avbl _ -> true
-    | Ocpd _ -> false
-
 let xyz hxl = 
     match hxl with 
     | Avbl c -> c
     | Ocpd c -> c
 
-let vld hxl = 
-    let xyz = xyz hxl
-    let vld = 
-        match xyz with 
-        | (x,y,z) when (x % 2 = 0) -> (x, y - (y % 4) + 1, z)
-        | (x,y,z) -> (x, y - (y%4) + 3, z)
-    match hxl with 
-    | Avbl _ -> Avbl vld
-    | Ocpd _ -> Ocpd vld
-    
 // Adjacent Hexels
 let adj (hst : Hxl) = 
     // Adjacent Hexels
@@ -75,6 +60,12 @@ let inr (hst : Hxl list) (occ : Hxl list) =
 
 // Multiple Uniform Increment    
 let mlt (hst : Hxl list) (occ : Hxl list) (cnt : int) = 
+    
+    let hos hst =
+        match hst with 
+        | Avbl _ -> true
+        | Ocpd _ -> false
+
     let rec inc (hst : Hxl list) (occ : Hxl list) (cnt : int) (acc : Hxl list list)= 
         match cnt with 
         | 1 -> acc
@@ -92,7 +83,7 @@ let mlt (hst : Hxl list) (occ : Hxl list) (cnt : int) =
     List.map (fun x -> List.distinct x) (inc hs1 occ cnt (List.chunkBySize 1 hs1))
 
 //Testing
-let oc1 = (adj (vld (Avbl(0,0,0))))
-let hs1 = oc1.[1..5]
+let oc1 = (adj (Avbl(0,1,0)))
+let hs1 = [oc1.[1];oc1.[3];oc1[6]]
 let in1 = inr hs1 oc1 
-let in2 = mlt hs1 oc1 15
+let in2 = mlt hs1 oc1 3
