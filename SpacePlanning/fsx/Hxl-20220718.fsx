@@ -58,8 +58,8 @@ let inr (hst : Hxl list) (occ : Hxl list) =
                         inc1 b occ acc
     inc1 hs1 occ []
 
-// Multiple Uniform Increment    
-let mlt (hst : Hxl list) (occ : Hxl list) (cnt : int) = 
+// Uniform Increment    
+let uni (hst : Hxl list) (occ : Hxl list) (cnt : int) = 
     
     let hos hst =
         match hst with 
@@ -82,8 +82,16 @@ let mlt (hst : Hxl list) (occ : Hxl list) (cnt : int) =
     let hs1 = List.map (fun x -> chk x (hst@occ)) hst
     List.map (fun x -> List.distinct x) (inc hs1 occ cnt (List.chunkBySize 1 hs1))
 
+// Non Uniform Increment
+let nui (hst : Hxl list) (occ : Hxl list) (cnt : int list) = 
+    let hs1 = (List.zip hst cnt) 
+    let cn1 =  List.transpose (List.windowed 2 (0::List.sort cnt))
+    let cn2 = List.map2 (fun x y -> y - x ) cn1.[0] cn1.[1]
+    cn2
+
 //Testing
 let oc1 = (adj (Avbl(0,1,0)))
 let hs1 = [oc1.[1];oc1.[3];oc1[6]]
 let in1 = inr hs1 oc1 
-let in2 = mlt hs1 oc1 3
+let in2 = uni hs1 oc1 3
+//let in2 = nui hs1 oc1 [8;3;5]
