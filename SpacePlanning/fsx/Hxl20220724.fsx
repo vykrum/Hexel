@@ -72,15 +72,16 @@ let nui (hsCt : (Hxl * int) list) (occ : Hxl list) =
                         let ac1 = List.map(fun x -> List.concat x) (List.transpose [acc;List.map(fun x->[x])hs1])
                         let occ = (occ @ List.concat ac1)
                         let acc = List.map (fun a -> List.map (fun x -> chk x occ)a) ac1
-                        let hst = List.map (fun x -> List.last x) acc
+                        let hs1 = List.map(fun a -> List.filter (host) a) acc
+                        let hst = List.map (fun x -> List.head x) hs1
                         let cnt = List.map (fun x -> x - 1) cnt
                         inx hst occ cnt (mxc - 1) acc
     List.map (fun x -> List.distinct x) (inx hst occ cnt mx acc) 
 
 //Testing
 let ooc = adj (vld (Host(0,0,0)))
-let hss = ooc.[0..3]
-let hsc = List.zip hss  [0;2;3;1]
+let hss = ooc.[1..3]
+let hsc = List.zip hss  [5;3;8]
 //let ad1 = inc (hss.[4]) ooc
 //let in1 = inr hss ooc 
 //let in2 = mui hss ooc 8
