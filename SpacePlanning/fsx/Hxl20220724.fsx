@@ -77,7 +77,7 @@ let nui (hsCt : (Hxl * int) list) (occ : Hxl list) =
                                                                                | x when x < 1 -> y
                                                                                | _ -> (inc y occ) )cnt hst
                         let ac1 = List.map(fun x -> List.concat x) (List.transpose [acc;List.map(fun x->[x])hs1])
-                        let occ = (occ @ List.concat ac1)
+                        let occ = (occ @ List.concat ac1) |> List.distinct
                         let acc = List.map (fun a -> List.map (fun x -> chk x occ)a) ac1
                         let hs1 = List.map(fun a -> List.filter (hck) a) acc
                         let hs2 = List.map (fun x -> List.head x ) acc
@@ -85,12 +85,16 @@ let nui (hsCt : (Hxl * int) list) (occ : Hxl list) =
                         let hst = List.map (fun x -> List.head x) hs3
                         let cnt = List.map (fun x -> x - 1) cnt
                         inx hst occ cnt (mxc - 1) acc
-    List.map (fun x -> List.distinct x) (inx hst occ cnt mx acc) 
+    let hx1 = List.map (fun x -> List.distinct x) (inx hst occ cnt mx acc) 
+    let hx2 = (List.head hx1)::List.map (fun x -> 
+            List.except (List.head x) (List.last x))
+                (List.windowed 2 hx1)
+    hx2
 
 //Testing
 let ooc = adj (vld (Host(0,0,0)))
-let hss = ooc.[1..3]
-let hsc = List.zip hss  [32;5;38]
+let hss = [ooc.[1]; ooc.[3]; ooc.[5]]
+let hsc = List.zip hss  [52;10;38]
 let nu1 = nui hsc ooc
 
 List.map (fun x -> List.length x) nu1
