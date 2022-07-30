@@ -4,8 +4,6 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Clusters.fs" />
-    <Compile Include="Helix.fsx" />
     <Compile Include="Hexels.fs" />
   </ItemGroup>
 </Project>
