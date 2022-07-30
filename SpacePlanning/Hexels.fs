@@ -1,121 +1,95 @@
 namespace Hexel
 
-// Coordinates
-type xyz = { X : int
-             Y : int
-             Z : double }
+// Hexel
+type Loc = 
+    int * int * double
 
-// Available, Boundary, Coordinates
-type hxl = { A : bool
-             B : bool
-             C : xyz }
+type Hxl = 
+    | Host of Loc
+    | Nost of Loc
 
 module Cluster = 
-    // Valid Hexel Coordinates
-    let xyzVldXyz (xyz : xyz) : xyz = 
-        match (xyz.X % 2 = 0) with 
-        | true -> { xyz with Y = xyz.Y - (xyz.Y % 4) + 1 }
-        | false -> { xyz with Y = xyz.Y - (xyz.Y % 4) + 3 }
+    // Host Check
+    let hck hst =
+        match hst with 
+        | Host _ -> true
+        | Nost _ -> false
 
-    // Adjacent Hexels
-    let xyzAdjXyz (hxl : hxl) : xyz list = 
-        let vldHxl = {hxl with C = xyzVldXyz (hxl.C)}
-        match vldHxl.A with 
-        | true -> List.map2 (fun x y -> { 
-                                            X = hxl.C.X + x
-                                            Y = hxl.C.Y + y
-                                            Z = hxl.C.Z 
-                                        }
-                            )
-                            [-2;-1;1;2;1;-1] [0;2;2;0;-2;-2]
-        | false -> []
+    // Hexel Locations
+    let xyz hxl = 
+        match hxl with 
+        | Host c -> c
+        | Nost c -> c
 
-    // Host Availability
-    let hxlHstAvl (hxl : hxl) (occ : hxl list) : hxl = 
-        let xyzOc1 = List.map (fun x -> x.C) occ
-        let lgt =  List.except (hxl.C :: xyzAdjXyz hxl) xyzOc1
-                    |> List.length
-        match (lgt = 0) with 
-        | true -> { hxl with A = false }
-        | false -> hxl
-
-    // Duplicate check
-    let hxlAvlChk (hxl : hxl list) =
-        hxl 
-        |> List.groupBy (fun x -> x.C) 
-        |> List.map (fun(_,x) -> List.distinct x) 
-        |> List.map (fun x -> match (List.length x > 1) with
-                                    | true -> List.map (fun a -> { (a:hxl) with A = false })x 
-                                            |> List.distinct
-                                    | false -> x )
-        
-    // Unique Hexels
-    let hxlUnqAvl (hxl : hxl list) : hxl list  = 
-        let hxl1 = List.groupBy(fun x -> x.C) hxl
-        let xyz1 = List.map (fun ( x, _ ) -> x) hxl1
-        let avl1 = List.map (fun ( _, x ) -> x) hxl1
-                |> List.map (fun x -> List.map (fun x -> x.A)x)
-                |> List.map (fun x -> List.contains false x)
-                |> List.map (fun x -> x = false)
-        List.map2 (fun x y -> {A = y ; B = false ; C = x}) xyz1 avl1
-        
-    // Incremental Hexel
-    let hxlIncHx1 (hxl : hxl) (occ : hxl list) : hxl = 
-        let hx1 = hxlHstAvl hxl occ
-        match (hx1.A) with 
-        | true -> 
-                    let xyzOc1 = List.map (fun x -> x.C) occ
-                    match hxl.A with 
-                    | true -> 
-                        let inc = hxl 
-                                |> xyzAdjXyz 
-                                |> List.except xyzOc1 
-                                |> List.tryHead
-                        match inc with 
-                        | None -> { hxl with A = false }
-                        | Some inc-> hxlHstAvl { 
-                                                    A = true
-                                                    B = false
-                                                    C = Some inc |> Option.get 
-                                                } occ
-                    | false -> hxl
-        | false -> hx1
-        
-    // Incremental Hexels
-    let hxlIncHx2 (hxl : hxl list list) (occ : hxl list)  = 
-        let rec hxInOgs1 (hxl : hxl list) (occ : hxl list) (acc : hxl list) = 
-            match hxl with 
-            | [] -> acc
-            | a :: b -> 
-                        let acc = acc @ [hxlIncHx1 a occ]
-                        let occ = (acc @ occ) @ hxl
-                        hxInOgs1 b occ acc
-        
-        let av1 = List.map (fun x -> List.filter (fun x -> x.A = true)x) hxl
-        let lg1 = List.map (fun x -> List.isEmpty x) av1 
-                |> List.contains true
-        let hx1 = match lg1 with 
-                    | true -> []
-                    | false ->  let hd1 = List.map (fun x -> List.head x) av1
-                                let in1 = hxInOgs1 hd1 occ [] |> List.chunkBySize 1
-                                                    
-                                let lc1 = [hxl;in1] 
-                                        |> List.transpose 
-                                        |> List.map (fun x -> List.concat x) 
-                                        |> List.map (fun x -> List.distinct x)
-                                lc1
-
-        hx1 |> List.map (fun x -> hxlAvlChk x) |> List.map (fun x -> List.concat x)
+    // Valid Locations
+    let vld hxl = 
+        let xyz = xyz hxl
+        let vld = 
+            match xyz with 
+            | (x,y,z) when (x % 2 = 0) -> (x, y - (y % 4) + 1, z)
+            | (x,y,z) -> (x, y - (y%4) + 3, z)
+        match hxl with 
+        | Host _ -> Host vld
+        | Nost _ -> Nost vld
     
-    // Multiple Increments
-    let hxlIncHx3 (hxl : hxl list list) (occ : hxl list) (cnt : int) : hxl list list = 
-        
-        let rec hxIncHx3 (hxl : hxl list list) (occ : hxl list) (cnt : int) = 
-            let ttl = (List.length hxl) * cnt
-            match (List.length (List.concat hxl) < ttl) || (List.length (List.concat hxl) = 0) with 
-            | false -> hxl
-            | true -> 
-                    let hxl = hxlIncHx2 hxl occ
-                    let occ = [occ; (hxlIncHx2 hxl occ) |> List.concat] |> List.concat |> hxlUnqAvl |> List.distinct
-                    hxIncHx3  hxl occ cnt
-        hxIncHx3 hxl occ cnt
+    // Adjacent Hexels
+    let adj (hst : Hxl) = 
+        // Adjacent Hexels
+        match hst with 
+        | Host (x1,y1,z1) -> 
+            List.map2 (fun a b -> 
+                Host ((a+x1), (b+y1), z1)) 
+                [0; -2; -1; 1; 2; 1; -1] 
+                [0; 0; 2; 2; 0; -2; -2]
+        | Nost _ -> hst |> List.singleton
+
+    // Host
+    let chk (hst : Hxl) (occ : Hxl list) = 
+        let xyzO = List.map (fun x -> xyz x)occ
+        let xyzA  = List.map (fun x -> xyz x) (adj hst)
+        let xyzB = List.except xyzO xyzA
+
+        match hst with 
+        | Nost _ -> hst
+        | Host (x,y,z) when (List.length xyzB) = 0 -> Nost (x,y,z)
+        | Host _ -> hst
+
+    // Incremental Hexel
+    let inc (hst : Hxl) (occ : Hxl list) = 
+        let xyzO1 = List.map (fun x -> xyz x)occ
+        let xyzA1  = List.map (fun x -> xyz x) (adj hst)
+        let xyzB1 = List.except xyzO1 xyzA1
+    
+        match hst with 
+        | Nost _ -> adj hst |> List.head
+        | Host (x,y,z) when (List.length xyzB1) = 0 ->  Nost (x,y,z)
+        | Host _ -> adj (Host (xyzB1 |> List.head)) |> List.head
+    
+
+    // Non Uniform Increments
+    let nui (hsCt : (Hxl * int) list) (occ : Hxl list) = 
+        let hst = List.map (fun (x,_) -> x) hsCt
+        let cnt = List.map (fun (_,x) -> x) hsCt
+        let mx = (List.max cnt) + 1
+        let acc = List.map (fun x -> List.singleton x)hst
+        let rec inx (hst : Hxl list) (occ : Hxl list) (cnt : int list) (mxc : int) (acc : Hxl list list) = 
+            match mxc with 
+            | 1 -> acc 
+            | mxc -> 
+                            let hs1 = List.map2 (fun x y -> match x with 
+                                                                                   | x when x < 1 -> y
+                                                                                   | _ -> (inc y occ) )cnt hst
+                            let ac1 = List.map(fun x -> List.concat x) (List.transpose [acc;List.map(fun x->[x])hs1])
+                            let occ = (occ @ List.concat ac1) |> List.distinct
+                            let acc = List.map (fun a -> List.map (fun x -> chk x occ)a) ac1
+                            let hs1 = List.map(fun a -> List.filter (hck) a) acc
+                            let hs2 = List.map (fun x -> List.head x ) acc
+                            let hs3 = List.map2 (fun x y -> x@[y] ) hs1 hs2
+                            let hst = List.map (fun x -> List.head x) hs3
+                            let cnt = List.map (fun x -> x - 1) cnt
+                            inx hst occ cnt (mxc - 1) acc
+        let hx1 = List.map (fun x -> List.distinct x) (inx hst occ cnt mx acc) 
+        let hx2 = (List.map (fun x -> 
+                List.except (List.last x) (List.head x))
+                    (List.windowed 2 (hx1@ [List.head hx1]))) 
+        hx2
