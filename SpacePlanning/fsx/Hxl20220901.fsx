@@ -55,6 +55,22 @@
         | Host (x,y,z) when (List.length xyzB) = 0 -> Nost (x,y,z)
         | Host _ -> hst
 
+    //Hexel Except
+    let exc (ex:Hxl list) (hx : Hxl list) = 
+        let xy1 = List.map (fun x -> xyz x) ex
+        let hx1 = (List.map (fun x -> 
+                                let a = xyz x
+                                match List.contains a xy1 with 
+                                | true -> []
+                                | false -> [x]) hx) |> List.concat
+        let hx2 = (List.map (fun x -> 
+                                                    let a = List.except hx1 (adj x)
+                                                    match (List.length a) with
+                                                    | 6 -> []
+                                                    | _ -> [x])hx1) |> List.concat
+        hx2
+
+
     // Incremental Hexel
     let inc (hst : Hxl) (occ : Hxl list) = 
         let xyzO1 = List.map (fun x -> xyz x)occ
@@ -89,13 +105,14 @@
                             let hst = List.map (fun x -> List.head x) hs3
                             let cnt = List.map (fun x -> x - 1) cnt
                             inx hst occ cnt (mxc - 1) acc
-        let hx1 = List.map (fun x -> List.distinct x) (inx hst occ cnt mx acc) 
-        let hx2 = (List.map (fun x -> 
-                List.except (List.last x) (List.head x))
-                    (List.windowed 2 (hx1@ [List.head hx1]))) 
+        let hx1 = List.map (fun x -> List.distinctBy xyz x) (inx hst occ cnt mx acc) 
+        let hx2 =  List.windowed 2 (hx1@ [List.head hx1])
+        let cts ls hx = List.contains (xyz hx) (List.map(fun a -> xyz a)ls)
+        let hx3 = List.map(fun x -> List.filter (cts (List.head x)) (List.last x))hx2
+        let hx4 = (List.head hx1) :: hx3
         match (List.length hsCt) with 
         | x when x <= 1 -> hx1
-        | _ -> hx2
+        | _ -> hx1
 
 //Testing
 let ooc = adj (vld (Host(0,0,0)))

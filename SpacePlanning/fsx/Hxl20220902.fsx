@@ -55,6 +55,11 @@
         | Host (x,y,z) when (List.length xyzB) = 0 -> Nost (x,y,z)
         | Host _ -> hst
 
+    // Except
+    let exc (exc : Hxl list) (hxl : Hxl list) = 
+        let exy hx = List.exists (fun x -> x = xyz hx) (List.map(fun x -> xyz x)exc)
+        List.filter (fun x -> (exy x) = false) hxl
+
     // Incremental Hexel
     let inc (hst : Hxl) (occ : Hxl list) = 
         let xyzO1 = List.map (fun x -> xyz x)occ
@@ -66,6 +71,14 @@
         | Host (x,y,z) when (List.length xyzB1) = 0 ->  Nost (x,y,z)
         | Host _ -> adj (Host (xyzB1 |> List.head)) |> List.head
     
+    // Incremental Hexels
+    let ins (hst : Hxl list) (occ : Hxl list) = 
+        let hs1 = List.map (fun x -> adj x) hst 
+        (List.tail hs1) |> List.scan  (fun ac st-> 
+                                                                        let occ = ac @ occ
+                                                                        [(exc (ac @ occ) st) |> List.head]
+                                                                        ) ([(List.head hs1) |> List.head])
+        
 
     // Non Uniform Increments
     let nui (hsCt : (Hxl * int) list) (occ : Hxl list) = 
@@ -90,15 +103,18 @@
                             let cnt = List.map (fun x -> x - 1) cnt
                             inx hst occ cnt (mxc - 1) acc
         let hx1 = List.map (fun x -> List.distinct x) (inx hst occ cnt mx acc) 
-        let hx2 = (List.map (fun x -> 
+        (* let hx2 = (List.map (fun x -> 
                 List.except (List.last x) (List.head x))
                     (List.windowed 2 (hx1@ [List.head hx1]))) 
         match (List.length hsCt) with 
         | x when x <= 1 -> hx1
-        | _ -> hx2
+        | _ -> hx2 *)
+        hx1
 
 //Testing
 let ooc = adj (vld (Host(0,0,0)))
 let hss = ooc.[1..6]
-let hsc = List.zip hss  [12;20;18;14;3;5]
-let nu1 = nui hsc ooc
+//let hsc = List.zip hss  [12;20;18;14;3;5]
+//let nu1 = nui hsc ooc
+let a = ins hss []
+
