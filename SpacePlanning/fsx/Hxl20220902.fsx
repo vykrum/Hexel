@@ -55,7 +55,7 @@
         | Host (x,y,z) when (List.length xyzB) = 0 -> Nost (x,y,z)
         | Host _ -> hst
 
-    // Except
+    // Except Locations
     let exc (exc : Hxl list) (hxl : Hxl list) = 
         let exy hx = List.exists (fun x -> x = xyz hx) (List.map(fun x -> xyz x)exc)
         List.filter (fun x -> (exy x) = false) hxl
@@ -74,10 +74,13 @@
     // Incremental Hexels
     let ins (hst : Hxl list) (occ : Hxl list) = 
         let hs1 = List.map (fun x -> adj x) hst 
-        (List.tail hs1) |> List.scan  (fun ac st-> 
-                                                                        let occ = ac @ occ
-                                                                        [(exc (ac @ occ) st) |> List.head]
-                                                                        ) ([(List.head hs1) |> List.head])
+        let oc1 = occ @ hst
+        hs1 |> List.scan  (fun ac st-> 
+                                                                        let oc1 = ac @ oc1
+                                                                        [(exc oc1 st) |> List.head]
+                                                                        ) []
+                                                                        |> List.tail 
+                                                                        |> List.map (fun x -> List.head x)
         
 
     // Non Uniform Increments
@@ -113,8 +116,9 @@
 
 //Testing
 let ooc = adj (vld (Host(0,0,0)))
-let hss = ooc.[1..6]
+let hss = ooc.[1..3]
 //let hsc = List.zip hss  [12;20;18;14;3;5]
 //let nu1 = nui hsc ooc
-let a = ins hss []
+let a = ins hss ooc
+let b = ins hss (a @ ooc)
 
