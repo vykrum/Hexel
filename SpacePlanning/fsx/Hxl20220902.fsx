@@ -57,7 +57,8 @@
 
     // Except Locations
     let exc (exc : Hxl list) (hxl : Hxl list) = 
-        let exy hx = List.exists (fun x -> x = xyz hx) (List.map(fun x -> xyz x)exc)
+        let exy hx = List.exists (fun x -> x = xyz hx)
+                        (List.map(fun x -> xyz x)exc)
         List.filter (fun x -> (exy x) = false) hxl
 
     // Incremental Hexel
@@ -71,18 +72,6 @@
         | Host (x,y,z) when (List.length xyzB1) = 0 ->  Nost (x,y,z)
         | Host _ -> adj (Host (xyzB1 |> List.head)) |> List.head
     
-    // Incremental Hexels
-    let ins (hst : Hxl list) (occ : Hxl list) = 
-        let hs1 = List.map (fun x -> adj x) hst 
-        let oc1 = occ @ hst
-        hs1 |> List.scan  (fun ac st-> 
-                                                                        let oc1 = ac @ oc1
-                                                                        [(exc oc1 st) |> List.head]
-                                                                        ) []
-                                                                        |> List.tail 
-                                                                        |> List.map (fun x -> List.head x)
-        
-
     // Non Uniform Increments
     let nui (hsCt : (Hxl * int) list) (occ : Hxl list) = 
         let hst = List.map (fun (x,_) -> x) hsCt
@@ -94,9 +83,10 @@
             | 1 -> acc 
             | mxc -> 
                             let hs1 = List.map2 (fun x y -> match x with 
-                                                                                   | x when x < 1 -> y
-                                                                                   | _ -> (inc y occ) )cnt hst
-                            let ac1 = List.map(fun x -> List.concat x) (List.transpose [acc;List.map(fun x->[x])hs1])
+                                                            | x when x < 1 -> y
+                                                            | _ -> (inc y occ) )cnt hst
+                            let ac1 = List.map(fun x -> List.concat x) 
+                                        (List.transpose [acc;List.map(fun x->[x])hs1])
                             let occ = (occ @ List.concat ac1) |> List.distinct
                             let acc = List.map (fun a -> List.map (fun x -> chk x occ)a) ac1
                             let hs1 = List.map(fun a -> List.filter (hck) a) acc
@@ -114,11 +104,34 @@
         | _ -> hx2 *)
         hx1
 
+    // Incremental Hexels
+    let ins (hst : Hxl list) (occ : Hxl list) = 
+        let hs1 = List.map (fun x -> adj x) hst
+        let oc1 = occ @ hst
+        let hs2 =   hs1 |> List.scan  (fun ac st-> 
+                    let oc1 = ac @ oc1
+                    let hx1 = (exc oc1 st) |> List.tryHead
+                    let hx2 = match hx1 with 
+                                    | Some hx1 -> [hx1]
+                                    | None -> [st |> List.head]
+                    hx2
+                    ) []
+                    |> List.tail 
+                    |> List.map (fun x -> List.head x)
+        List.map(fun x -> chk x (occ @ hst @ hs2)) hs2
+
+    // Non Uniform 
+    let nus (hxc : (Hxl*int) list) (occ : Hxl list) = 
+        let (hx1,ct1) = hxc |> List.unzip
+        hx1
+
+
 //Testing
 let ooc = adj (vld (Host(0,0,0)))
-let hss = ooc.[1..3]
+let hss = ooc.[1..6]
 //let hsc = List.zip hss  [12;20;18;14;3;5]
 //let nu1 = nui hsc ooc
 let a = ins hss ooc
 let b = ins hss (a @ ooc)
+let c = ins hss (a @ b @ ooc)
 
