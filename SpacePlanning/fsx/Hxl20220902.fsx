@@ -120,18 +120,30 @@
                     |> List.map (fun x -> List.head x)
         List.map(fun x -> chk x (occ @ hst @ hs2)) hs2
 
-    // Non Uniform 
-    let nus (hxc : (Hxl*int) list) (occ : Hxl list) = 
+    // Uniform Cluster
+    let uns (hxc : (Hxl*int) list) (occ : Hxl list) = 
         let (hx1,ct1) = hxc |> List.unzip
-        hx1
+        let mxc = (List.max ct1) + 1
+        let rec nux (hst : Hxl list) (cnt : int list) (occ : Hxl list) (mxc : int) (acc : Hxl list list) = 
+            match mxc with 
+            | mxc when (mxc <= 1) -> acc
+            | _ -> 
+                    let hs1 = (ins hst occ) |> List.map(fun x -> List.singleton x)
+                    let ac1 = List.map2(fun x y -> x @ y) acc hs1
+                    let acc = List.map ( fun y -> List.map (fun x -> chk x occ)y)ac1
+                    let ac2 = List.map(fun a -> List.filter (hck) a) acc
+                    let hst = List.map (fun x -> List.head x ) ac2
+                    let occ = [occ @ (acc |> List.concat) @ hst] |> List.concat
+                    nux hst cnt occ (mxc-1) acc
+
+        nux hx1 ct1 occ mxc (List.map(fun x -> List.singleton x)hx1)
 
 
 //Testing
 let ooc = adj (vld (Host(0,0,0)))
-let hss = ooc.[1..6]
-//let hsc = List.zip hss  [12;20;18;14;3;5]
-//let nu1 = nui hsc ooc
-let a = ins hss ooc
-let b = ins hss (a @ ooc)
-let c = ins hss (a @ b @ ooc)
-
+let hss = ooc.[1..3]
+let hsc = List.zip hss  [4;5;12]
+let nu1 = uns hsc ooc
+//let a = ins hss ooc
+//let b = ins hss (a @ ooc)
+//let c = ins hss (a @ b @ ooc)
