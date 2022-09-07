@@ -110,15 +110,32 @@
         let oc1 = occ @ hst
         let hs2 =   hs1 |> List.scan  (fun ac st-> 
                     let oc1 = ac @ oc1
-                    let hx1 = (exc oc1 st) |> List.tryHead
-                    let hx2 = match hx1 with 
-                                    | Some hx1 -> [hx1]
+                    let hx1 = (exc oc1 st)
+                    let hx2 = hx1 |> List.tryHead
+                    
+                    let hx3 = match hx2 with 
+                                    | Some hx2 -> [hx2]
                                     | None -> [st |> List.head]
-                    hx2
+                    hx3
                     ) []
                     |> List.tail 
                     |> List.map (fun x -> List.head x)
-        List.map(fun x -> chk x (occ @ hst @ hs2)) hs2
+
+        let hs3 = 
+            let bl = [List.head hs2] |> List.contains (List.last hs2)        
+            match bl with 
+                | true -> 
+                    let hx40 = adj (List.last hst)
+                    let hx41 = exc (occ @ hst @ hs2) hx40
+                    let hx42 = hx41 |> List.tryHead
+                    let hx43 = match hx42 with 
+                                                        | Some hx42 -> [hx42]
+                                                        | None -> [hst |> List.last]
+                    let hx44 = hs2 |> List.rev |> List.tail |> List.rev 
+                    let hx45 = hx44 @ hx43
+                    hx45
+                | false -> hs2
+        List.map(fun x -> chk x (occ @ hst @ hs3)) hs3
 
     // Uniform Cluster
     let uns (hxc : (Hxl*int) list) (occ : Hxl list) = 
@@ -129,8 +146,9 @@
             | mxc when (mxc <= 1) -> acc
             | _ -> 
                     let hs1 = (ins hst occ) |> List.map(fun x -> List.singleton x)
+                    let oc1 = [occ @ (acc |> List.concat) @ (hs1 |> List.concat)] |> List.concat
                     let ac1 = List.map2(fun x y -> x @ y) acc hs1
-                    let acc = List.map ( fun y -> List.map (fun x -> chk x occ)y)ac1
+                    let acc = List.map ( fun y -> List.map (fun x -> chk x oc1)y)ac1
                     let ac2 = List.map(fun a -> List.filter (hck) a) acc
                     let hst = List.map (fun x -> List.head x ) ac2
                     let occ = [occ @ (acc |> List.concat) @ hst] |> List.concat
@@ -141,8 +159,8 @@
 
 //Testing
 let ooc = adj (vld (Host(0,0,0)))
-let hss = ooc.[1..3]
-let hsc = List.zip hss  [4;5;12]
+let hss = ooc.[1..6]
+let hsc = List.zip hss  [4;5;7;7;7;7]
 let nu1 = uns hsc ooc
 //let a = ins hss ooc
 //let b = ins hss (a @ ooc)
