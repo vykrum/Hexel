@@ -192,8 +192,4 @@ hxIncOg [[{X=0;Y=1;Z=0;C=false}];[{X= -2;Y=1;Z=0;C=false}];[{X= -1;Y=3;Z=0;C=fal
 
 #!fsharp
 
-#r "nuget:FSharp.Data"
-open FSharp.Data
-
-let a = HtmlDocument.Load("https://vykrum.github.io/Hywe/")
-a.Elements("dscr")
+[[1;2;3];[10;11;12]] |> List.transpose
