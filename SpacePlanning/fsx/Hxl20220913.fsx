@@ -1,8 +1,7 @@
-type Hxl = {
-    Avl : bool
-    Loc : int * int * int
-}
+// Hexel
+type Hxl = { Avl : bool; Loc : int * int * int }
 
+// Adjacent Hexels
 let adj (hxl : Hxl) = 
     match hxl.Avl with 
     | false -> hxl |> List.singleton
@@ -11,10 +10,11 @@ let adj (hxl : Hxl) =
             List.map (fun x -> {Avl = true ; Loc= x}) 
                 (List.map3 (fun a b c -> 
                     ((a + x), (b + y), (c + z))) 
-                    [0; -2; -1; 1; 2; 1; -1] 
-                    [0; 0; 2; 2; 0; -2; -2] 
+                    [0; -1; -2; -1; 1; 2; 1] 
+                    [0; -2; 0; 2; 2; 0; -2] 
                     [0; 0; 0; 0; 0; 0; 0])
 
+// Except Hexels
 let exc (exl : Hxl List) (hxl : Hxl list) = 
     let cts hx  = ((List.map (fun x -> x.Loc)exl) 
         |> List.contains hx.Loc) = false
@@ -25,6 +25,7 @@ let exc (exl : Hxl List) (hxl : Hxl list) =
             | 1 -> y |> List.head
             | _ -> {Avl = false ; Loc= x} )
 
+// Available Hexels
 let chk (hxl : Hxl) (occ : Hxl list) = 
     match hxl.Avl with
     | true -> match ((exc (hxl::occ) (adj hxl)) |> List.length) with 
@@ -32,6 +33,7 @@ let chk (hxl : Hxl) (occ : Hxl list) =
                     | _ -> hxl
     | false -> hxl
 
+// Incremental Hexels
 let inc (hxl : (int * Hxl) list) (occ : Hxl list) = 
     let hxc = hxl |> List.map ( fun (x,y) -> 
         match x with
@@ -51,6 +53,7 @@ let inc (hxl : (int * Hxl) list) (occ : Hxl list) =
             |> List.map (fun x -> List.head x)
     List.zip ct2 hx3
 
+// Non Uniform Clusters
 let nui (hxc : (int * Hxl) list) (occ : Hxl list) = 
         let (ct1,hx1) = hxc|> List.unzip
         let mxc = (List.max ct1) + 1
@@ -61,23 +64,23 @@ let nui (hxc : (int * Hxl) list) (occ : Hxl list) =
             | _ ->
                     let h01 = inc hxc occ
                     let (c02,h02) = h01 |> List.unzip
-                    let ac1 = List.map2 (fun x y -> x@[y]) acc h02
-                    let oc1 = (List.concat ac1) @ occ
+                    let ac1 = List.map2 (fun x y -> x @ [y]) acc h02
+                    let oc1 = ((List.concat ac1) @ occ) |> List.distinct
                     let ac2 = ac1 |> List.map(fun x ->List.map(fun y -> chk y oc1)x)
                     let acc = ac2 |> List.map(fun x -> List.distinct x)
-                    let ac3 = acc |> List.map(fun x -> List.filter (fun y -> y.Avl=true)x)
+                    let ac3 = acc |> List.map(fun x -> List.filter (fun y -> y.Avl = true)x)
                     let h00 = (List.map (fun x -> List.tryHead x ) ac3)
                     let h02 = List.map2 (fun x y -> match x with 
                                                                 | Some x -> x
                                                                 | None -> y) h00 h02
                     let hxc = List.zip c02 h02
-                    let occ = [occ @ (acc |> List.concat) @ h02] |> List.concat 
+                    let occ = [occ @ (acc |> List.concat) @ h02] |> List.concat |> List.distinct
                     nux hxc occ (mxc-1) acc
         (nux hxc occ mxc acc) |> List.map(fun x -> List.distinct x)
 
 // Testing
 let Loc1 hxl = List.map (fun x -> x.Loc) hxl
 let occ = (adj {Avl=true ; Loc=(0,1,0)})
-let a = List.zip [5;4;3;2;1;0] occ[1..6] 
+let a = List.zip [1..6] occ[1..6] 
 let b = (nui a occ) |> List.map (List.map(fun y ->(fun x -> x.Loc)y))
 //let r = exc occ occ[1..2]
