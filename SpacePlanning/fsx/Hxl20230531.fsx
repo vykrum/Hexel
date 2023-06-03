@@ -1,25 +1,34 @@
+//Adjacent locations
+let adjLoc (loc: int * int * int) = 
+    let (x,y,z) = loc
+    Array.map3 (fun a b c ->
+        ((a + x), (b + y), (c + z)))
+        [|1; -1; -2; -1; 1; 2|]
+        [|-2; -2; 0; 2; 2; 0|]
+        [|0; 0; 0; 0; 0; 0|]
+
+
 // Hexel
 type Hxl = { Avl : int; Cnt : int ; Loc : int * int * int }
 
+// Locations to Hexels
+let locHxl (avl : int[]) (cnt : int[]) (loc : (int * int * int)[]) = 
+    Array.map3 (fun a b c -> 
+    {Avl = a ; Cnt = b; Loc = c}) avl cnt loc
+
 // Adjacent Hexels
-let adj (hxl : Hxl) = 
+let adjHxl (hxl : Hxl) = 
     match hxl.Avl with 
     | a when a < 1 -> hxl |> Array.singleton
-    | _ -> 
-            let (x,y,z) = hxl.Loc
-            Array.map (fun c -> {Avl = 6 ; Cnt = 1; Loc = c})
-                (Array.map3 (fun a b c ->
-                    ((a + x), (b + y), (c + z)))
-                    [|1; -1; -2; -1; 1; 2|]
-                    [|-2; -2; 0; 2; 2; 0|]
-                    [|0; 0; 0; 0; 0; 0|])
+    | _ -> Array.map (fun c -> {Avl = 6 ; Cnt = 1; Loc = c}) (adjLoc (hxl.Loc))
+                
 
 let loc (hxl : Hxl[]) = Array.map (fun x -> x.Loc) hxl
 let cnt (hxl : Hxl[]) = Array.map (fun x -> x.Cnt) hxl
 
 // Availability Update
 let avl (hxl : Hxl) (occ : Hxl[]) = 
-    let av1 = Array.except (loc occ) (loc(adj hxl))
+    let av1 = Array.except (loc occ) (loc(adjHxl hxl))
                  |> Array.length
     {hxl with Avl = av1}
 
@@ -44,7 +53,7 @@ let icr (hxl : Hxl) (occ : Hxl[]) =
 
         let hx1 = match hx0.Avl with 
                   | 0 -> Some hx0
-                  | _ -> (exc (Array.concat [|[|hx0|];occ|]) (adj hx0)) |> Array.tryHead
+                  | _ -> (exc (Array.concat [|[|hx0|];occ|]) (adjHxl hx0)) |> Array.tryHead
         let hx2 = match hx1 with 
                   | None -> hx0
                   | Some x -> x
@@ -85,8 +94,9 @@ let nui (hxc : (int * Hxl)[]) (occ : Hxl[]) =
     (nu1 hx1 occ mxc acc) 
 
 let a = {Avl = 6; Cnt = 1; Loc = 0,1,0}
-let b = adj a
+let b = adjHxl a
 let c = [|[|a|];b|] |> Array.concat
 //let d = inc b.[0..2] c
 let e = nui (Array.zip [|1..3|] b[0..2]) c
+
 
