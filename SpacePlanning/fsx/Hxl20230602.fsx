@@ -31,7 +31,7 @@ module Locations =
                     |> Array.except occ 
                     |> Array.tryHead
             match inc with 
-            | Some a -> a, y-1
+            | Some a -> a, y
             | None -> loc
         | _ -> loc
    
@@ -44,52 +44,74 @@ module Locations =
             loc[0] loc
             |> Array.tail
 
+    // Get Locations
+    let getLoc 
+        (loc : (Loc*int)[]) = 
+        loc
+        |> Array.map(fun x 
+                        -> fst x)
+
     // Available Location
     let avlLoc 
-        (occ: Loc[])
-        (loc: (Loc*int))  = 
+        (loc: (Loc*int))
+        (occ: Loc[]) = 
         loc 
         |> fst 
         |> adjLocs 
         |> Array.except occ 
-        |> Array.length > 0
+        |> Array.length
 
 
     // Cluster Locations
     let clsLocs 
         (loc: (Loc*int)[])
         (occ : Loc[]) = 
-        
-        let rec clsts 
-            (loc: (Loc*int)[])
-            (occ : Loc[]) = 
-            let acc = Array.chunkBySize 1 loc
-            let cnt = 
+        let cnt = 
                 loc
                 |> Array.map (fun x -> snd x)
                 |> Array.max
+        let acc = Array.chunkBySize 1 loc
+        
+        let rec clsts 
+            (loc: (Loc*int)[])
+            (occ : Loc[])
+            (acc:(Loc*int)[][])
+            (cnt : int) = 
+            
 
             match cnt with 
             | c when c < 1 -> acc
             | _ -> 
-                let cnt = cnt - 1
-                let inc = incLocs loc occ
-                let occ = Array.append  occ (Array.map(fun x -> fst x)inc) 
-                //Filter Available
-                let avl = 
-                    acc 
-                    |> Array.map (fun x-> Array.filter (avlLoc occ)x)
-                let loc = Array.map2 (fun x y 
-                                        -> Array.append x y)avl [|loc|]
-                                        |> Array.map (fun x -> Array.head x)
+                    let occ = 
+                        acc 
+                        |> Array.concat 
+                        |> getLoc
+                        |> Array.append occ
+                        |> Array.distinct
+                    let rpt = Array.map (fun x -> (snd x)-1) loc
+                    //Filter Available
+                    let loc =  
+                        acc
+                        |> Array.map (fun x
+                                        -> Array.filter (fun a 
+                                                            -> (avlLoc a occ) > 0) x )
+                        |> Array.map (fun x 
+                                        -> Array.head x)
+                        |> Array.map2 (fun x y -> fst y,  x) rpt
+                    let inc = incLocs loc occ
+                            
+                    let acc = Array.map2  (fun x y
+                                            -> Array.append x y) 
+                                acc
+                                (Array.chunkBySize 1 inc)
+                    (clsts loc occ acc (cnt-1))
                 
-                let acc = Array.map2 
-                            (fun x y 
-                                -> Array.append x y) 
-                            acc
-                            (clsts loc occ)
-                acc
-        clsts loc occ 
+        clsts loc occ acc cnt
+        |> Array.map(fun c ->Array.map (fun x -> 
+                                                    match x with
+                                                    | (a,b) when b < 0 -> a,0
+                                                    | _ -> x ) c )
+        |> Array.map(fun x -> Array.distinct x)
         
 
 
@@ -98,9 +120,11 @@ module Locations =
 //Hexels.adjHxls {Avl=6; Cls = 1; Loc=(1,-2,0)} [||]
 let og:Locations.Loc = {x=0; y=0; z=0}
 let t0 = Locations.adjLocs og
-let t1 = Array.zip t0 [|1;3;8;5;1;1;1|]
+let t1 = Array.zip t0 [|3;4;5;6;4;3;2|]
 //let t2 = Locations.incLoc t1[1] t0
-let t2 = Locations.clsLocs t1[1..3] t0
-//let t3 = Locations.clsLocs t1[1..3] t0
+let t2 = Locations.clsLocs t1[1..6] t0
 
-//Locations.addLocs t1[1..2] t1 2
+//let t11 = Array.concat[|t1;Array.concat t2|]
+//let o11 = Array.map (fun x -> fst x) t11
+//let t12 = Locations.clsLocs t2 o11
+
