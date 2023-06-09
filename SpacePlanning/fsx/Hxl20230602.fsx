@@ -1,12 +1,21 @@
 module Locations =
 
-    //Adjacent Locations
+    // Adjacent Locations
     type Loc = 
         { 
             x : int
             y : int
             z : int
         }
+    
+    // Identity Location
+    let idnLoc = 
+        {
+            x = 0
+            y = 0
+            z = 0
+        }
+    
     let adjLocs 
         (loc: Loc) = 
         Array.map3 (fun a b c ->
@@ -18,13 +27,13 @@ module Locations =
             [|0; 1; -1; -2; -1; 1; 2|]
             [|0; -2; -2; 0; 2; 2; 0|]
             [|0; 0; 0; 0; 0; 0; 0|]
-
+    
     // Increment Location
     let incLoc 
         (loc: Loc * int) 
         (occ: Loc[]) = 
         match loc with 
-        | x,y when y > 0 -> 
+        | x,y when y >= 0 -> 
             let inc = x 
                     |> adjLocs 
                     |> Array.tail 
@@ -61,7 +70,6 @@ module Locations =
         |> Array.except occ 
         |> Array.length
 
-
     // Cluster Locations
     let clsLocs 
         (loc: (Loc*int)[])
@@ -77,8 +85,6 @@ module Locations =
             (occ : Loc[])
             (acc:(Loc*int)[][])
             (cnt : int) = 
-            
-
             match cnt with 
             | c when c < 1 -> acc
             | _ -> 
@@ -88,16 +94,21 @@ module Locations =
                         |> getLoc
                         |> Array.append occ
                         |> Array.distinct
-                    let rpt = Array.map (fun x -> (snd x)-1) loc
-                    //Filter Available
+                    let rpt = Array.map (fun x 
+                                            -> (snd x)-1) loc
                     let loc =  
                         acc
                         |> Array.map (fun x
                                         -> Array.filter (fun a 
-                                                            -> (avlLoc a occ) > 0) x )
+                                                            -> (avlLoc a occ) > 0) x)
                         |> Array.map (fun x 
-                                        -> Array.head x)
-                        |> Array.map2 (fun x y -> fst y,  x) rpt
+                                        -> Array.tryHead x)
+                        |> Array.map (fun x 
+                                        -> match x with
+                                           | Some a -> a 
+                                           | None -> (idnLoc,-1))                
+                        |> Array.map2 (fun x y 
+                                        -> fst y,  x) rpt
                     let inc = incLocs loc occ
                             
                     let acc = Array.map2  (fun x y
@@ -107,11 +118,9 @@ module Locations =
                     (clsts loc occ acc (cnt-1))
                 
         clsts loc occ acc cnt
-        |> Array.map(fun c ->Array.map (fun x -> 
-                                                    match x with
-                                                    | (a,b) when b < 0 -> a,0
-                                                    | _ -> x ) c )
-        |> Array.map(fun x -> Array.distinct x)
+        |> Array.map(fun x 
+                        -> Array.filter(fun (y,z) -> z >= 0) x)
+        
         
 
 
@@ -120,7 +129,7 @@ module Locations =
 //Hexels.adjHxls {Avl=6; Cls = 1; Loc=(1,-2,0)} [||]
 let og:Locations.Loc = {x=0; y=0; z=0}
 let t0 = Locations.adjLocs og
-let t1 = Array.zip t0 [|3;4;5;6;4;3;2|]
+let t1 = Array.zip t0 [|8;2;8;8;8;8;8|]
 //let t2 = Locations.incLoc t1[1] t0
 let t2 = Locations.clsLocs t1[1..6] t0
 
