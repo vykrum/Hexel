@@ -44,21 +44,34 @@ module Location =
             | None -> loc
         | _ -> loc
    
-    // Increment Location
-    let increments 
-        (loc: (Loc*int)[]) 
-        (occ: Loc[]) = 
-        Array.scan (fun ac st -> 
-        increment st (Array.append[|fst ac|] occ )) 
-            loc[0] loc
-            |> Array.tail
-
-    // Get Location from tuple 
+       // Get Location from tuple 
     let getLocs 
         (loc : (Loc*int)[]) = 
         loc
         |> Array.map(fun x 
                         -> fst x)
+
+    // Increment Location
+    let increments 
+        (loc: (Loc*int)[]) 
+        (occ: Loc[]) = 
+        let inc = 
+            Array.scan (fun ac st -> 
+            increment st (Array.append[|fst ac|] occ )) 
+                loc[0] loc
+                |> Array.tail
+        // Avoid identical increments
+        let bln = Array.map2 (fun x y 
+                                -> x=y) (Array.map(fun y 
+                                                    ->(inc 
+                                                    |> Array.findIndex(fun x 
+                                                                        -> x = y)))inc) 
+                                                                        ([|0..(Array.length inc)-1|])
+                
+        let rpt = Array.zip3 loc inc bln
+        rpt |> Array.map (fun x -> match x with 
+                                    | a,b,true -> b
+                                    | a,b,false -> increment a (Array.append occ (getLocs inc)))
 
     // Available Adjacent Locations
     let available 
@@ -121,7 +134,7 @@ module Location =
         |> Array.map(fun x 
                         -> Array.filter(fun (y,z) -> z >= 0) x)
         
-        
+      
 
 
     
@@ -129,11 +142,10 @@ module Location =
 //Hexels.adjHxls {Avl=6; Cls = 1; Loc=(1,-2,0)} [||]
 let og:Location.Loc = {x=0; y=0; z=0}
 let t0 = Location.adjacent og
-let t1 = Array.zip t0 [|8;2;8;8;8;8;8|]
+let t1 = Array.zip t0 [|6;6;6;6;6;6;6|]
 //let t2 = Location.incLoc t1[1] t0
 let t2 = Location.clusters t1[1..6] t0
 
 //let t11 = Array.concat[|t1;Array.concat t2|]
 //let o11 = Array.map (fun x -> fst x) t11
 //let t12 = Location.clusters t2 o11
-

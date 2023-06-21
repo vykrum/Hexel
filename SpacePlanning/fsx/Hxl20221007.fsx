@@ -7,6 +7,8 @@ let adj (hxl : Hxl) =
     | a when a < 1 -> hxl |> Array.singleton
     | _ -> 
             let (x,y,z) = hxl.Loc
+
+            
             Array.map (fun c -> {Avl = 6 ; Cnt = 1; Loc = c})
                 (Array.map3 (fun a b c ->
                     ((a + x), (b + y), (c + z)))
@@ -63,30 +65,31 @@ let inc (hxl : Hxl[]) (occ : Hxl[]) =
 // Non Uniform Increments
 let nui (hxc : (int * Hxl)[]) (occ : Hxl[]) = 
     let ct0,hx0 = Array.unzip hxc
-    let hx1 = Array.map2 (fun x y -> {x with Cnt = y}) hx0 ct0
+    let occ = [|hx0;occ|] |> Array.concat
+    let hx1 = hx0 |> Array.map(fun x -> avl x occ)
+    let hx2 = Array.map2 (fun x y -> {x with Cnt = y}) hx1 ct0
     let mxc = Array.max ct0
     let acc = Array.map (fun x -> Array.singleton x) hx1
+    
     let rec nu1 (hxl :Hxl[]) (occ : Hxl[]) (mxc : int) (acc : Hxl[][]) = 
         match mxc with 
-        | c when c < 0 -> acc
+        | c when c < 1 -> acc
         | _ -> 
                 let h01 = inc hxl occ
-                let c01 = Array.map (fun x -> x.Cnt) h01
-                let occ = [|(Array.concat acc);occ;h01|] |> Array.concat
-                let acc = Array.map2 (fun x y -> [x ; [|y|]]|> Array.concat) acc h01
-                let ac2 = acc |> Array.map (fun x -> Array.filter (fun y -> y.Avl > 0)x)
-                let h02 = (Array.map (fun x -> Array.tryHead x ) ac2)
-                let h03 = Array.map2 (fun x y -> match x with 
-                                                                    | Some x -> x
-                                                                    | None -> y) h02 hxl
-                let h04 = Array.map(fun x -> avl x ([|(Array.concat acc);occ;h01|] |> Array.concat)) h03
-                let hxl = Array.map2 (fun x y -> {x with Cnt = y}) h04 c01
+                let c01 = h01 |> Array.map (fun x -> x.Cnt)
+                let acc = Array.map2 (fun x y -> Array.concat [|x;[|y|]|]) acc h01 
+                let occ = [|h01;occ;hxl|] |> Array.concat |> Array.distinct
+                let ac0 = acc |> Array.map (fun x -> Array.map(fun a -> avl a occ)x)
+                let ac1 = ac0 |> Array.map(fun a -> Array.filter (fun x  -> x.Avl > 0)a)
+                let ac2 = ac1 |> Array.map (fun x -> Array.head x)
+                let h02 = Array.map2 (fun x y -> {x with Cnt = y}) ac2 c01
+                let hxl = h02
                 nu1 hxl occ (mxc-1) acc 
-    (nu1 hx1 occ mxc acc) 
+    (nu1 hx2 occ mxc acc) 
 
 let a = {Avl = 6; Cnt = 1; Loc = 0,1,0}
 let b = adj a
 let c = [|[|a|];b|] |> Array.concat
 //let d = inc b.[0..2] c
-let e = nui (Array.zip [|1..3|] b[0..2]) c
+let e = nui (Array.zip [|2;2;2|] b[0..2]) c
 
