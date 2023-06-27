@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+let xmls = """
 <residence>
     <foyer value="5">
         <study value="10"></study>
@@ -23,3 +23,6 @@
     </dining>
     <staircase value="20"></staircase>
 </residence>
+"""
+open System.Xml.Linq
+let xd = XDocument.Load("""C:\Users\vykru\Github\Hexel\SpacePlanning\space.xml""")
