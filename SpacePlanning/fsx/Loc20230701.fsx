@@ -112,13 +112,35 @@ let increments
         increment sqn st (Array.append[|fst ac|] occ )) 
             loc[0] loc
             |> Array.tail
-    inc
+    
+    let replaceDuplicate 
+        (sqn : Sqn)
+        (loc : (Loc*int)[]) 
+        (inc : (Loc*int)[]) 
+        (occ : Loc[]) =
+        let in1 = Array.map (fun x -> snd x)inc
+        let lc1 = getLocs loc 
+        let ic1 = getLocs inc 
+        let oc1 = Array.concat[|occ;lc1;ic1|]
+        let id1 = Array.map(fun y -> Array.findIndex (fun x -> x = y)ic1)ic1
+        let bl1 = Array.map2 (fun x y -> x=y) [|0..(Array.length ic1)-1|] id1   
+        let tp1 = Array.zip3 bl1 ic1 loc  
+        tp1 |> Array.map2 (fun d (a,b,c) 
+                            -> match a with 
+                                | true -> b,d
+                                | false -> 
+                                        match ((available sqn c oc1)>0) with 
+                                        | false -> (fst c),-1
+                                        | true -> fst(increment sqn c oc1),d) in1
+
+    replaceDuplicate sqn loc inc occ
 
 // Cluster Locations
 let clusters 
     (sqn : Sqn)
     (loc : (Loc*int)[])
     (occ : Loc[]) = 
+    
     let cnt = 
             loc
             |> Array.map (fun x -> snd x)
@@ -171,7 +193,7 @@ let clusters
 
                 (clsts loc occ acc (cnt-1))
                 
-    let a = clsts loc occ acc cnt
+    let cls = clsts loc occ acc cnt
             |> Array.map(fun x 
                             -> Array.filter(fun (_,z) -> z >= 0) x)
-    a
+    cls
