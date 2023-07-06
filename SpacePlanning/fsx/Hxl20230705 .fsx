@@ -31,11 +31,11 @@ let sequence (sqn:Sqn) =
     | NECW -> [|0,0; 1,2; 2,0; 1,-2; -1,-2; -2,0; -1,2|]
     | NECC -> [|0,0; 1,2; -1,2; -2,0; -1,-2; 1,-2; 2,0|]
 
-// Identity Hxlation
+// Identity Hexel
 let identity = 
     OG(0,0)
 
-// Adjacent Hxlation
+// Adjacent Hexels
 let adjacent 
     (sqn: Sqn)
     (hxo: Hxl) = 
@@ -43,7 +43,7 @@ let adjacent
     let (OG (x,y)) = hxo
     OG(x+a,y+b) )(sequence sqn)
 
-// Increment Hxlation
+// Increment Hexel
 let increment 
     (sqn : Sqn)
     (hxo : Hxl * int) 
@@ -75,14 +75,14 @@ let increment
         | None -> (identity,-1)
     | _ -> (identity,-1)
 
-// Get Hxlation from tuple 
+// Get Hexel from tuple 
 let getHxls 
     (hxo : (Hxl*int)[]) = 
     hxo
     |> Array.map(fun x 
                     -> fst x)
 
-// Available Adjacent Hxlations
+// Available Adjacent Hexels
 let available 
     (sqn : Sqn)
     (hxo : (Hxl*int))
@@ -193,7 +193,7 @@ let clusters
         cls
         |> Array.map(fun x -> getHxls x)
         
-    // Hxlations to Clusters
+    // Hxexels to Clusters
     let bs1 = getHxls bas
     let oc1 = Array.concat
                 [|
@@ -224,7 +224,7 @@ let t1 = Array.zip t0 [|0;0;4;0;0;1;20|]
 let t2 = clusters SECW t1[1..6] t0
 //let oc1 = Array.append t0 (getHxls(Array.concat t2))
 //let cl1 =t2 |> Array.map (fun x -> Array.partition(fun y -> (available SECW y oc1) = 0)x)
-    //Array.map3 (fun a b c -> {Base=a;COGe=b;Edge=c}) (getHxls Hxl) (cl2 |> Array.map(fun x -> (fst x)))
+    //Array.map3 (fun a b c -> {Base=a;Core=b;Edge=c}) (getHxls Hxl) (cl2 |> Array.map(fun x -> (fst x)))
     
 //Array.length t2[5]
 t2.Edge
