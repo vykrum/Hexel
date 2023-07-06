@@ -15,7 +15,7 @@ type Sqn =
     | NECW
     | NECC
 
-// Sequences     
+// Sequences
 let sequence (sqn:Sqn) =  
     match sqn with 
     | EECW -> [|0,0; 2,0; 1,-2; -1,-2; -2,0; -1,2; 1,2|]
@@ -75,7 +75,7 @@ let increment
         | None -> (identity,-1)
     | _ -> (identity,-1)
 
-// Get Hexel from tuple 
+// Get Hexel from tuple
 let getHxls 
     (hxo : (Hxl*int)[]) = 
     hxo
@@ -85,12 +85,15 @@ let getHxls
 // Available Adjacent Hexels
 let available 
     (sqn : Sqn)
-    (hxo : (Hxl*int))
+    (hxo : obj)
     (occ : Hxl[]) = 
-    hxo 
-    |> fst 
+    let hx1 = match hxo with 
+                | :? (Hxl*int) as (a,_)->  a
+                | :? Hxl as b ->  b
+                | _ -> identity
+    hx1 
     |> adjacent sqn
-    |> Array.except (Array.append occ [|(fst hxo)|])
+    |> Array.except (Array.append occ [|hx1|])
     |> Array.length
 
 // Increment Hexels
@@ -125,7 +128,6 @@ let increments
                                         match ((available sqn c oc1)>0) with 
                                         | false -> (fst c),-1
                                         | true -> fst(increment sqn c oc1),d) in1
-
     replaceDuplicate sqn hxo inc occ
 
 // Clusters
@@ -189,42 +191,51 @@ let clusters
     let cls = clsts bas occ acc cnt
             |> Array.map(fun x 
                             -> Array.filter(fun (_,z) -> z >= 0) x)
-    let cl0 = 
+    let cl1 = 
         cls
         |> Array.map(fun x -> getHxls x)
-        
-    // Hxexels to Clusters
     let bs1 = getHxls bas
+    
+    // Bounding Hexels
+    let cl2 = Array.map (fun x -> Array.tail x) cl1
+    let cl3 = 
+        cl2
+        |> Array.map(fun y 
+                        -> Array.partition(fun x 
+                                            -> (available sqn x y)>0)y)
+    let bd1 = Array.map(fun x -> fst x) cl3
+    // Core Hexels
+    let cr1 = Array.map(fun x -> snd x) cl3
+    
     let oc1 = Array.concat
                 [|
                     occ 
                     (getHxls(Array.concat cls))
                 |] 
-    let cl1 = 
-        cls 
-        |> Array.map (fun x -> Array.partition(fun y -> (available sqn y oc1) = 0)x)
-    let cr1 = 
-        Array.map (fun x -> getHxls (fst x)) cl1
-            |> Array.map(fun x -> Array.except (getHxls bas)x)
-    let ed1 = 
-        Array.map (fun x -> getHxls (snd x)) cl1
-            |> Array.map(fun x -> Array.except (getHxls bas)x)
+    
+    let cl4 = 
+        bd1
+        |> Array.map(Array.partition(fun x-> (available sqn x oc1)>0))
+    // Available Hexels
+    let av1= Array.map(fun x -> fst x) cl4
+    // Border Hexels
+    let sh1= Array.map(fun x -> fst x) cl4
     
     {|
         Base = bs1
-        Hxls = cl0
+        Hxls = cl1
         Core = cr1
-        Edge = ed1
+        Brdr = sh1
+        Avbl = av1
     |}
-
 
 let og:Hxl = OG(0,0)
 let t0 = adjacent SECW og
-let t1 = Array.zip t0 [|0;0;4;0;0;1;20|]
+let t1 = Array.zip t0 [|1;2;4;3;4;5;10|]
 let t2 = clusters SECW t1[1..6] t0
 //let oc1 = Array.append t0 (getHxls(Array.concat t2))
 //let cl1 =t2 |> Array.map (fun x -> Array.partition(fun y -> (available SECW y oc1) = 0)x)
     //Array.map3 (fun a b c -> {Base=a;Core=b;Edge=c}) (getHxls Hxl) (cl2 |> Array.map(fun x -> (fst x)))
     
 //Array.length t2[5]
-t2.Edge
+t2.Hxls
