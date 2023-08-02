@@ -1,6 +1,8 @@
+[<Struct>]
 type Hxl = 
     | OG of int * int
 
+[<Struct>]
 type Sqn = 
     | EECW
     | EECC
@@ -18,18 +20,18 @@ type Sqn =
 // Sequences
 let sequence (sqn:Sqn) =  
     match sqn with 
-    | EECW -> [|0,0; 2,0; 1,-2; -1,-2; -2,0; -1,2; 1,2|]
-    | EECC -> [|0,0; 2,0; 1,2; -1,2; -2,0; -1,-2; 1,-2|]
-    | SECW -> [|0,0; 1,-2; -1,-2; -2,0; -1,2; 1,2; 2,0|]
-    | SECC -> [|0,0; 1,-2; 2,0; 1,2; -1,2; -2,0; -1,-2|]
-    | SWCW -> [|0,0; -1,-2; -2,0; -1,2; 1,2; 2,0; 1,-2|]
-    | SWCC -> [|0,0; -1,-2; 1,-2; 2,0; 1,2; -1,2; -2,0|]
-    | WWCW -> [|0,0; -2,0; -1,2; 1,2; 2,0; 1,-2; -1,-2|]
-    | WWCC -> [|0,0; -2,0; -1,-2; 1,-2; 2,0; 1,2; -1,2|]
-    | NWCW -> [|0,0; -1,2; 1,2; 2,0; 1,-2; -1,-2; -2,0|]
-    | NWCC -> [|0,0; -1,2; -2,0; -1,-2; 1,-2; 2,0; 1,2|]
-    | NECW -> [|0,0; 1,2; 2,0; 1,-2; -1,-2; -2,0; -1,2|]
-    | NECC -> [|0,0; 1,2; -1,2; -2,0; -1,-2; 1,-2; 2,0|]
+    | EECW -> [|0y,0y; 2y,0y; 1y,-2y; -1y,-2y; -2y,0y; -1y,2y; 1y,2y|]
+    | EECC -> [|0y,0y; 2y,0y; 1y,2y; -1y,2y; -2y,0y; -1y,-2y; 1y,-2y|]
+    | SECW -> [|0y,0y; 1y,-2y; -1y,-2y; -2y,0y; -1y,2y; 1y,2y; 2y,0y|]
+    | SECC -> [|0y,0y; 1y,-2y; 2y,0y; 1y,2y; -1y,2y; -2y,0y; -1y,-2y|]
+    | SWCW -> [|0y,0y; -1y,-2y; -2y,0y; -1y,2y; 1y,2y; 2y,0y; 1y,-2y|]
+    | SWCC -> [|0y,0y; -1y,-2y; 1y,-2y; 2y,0y; 1y,2y; -1y,2y; -2y,0y|]
+    | WWCW -> [|0y,0y; -2y,0y; -1y,2y; 1y,2y; 2y,0y; 1y,-2y; -1y,-2y|]
+    | WWCC -> [|0y,0y; -2y,0y; -1y,-2y; 1y,-2y; 2y,0y; 1y,2y; -1y,2y|]
+    | NWCW -> [|0y,0y; -1y,2y; 1y,2y; 2y,0y; 1y,-2y; -1y,-2y; -2y,0y|]
+    | NWCC -> [|0y,0y; -1y,2y; -2y,0y; -1y,-2y; 1y,-2y; 2y,0y; 1y,2y|]
+    | NECW -> [|0y,0y; 1y,2y; 2y,0y; 1y,-2y; -1y,-2y; -2y,0y; -1y,2y|]
+    | NECC -> [|0y,0y; 1y,2y; -1y,2y; -2y,0y; -1y,-2y; 1y,-2y; 2y,0y|]
 
 // Identity Hexel
 let identity = 
@@ -41,7 +43,7 @@ let adjacent
     (hxo: Hxl) = 
     Array.map (fun (a,b) -> 
     let (OG (x,y)) = hxo
-    OG(x+a,y+b) )(sequence sqn)
+    OG(x+ int a,y+ int b) )(sequence sqn)
 
 // Increment Hexel
 let increment 
@@ -236,7 +238,7 @@ let clusters
                                             -> (available sqn x y)>0)y)
     let bd1 = Array.map(fun x -> fst x) cl3
     let bd2 = Array.map (fun x -> bndSqn sqn x) bd1
-    
+    //let bd2 = Array.map2 (fun x y -> Array.except [|x|] y) bs1 bd1
     // Core Hexels
     let cr1 = Array.map(fun x -> snd x) cl3
     
@@ -263,11 +265,12 @@ let clusters
         Avbl = av1
     |}
 
-
 # time "on"
 let og:Hxl = OG(0,0)
-let t0 = adjacent SECW og
-let t1 = Array.zip t0 [|100;40;50;10;50;30;60|]
-let t2 = clusters SECW t1[1..6] t0
-let t3 = (t2.Prph)
+//let t0 = adjacent SECW og
+//let t1 = Array.zip t0 [|90;47;50;30;53;32;60|]
+let t2 = (clusters SECW [|og,10|] [||])
+
+let t3 = Array.zip ((t2.Prph[0])[0..6]) [|10;17;5;8;3;2;6|]
+let t4 = (clusters SECW t3 (t2.Hxls[0])).Avbl
 #time "off"
