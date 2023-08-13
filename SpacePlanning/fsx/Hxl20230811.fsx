@@ -285,6 +285,6 @@ let clusters
 let og:Hxl = OG(0,0)
 let t2 = (clusters VCSE [|og,10|] [||])
 
-let t3 = Array.zip ((t2.Prph[0])[0..6]) [|10;11;51;10;31;21;61|]
+let t3 = Array.zip ((t2.Prph[0])[0..6]) [|10;12;51;10;31;21;61|]
 let t4 = (clusters VCSE t3 (t2.Hxls[0])).Avbl
 #time "off"
