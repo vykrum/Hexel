@@ -61,6 +61,20 @@ let hxlCrd (hxl : Hxl) =
     | A5 (a,b,c) -> (a,b,c)
     | A6 (a,b,c) -> (a,b,c)
 
+// Available Edge Count
+let avlEdg (hxl : Hxl) = 
+    match hxl with 
+    | OG (a,b,c) -> 0
+    | OP (a,b,c) -> 0
+    | SH (a,b,c) -> 0
+    | A0 (a,b,c) -> 0
+    | A1 (a,b,c) -> 1
+    | A2 (a,b,c) -> 2
+    | A3 (a,b,c) -> 3
+    | A4 (a,b,c) -> 4
+    | A5 (a,b,c) -> 5
+    | A6 (a,b,c) -> 6
+
 // Standardize type
 let allOG (hxo:Hxl[]) = 
     hxo
