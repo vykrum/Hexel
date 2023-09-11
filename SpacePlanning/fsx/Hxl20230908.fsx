@@ -1,7 +1,7 @@
 type Hxl = 
-    | OG of int * int * int
-    | OP of int * int * int
-
+    | OG of x:int * y:int * z:int
+    | OP of x:int * y:int * z:int
+  
 type Sqn = 
     // Vertical,Horizontal,Clockwise,Anticlockwise,North,South,East,West
     | VCEE | VAEE | VCSE | VASE | VCSW | VASW | VCWW | VAWW | VCNW | VANW | VCNE | VANE
@@ -163,7 +163,7 @@ let clusters
     (bas : (Hxl*int)[])
     (occ : Hxl[]) = 
     
-    // Output : Base, Hxls, Core, Brdr, Avbl
+    // Output : Base, Hxls, Core, Prph, Brdr, Avbl
     let cnt = 
             bas
             |> Array.map (fun x -> snd x)
@@ -300,7 +300,7 @@ let clusters
 # time "on"
 let og:Hxl = OG(0,0,0)
 let t2 = (clusters VCSE [|og,10|] [||])
-let o1 = Array.append (t2.Hxls[0]) [|OP(5,-10,0)|]
-let t3 = Array.zip ((t2.Prph[0])[0..6]) [|6;6;6;6;6;6;6|]
-let t4 = (clusters VCSE t3 o1).Avbl
+let o1 = t2.Hxls[0]
+let t3 = Array.zip ((t2.Prph[0])[0..6]) [|6;12;12;12;6;6;6|]
+let t4 = (clusters VCSE t3 o1).Prph
 #time "off"
