@@ -242,21 +242,27 @@ let clusters
                                 | None -> [||]
                 let acc = Array.append acc  hx3
                 arr sqn hxl acc (cnt-1) opt
+        
         let a1 = 
             match hxl with 
             | [||] -> [||]
             | _ -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) true
+
         let b1 = Array.length a1 = Array.length hxl
+        
         match b1 with 
         | true -> a1
         | false -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) false
 
-    let cls = clsts bas occ acc cnt
+    let cls = 
+        clsts bas occ acc cnt
             |> Array.map(fun x 
                             -> Array.filter(fun (_,z) -> z >= 0) x)
+
     let cl1 = 
         cls
         |> Array.map(fun x -> getHxls x)
+    
     let bs1 = getHxls bas
     
     // Bounding Hexels
