@@ -303,10 +303,28 @@ let clusters
         Avbl = av1
     |}
 
+let rec cntSqn 
+    (sqn : Sqn)
+    (hxl : Hxl[])
+    (acc : Hxl[])
+    (cnt : int) = 
+    match cnt with 
+    | a when a<=1 -> acc
+    | _ -> 
+            let b = Array.head hxl
+            let hxl = Array.except [|b|] hxl
+            let d = adjacent sqn b
+            let e = d |> Array.filter(fun x -> Array.contains x hxl) |> Array.head
+            let acc = Array.append acc [|e|]
+            cntSqn sqn hxl acc (cnt-1)
+    
+
 # time "on"
 let og:Hxl = OG(0,0,0)
 let t2 = (clusters VCSE [|og,10|] [||])
 let o1 = t2.Hxls[0]
 let t3 = Array.zip ((t2.Prph[0])[0..6]) [|6;12;12;12;6;6;6|]
-let t4 = (clusters VCSE t3 o1).Prph
+let t4 = (clusters VCSE t3 o1).Avbl
 #time "off"
+
+let ww = cntSqn VCSE t4[1] [|(Array.head t4[1])|] (Array.length t4[1])
