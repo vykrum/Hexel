@@ -8,7 +8,8 @@ type Sqn =
     | HCNN | HANN | HCNE | HANE | HCSE | HASE | HCSS | HASS | HCSW | HASW | HCNW | HANW
 
 // Sequence Variations
-let sequence (sqn:Sqn) =  
+let sequence 
+    (sqn:Sqn) =  
     match sqn with 
     | VCEE -> [|0x0,0x0; 0x2,0x0; 0x1,0xFFFFFFFE; 0xFFFFFFFF,0xFFFFFFFE; 0xFFFFFFFE,0x0; 0xFFFFFFFF,0x2; 0x1,0x2|]
     | VAEE -> [|0x0,0x0; 0x2,0x0; 0x1,0x2; 0xFFFFFFFF,0x2; 0xFFFFFFFE,0x0; 0xFFFFFFFF,0xFFFFFFFE; 0x1,0xFFFFFFFE|]
@@ -40,13 +41,16 @@ let identity =
     OG(0x0,0x0, 0x0)
 
 // Get Coordinates
-let hxlCrd (hxl : Hxl) = 
+let hxlCrd 
+    (hxl : Hxl) = 
     match hxl with 
     | OG (a,b,c) -> (a,b,c)
     | OP (a,b,c) -> (a,b,c)
 
 // Standardize type
-let allOG (hxo:Hxl[]) = 
+let allOG 
+    (hxo:Hxl[]) = 
+    
     hxo
     |> Array.map(fun x -> hxlCrd x)
     |> Array.map(fun x -> OG x)
