@@ -254,6 +254,36 @@ let clusters
         | true -> a1
         | false -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) false
 
+    // Hexel Ring Segment Sequence
+    let cntSqn
+        (sqn : Sqn)
+        (hxl : Hxl[]) = 
+    
+        let rec ctSq 
+            (sqn : Sqn)
+            (hxl : Hxl[])
+            (acc : Hxl[])
+            (cnt : int) = 
+            match cnt with 
+            | a when a<=1 -> acc
+            | _ -> 
+                    let b = Array.last acc
+                    let hxl = Array.except [|b|] hxl
+                    let d = (adjacent sqn b) |> Array.tail
+                    let e = d |> Array.filter(fun x -> Array.contains x hxl) |> Array.tryHead
+                    let f = match e with 
+                                | Some a -> [|a|]
+                                | None -> [||]
+                    let acc = Array.append acc f
+                    ctSq sqn hxl acc (cnt-1)
+        let cnt = Array.length(hxl)
+        let arr =  ctSq sqn hxl ([|Array.head hxl|]) cnt
+        let bln = cnt = Array.length(arr)
+        match bln with 
+        | true -> arr
+        | false -> ctSq sqn (Array.rev hxl) ([|Array.last hxl|]) cnt
+    
+
     let cls = 
         clsts bas occ acc cnt
             |> Array.map(fun x 
@@ -290,6 +320,7 @@ let clusters
     
     // Available Hexels
     let av1= Array.map(fun x -> fst x) cl4
+    let av2 = av1 |> Array.map(fun x -> cntSqn sqn x)
     
     // Border Hexels
     let br1= Array.map(fun x -> snd x) cl4
@@ -300,24 +331,10 @@ let clusters
         Core = cr1
         Prph = bd2
         Brdr = br1
-        Avbl = av1
+        Avbl = av2
     |}
 
-let rec cntSqn 
-    (sqn : Sqn)
-    (hxl : Hxl[])
-    (acc : Hxl[])
-    (cnt : int) = 
-    match cnt with 
-    | a when a<=1 -> acc
-    | _ -> 
-            let b = Array.head hxl
-            let hxl = Array.except [|b|] hxl
-            let d = adjacent sqn b
-            let e = d |> Array.filter(fun x -> Array.contains x hxl) |> Array.head
-            let acc = Array.append acc [|e|]
-            cntSqn sqn hxl acc (cnt-1)
-    
+
 
 # time "on"
 let og:Hxl = OG(0,0,0)
@@ -326,5 +343,3 @@ let o1 = t2.Hxls[0]
 let t3 = Array.zip ((t2.Prph[0])[0..6]) [|6;12;12;12;6;6;6|]
 let t4 = (clusters VCSE t3 o1).Avbl
 #time "off"
-
-let ww = cntSqn VCSE t4[1] [|(Array.head t4[1])|] (Array.length t4[1])
