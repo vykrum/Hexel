@@ -1,3 +1,4 @@
+// Sample Format
 let spaceStr =
      "(1/5/Foyer),(2/20/Living),(3/20/Dining),
     (4/20/Staircase),(1.1/10/Study),(3.1/15/Bed-1),
