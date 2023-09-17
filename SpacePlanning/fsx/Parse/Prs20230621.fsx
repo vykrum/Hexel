@@ -6,7 +6,6 @@ let spaceStr =
     (3.1.1/5/Bath-1),(3.2.1/5/Dress-2),(3.3.1/5/Dress-3),
     (3.3.2/5/Bath-3),(3.4.1/5/Utility),(3.2.1.1/5/Bath-2)"
 
-
 let spaceSeq (spaceStr:string) = 
     let spaceMap = 
         ((spaceStr.Replace ("\n",""))
