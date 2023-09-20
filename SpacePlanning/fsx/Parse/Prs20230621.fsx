@@ -65,7 +65,7 @@ let spaceSeq (spaceStr:string) =
                                         |> Map.find y))x)
     spcKey
 
-//Test
+//Testing
 # time "on"
 spaceSeq spaceStr
 # time "off"
