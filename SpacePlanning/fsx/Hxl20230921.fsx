@@ -2,22 +2,19 @@ type Hxl =
     | OG of x:int * y:int * z:int
     | OP of x:int * y:int * z:int
 
-type Cxl = 
-    {
-        Name : string
-        Size : int
-        Base : Hxl
-        Hxls : Hxl[]
-        Core : Hxl[]
-        Prph : Hxl[]
-        Brdr : Hxl[]
-        Avbl : Hxl[]
-    }  
 type Sqn = 
     // Vertical,Horizontal,Clockwise,Anticlockwise,North,South,East,West
     | VCEE | VAEE | VCSE | VASE | VCSW | VASW | VCWW | VAWW | VCNW | VANW | VCNE | VANE
     | HCNN | HANN | HCNE | HANE | HCSE | HASE | HCSS | HASS | HCSW | HASW | HCNW | HANW
 
+type Cxl = 
+    {
+        Name : string
+        Size : int
+        Seqn : Sqn
+        Base : Hxl
+        Hxls : Hxl[]
+    }  
 // Sequence Variations
 let sequence 
     (sqn:Sqn) =  
@@ -179,10 +176,8 @@ let clusters
     (occ : Hxl[]) = 
     
     let bas = Array.map(fun (x,y,z) -> x,y) ini
-    let nam = Array.map(fun (x,y,z) -> z) ini
-    let siz = Array.map(fun (x,y,z) -> y) ini
+    let szn = Array.map(fun (x,y,z) -> y,z) ini
 
-    // Output : Base, Hxls, Core, Prph, Brdr, Avbl
     let cnt = 
             bas
             |> Array.map (fun x -> snd x)
@@ -236,11 +231,38 @@ let clusters
 
                 (clsts Hxl occ acc (cnt - 0x1))
 
+
+    let cls = 
+        clsts bas occ acc cnt
+            |> Array.map(fun x 
+                            -> Array.filter(fun (_,z) -> z >= 0) x)
+
+    let cl1 = 
+        cls
+        |> Array.map(fun x -> getHxls x)
+    
+    let bs1 =  (getHxls bas)
+  
+    let cxl = Array.map3 (fun x y z -> 
+                                            {
+                                                Name = snd x
+                                                Size = fst x
+                                                Seqn = sqn
+                                                Base = y
+                                                Hxls = z
+                                            })szn bs1 cl1
+    cxl
+
+// Cluster Hexel Grouping
+let cxlHxl
+    (cxl : Cxl) 
+    (occ : Hxl[]) = 
+
     // Boundry Hexels Ring
     let bndSqn 
         (sqn : Sqn) 
         (hxl : Hxl[]) = 
-        
+    
         let rec arr 
             (sqn : Sqn) 
             (hxl : Hxl[]) 
@@ -301,62 +323,44 @@ let clusters
         match bln with 
         | true -> arr
         | false -> ctSq sqn (Array.rev hxl) ([|Array.last hxl|]) cnt
-    
 
-    let cls = 
-        clsts bas occ acc cnt
-            |> Array.map(fun x 
-                            -> Array.filter(fun (_,z) -> z >= 0) x)
-
-    let cl1 = 
-        cls
-        |> Array.map(fun x -> getHxls x)
-    
-    let bs1 = Array.map(fun x -> Array.singleton x) (getHxls bas)
-    
+    let cl1 = cxl.Hxls
     // Bounding Hexels
-    let cl2 = Array.map (fun x -> Array.tail x) cl1
-    let cl3 = 
-        cl2
-        |> Array.map(fun y 
-                        -> Array.partition(fun x 
-                                            -> (available sqn x y) > 0)y)
-    let bd1 = Array.map(fun x -> fst x) cl3
-    let bd2 = Array.map (fun x -> bndSqn sqn x) bd1
+    let cl2 =  Array.tail cl1
+    let cl3 = Array.partition(fun x-> (available cxl.Seqn x occ) > 0) cl2
+    let bd1 = fst  cl3
+    let bd2 = bndSqn cxl.Seqn bd1
     
     // Core Hexels
-    let cr1 = Array.map(fun x -> snd x) cl3
+    let cr1 = snd cl3
     
     let oc1 = Array.concat
                 [|
                     occ 
-                    (getHxls(Array.concat cls))
+                    cxl.Hxls
                 |] |> allOG
     
-    let cl4 = 
-        bd2
-        |> Array.map(Array.partition(fun x-> (available sqn x oc1) > 0))
+    let cl4 = Array.partition(fun x-> (available sqn x occ) > 0) bd2
     
     // Available Hexels
-    let av1= Array.map(fun x -> fst x) cl4
-    let av2 = av1 |> Array.map(fun x -> cntSqn sqn x)
+    let av1= fst cl4
+    let av2 = cntSqn cxl.Seqn av1
     
     // Border Hexels
-    let br1= Array.map(fun x -> snd x) cl4
+    let br1= snd cl4
+
+    // Output : Base, Hxls, Core, Prph, Brdr, Avbl
     
-    let anm = [|bs1;cl1;cr1;bd2;br1;av2|]
-    let cxl = Array.map3 (fun x y (z:Hxl[][]) -> 
-                                            {
-                                                Name = x
-                                                Size = y
-                                                Base = z[0][0]
-                                                Hxls = z[1]
-                                                Core = z[2]
-                                                Prph = z[3]
-                                                Brdr = z[4]
-                                                Avbl = z[5]
-                                            })nam siz anm
-    cxl
+    {|
+        Base = cxl.Base
+        Hxls = cl1
+        Core = cr1
+        Prph = bd2
+        Brdr = br1
+        Avbl = av2
+    |}    
+    
+
 
 # time "on"
 let og:Hxl = OG(0,0,0)
