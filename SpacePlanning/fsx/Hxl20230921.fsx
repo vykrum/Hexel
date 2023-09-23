@@ -341,7 +341,7 @@ let cxlHxl
                     cxl.Hxls
                 |] |> allOG
     
-    let cl4 = Array.partition(fun x-> (available cxl.Seqn x occ) > 0) bd2
+    let cl4 = Array.partition(fun x-> (available cxl.Seqn x oc1) > 0) bd2
     
     // Available Hexels
     let av1= fst cl4
