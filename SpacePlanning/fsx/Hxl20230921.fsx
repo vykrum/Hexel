@@ -15,6 +15,7 @@ type Cxl =
         Base : Hxl
         Hxls : Hxl[]
     }  
+
 // Sequence Variations
 let sequence 
     (sqn:Sqn) =  
@@ -169,8 +170,8 @@ let increments
     
     replaceDuplicate sqn hxo inc occ
 
-// Clusters 
-let clusters 
+// Coxel
+let coxel 
     (sqn : Sqn)
     (ini : (Hxl*int*string)[])
     (occ : Hxl[]) = 
@@ -253,7 +254,7 @@ let clusters
                                             })szn bs1 cl1
     cxl
 
-// Cluster Hexel Grouping
+// Coxel Hexel Grouping
 let cxlHxl
     (cxl : Cxl) 
     (occ : Hxl[]) = 
@@ -340,7 +341,7 @@ let cxlHxl
                     cxl.Hxls
                 |] |> allOG
     
-    let cl4 = Array.partition(fun x-> (available sqn x occ) > 0) bd2
+    let cl4 = Array.partition(fun x-> (available cxl.Seqn x occ) > 0) bd2
     
     // Available Hexels
     let av1= fst cl4
@@ -364,9 +365,9 @@ let cxlHxl
 
 # time "on"
 let og:Hxl = OG(0,0,0)
-let t2 = clusters VCSE [|og,10,"A"|] [||]
-//let t22 = (Array.map(fun x -> x.Prph)t2)[0]
-//let o1 = (Array.map(fun x -> x.Hxls)t2)[0]
-//let t3 = Array.zip3 (t22[0..6]) [|6;12;12;12;6;6;6|] [|"B";"C";"D";"E";"F";"G";"H"|]
-//let t4 = (clusters VCSE t3 o1)
+let t2 = coxel VCSE [|og,10,"A"|] [||]
+let t22 = (cxlHxl t2[0] [||]).Prph
+let o1 = t2[0].Hxls
+let t3 = Array.zip3 (t22[0..6]) [|6;12;12;12;6;6;6|] [|"B";"C";"D";"E";"F";"G";"H"|]
+let t4 = (coxel VCSE t3 o1)
 #time "off"
