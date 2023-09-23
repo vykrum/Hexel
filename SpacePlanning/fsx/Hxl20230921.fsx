@@ -254,7 +254,7 @@ let coxel
                                             })szn bs1 cl1
     cxl
 
-// Coxel Hexel Grouping
+// Coxel Hexel Groups
 let cxlHxl
     (cxl : Cxl) 
     (occ : Hxl[]) = 
@@ -361,7 +361,6 @@ let cxlHxl
         Avbl = av2
     |}    
     
-
 
 # time "on"
 let og:Hxl = OG(0,0,0)
