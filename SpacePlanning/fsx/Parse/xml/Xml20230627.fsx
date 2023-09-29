@@ -26,5 +26,5 @@ let xmls = """
 """
 open System.Xml.Linq
 let xd = XDocument.Load("""C:\Users\vykru\Github\Hexel\SpacePlanning\fsx\Parse\xml\space.xml""")
-let books = xd.Elements() |> Seq.iter ( fun(e) -> do printfn "%s" e.Value )
+let books = xd.ToString
 
