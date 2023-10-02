@@ -258,7 +258,7 @@ module Coxel =
                                                 })szn bs1 cl1
         cxl
 
-    // Coxel Hexel Group
+    // Coxel Hexel Groups
     let cxlHxl
         (cxl : Cxl) 
         (occ : Hxl[]) = 
