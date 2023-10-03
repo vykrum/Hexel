@@ -165,15 +165,21 @@ module Hexel =
 
 module Coxel =
     open Hexel
+
+    type Ref = 
+        | Labl of string
+        | Rfid of string
+
     type Cxl = 
         {
-            Name : string
-            Posn : string
+            Name : Ref
+            Rfid : Ref
             Size : int
             Seqn : Sqn
             Base : Hxl
             Hxls : Hxl[]
         }  
+
 
     // Coxel
     let coxel 
@@ -182,8 +188,8 @@ module Coxel =
         (occ : Hxl[]) = 
         
         let bas = Array.map(fun (x,_,y,_) -> x,y) ini
-        let szn = Array.map(fun (_,_,y,z) -> y,z) ini
-        let idn = Array.map (fun(x,y,_,_)->x,y) ini
+        let szn = Array.map(fun (_,_,y,z) -> y,Labl z) ini
+        let idn = Array.map (fun(x,y,_,_)->x,Rfid y) ini
 
         let cnt = 
                 bas
@@ -251,7 +257,7 @@ module Coxel =
         let cxl = Array.map3 (fun x y z -> 
                                                 {
                                                     Name = snd x
-                                                    Posn = snd y
+                                                    Rfid = snd y
                                                     Size = fst x
                                                     Seqn = sqn
                                                     Base = fst y
@@ -385,13 +391,12 @@ let t2 = coxel sq [|og,"0",10,"A"|] [||]
 let spTree = 
   [|[|("1", 5, "Foyer"); ("1.1", 10, "Study"); ("2", 20, "Living")|];                             
     [|("2", 20, "Living"); ("3", 20, "Dining")|];
-    [|("3", 20, "Dining"); ("3.1", 15, "Bed-1"); ("3.2", 15, "Bed-2");                            
-      ("3.3", 15, "Bed-3"); ("3.4", 15, "Kitchen"); ("4", 20, "Staircase")|];                     
+    [|("3", 20, "Dining"); ("3.1", 15, "Bed-1"); ("3.2", 15, "Bed-2"); ("3.3", 15, "Bed-3"); ("3.4", 15, "Kitchen"); ("4", 20, "Staircase")|];                     
     [|("3.1", 15, "Bed-1"); ("3.1.1", 5, "Bath-1")|];                                             
     [|("3.2", 15, "Bed-2"); ("3.2.1", 5, "Dress-2")|];                                            
     [|("3.2.1", 5, "Dress-2"); ("3.2.1.1", 5, "Bath-2")|];                                        
     [|("3.3", 15, "Bed-3"); ("3.3.1", 5, "Dress-3"); ("3.3.2", 5, "Bath-3")|];                    
-    [|("3.4", 15, "Kitchen"); ("3.4.1", 5, "Utility")|]|]  
+    [|("3.4", 15, "Kitchen"); ("3.4.1", 5, "Utility")|]|]
 
 let a,b,c = spTree |> Array.concat |> Array.head
 let st = coxel sq [|(og , a , b, c)|] [||]
