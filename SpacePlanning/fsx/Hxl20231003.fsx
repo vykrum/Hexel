@@ -12,6 +12,7 @@ module Hexel =
     type Cxl = 
         {
             Name : string
+            Posn : string
             Size : int
             Seqn : Sqn
             Base : Hxl
@@ -182,6 +183,7 @@ module Coxel =
         
         let bas = Array.map(fun (x,_,y,_) -> x,y) ini
         let szn = Array.map(fun (_,_,y,z) -> y,z) ini
+        let idn = Array.map (fun(x,y,_,_)->x,y) ini
 
         let cnt = 
                 bas
@@ -246,16 +248,15 @@ module Coxel =
             cls
             |> Array.map(fun x -> getHxls x)
         
-        let bs1 =  (getHxls bas)
-    
         let cxl = Array.map3 (fun x y z -> 
                                                 {
                                                     Name = snd x
+                                                    Posn = snd y
                                                     Size = fst x
                                                     Seqn = sqn
-                                                    Base = y
+                                                    Base = fst y
                                                     Hxls = z
-                                                })szn bs1 cl1
+                                                })szn idn cl1
         cxl
 
     // Classify Coxel Hexels
@@ -392,8 +393,8 @@ let spTree =
     [|("3.3", 15, "Bed-3"); ("3.3.1", 5, "Dress-3"); ("3.3.2", 5, "Bath-3")|];                    
     [|("3.4", 15, "Kitchen"); ("3.4.1", 5, "Utility")|]|]  
 
-let a,b = spTree |> Array.concat |> Array.head
-let st = coxel sq [|(og , a , b)|] [||]
+let a,b,c = spTree |> Array.concat |> Array.head
+let st = coxel sq [|(og , a , b, c)|] [||]
 let c01 = (cxlHxl (Array.head st) [||]).Avbl
 
 #time "off"
