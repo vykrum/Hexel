@@ -6,7 +6,9 @@ let spaceStr =
     (3.1.1/5/Bath-1),(3.2.1/5/Dress-2),(3.3.1/5/Dress-3),
     (3.3.2/5/Bath-3),(3.4.1/5/Utility),(3.2.1.1/5/Bath-2)"
 
-let spaceSeq (spaceStr:string) = 
+let spaceSeq 
+    (spaceStr:string) = 
+    
     let spaceMap = 
         ((spaceStr.Replace ("\n",""))
             .Replace(" ",""))
@@ -57,13 +59,20 @@ let spaceSeq (spaceStr:string) =
         |> Array.append spcKy04
         |> Array.sortBy (fun x -> Array.head x)
     
-    let spcKey = 
+    let spcKy06 = 
         spcKy05 
         |> Array.map(fun x 
                         -> (Array.map (fun y 
-                                        -> spaceMap 
+                                        -> y, spaceMap 
                                         |> Map.find y))x)
-    spcKey
+    
+    let spcKey =
+        spcKy06
+        |> Array.map (fun z 
+                        -> (Array.map (fun (x,y) 
+                                        -> x, fst y, snd y))z)
+    
+    spcKey    
 
 //Testing
 # time "on"
