@@ -9,16 +9,6 @@ module Hexel =
         | VCEE | VAEE | VCSE | VASE | VCSW | VASW | VCWW | VAWW | VCNW | VANW | VCNE | VANE
         | HCNN | HANN | HCNE | HANE | HCSE | HASE | HCSS | HASS | HCSW | HASW | HCNW | HANW
 
-    type Cxl = 
-        {
-            Name : string
-            Posn : string
-            Size : int
-            Seqn : Sqn
-            Base : Hxl
-            Hxls : Hxl[]
-        }  
-
     // Sequence Variations
     let sequence 
         (sqn:Sqn) =  
@@ -175,6 +165,16 @@ module Hexel =
 
 module Coxel =
     open Hexel
+    type Cxl = 
+        {
+            Name : string
+            Posn : string
+            Size : int
+            Seqn : Sqn
+            Base : Hxl
+            Hxls : Hxl[]
+        }  
+
     // Coxel
     let coxel 
         (sqn : Sqn)
