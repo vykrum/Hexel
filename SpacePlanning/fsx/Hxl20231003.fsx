@@ -166,30 +166,37 @@ module Hexel =
 module Coxel =
     open Hexel
 
-    type Ref = 
-        | Labl of string
-        | Rfid of string
+    type Prp = 
+        | Label of string
+        | Refid of string
+        | Count of int
 
     type Cxl = 
         {
-            Name : Ref
-            Rfid : Ref
-            Size : int
+            Name : Prp
+            Rfid : Prp
+            Size : Prp
             Seqn : Sqn
             Base : Hxl
             Hxls : Hxl[]
         }  
 
+    let prpVlu 
+        (prp : Prp) = 
+        match prp with 
+        | Label prp -> prp
+        | Refid prp -> prp
+        | Count prp -> prp.ToString()
 
     // Coxel
     let coxel 
         (sqn : Sqn)
-        (ini : (Hxl*string*int*string)[])
+        (ini : (Hxl*Prp*Prp*Prp)[])
         (occ : Hxl[]) = 
         
-        let bas = Array.map(fun (x,_,y,_) -> x,y) ini
-        let szn = Array.map(fun (_,_,y,z) -> y,Labl z) ini
-        let idn = Array.map (fun(x,y,_,_)->x,Rfid y) ini
+        let bas = Array.map(fun (x,_,y,_) -> x,int(prpVlu y)) ini
+        let szn = Array.map(fun (_,_,y,z) -> y,z) ini
+        let idn = Array.map (fun(x,y,_,_)->x,y) ini
 
         let cnt = 
                 bas
@@ -382,13 +389,13 @@ open Hexel
 open Coxel
 let og:Hxl = OG(0,0,0)
 let sq = VCSE
-let t2 = coxel sq [|og,"0",10,"A"|] [||]
+let t2 = coxel sq [|og,Refid "0",Count 10,Label "A"|] [||]
 //let t22 = (cxlHxl t2[0] [||]).Prph
 //let o1 = t2[0].Hxls
 //let t3 = Array.zip3 (t22[0..6]) [|6;12;12;12;6;6;6|] [|"B";"C";"D";"E";"F";"G";"H"|]
 //let t4 = (coxel VCSE t3 o1)
 
-let spTree = 
+let treeStr = 
   [|[|("1", 5, "Foyer"); ("1.1", 10, "Study"); ("2", 20, "Living")|];                             
     [|("2", 20, "Living"); ("3", 20, "Dining")|];
     [|("3", 20, "Dining"); ("3.1", 15, "Bed-1"); ("3.2", 15, "Bed-2"); ("3.3", 15, "Bed-3"); ("3.4", 15, "Kitchen"); ("4", 20, "Staircase")|];                     
@@ -398,7 +405,12 @@ let spTree =
     [|("3.3", 15, "Bed-3"); ("3.3.1", 5, "Dress-3"); ("3.3.2", 5, "Bath-3")|];                    
     [|("3.4", 15, "Kitchen"); ("3.4.1", 5, "Utility")|]|]
 
-let a,b,c = spTree |> Array.concat |> Array.head
+let treeRef = treeStr 
+            |> Array.map (fun x 
+                            ->(Array.map(fun (a,b,c) 
+                                            -> Refid a, Count b, Label c))x)
+
+let a,b,c = treeRef |> Array.concat |> Array.head
 let st = coxel sq [|(og , a , b, c)|] [||]
 let c01 = (cxlHxl (Array.head st) [||]).Avbl
 
