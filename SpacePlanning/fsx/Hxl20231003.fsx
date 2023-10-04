@@ -165,7 +165,7 @@ module Hexel =
 
 module Coxel =
     open Hexel
-
+    
     type Prp = 
         | Label of string
         | Refid of string
@@ -378,9 +378,6 @@ module Coxel =
             Brdr = br1
             Avbl = av2
         |}    
-
-
-
 
 
 // Testing
