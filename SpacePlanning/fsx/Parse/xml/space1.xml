@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<residence>
+    <foyer size="5">
+        <study size="10"></study>
+    </foyer>
+    <living size="20"></living>
+    <dining size="20">
+        <bed-1 size="15">
+            <bath-1 size="5"></bath-1>
+        </bed-1>
+        <bed-2 size="15">
+            <dress-2 size="5">
+                <bath-2 size="5"></bath-2>
+            </dress-2>
+        </bed-2>
+        <bed-3 size="15">
+            <dress-3 size="5"></dress-3>
+            <bath-3 size="5"></bath-3>
+        </bed-3>
+        <kitchen size="15">
+            <utility size="5"></utility>
+        </kitchen>
+    </dining>
+    <staircase size="15"></staircase>
+</residence>

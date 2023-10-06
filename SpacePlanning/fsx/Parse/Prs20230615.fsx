@@ -1,4 +1,5 @@
-let spaceStr = "(1/5/Foyer),(2/20/Living),(3/20/Dining),
+let spaceStr = 
+    "(1/5/Foyer),(2/20/Living),(3/20/Dining),
     (4/20/Staircase),(1.1/10/Study),(3.1/15/Bed-1),
     (3.2/15/Bed-2),(3.3/15/Bed-3),(3.4/15/Kitchen),
     (3.1.1/5/Bath-1),(3.2.1/5/Dress-2),(3.3.1/5/Dress-3),
