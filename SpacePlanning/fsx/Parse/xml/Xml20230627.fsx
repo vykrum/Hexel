@@ -24,6 +24,8 @@ let xmls = """
     <staircase value="20"></staircase>
 </residence>
 """
+
+// Test
 open System.Xml.Linq
 let xd = XDocument.Load("""C:\Users\vykru\Github\Hexel\SpacePlanning\fsx\Parse\xml\space.xml""")
 let xs = xd.ToString
