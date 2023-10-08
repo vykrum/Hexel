@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<residence>
+<residence size="10">
     <foyer size="5">
         <study size="10"></study>
     </foyer>
