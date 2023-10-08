@@ -28,5 +28,19 @@ let xmls = """
 // Test
 open System.Xml.Linq
 let xd = XDocument.Load("""C:\Users\vykru\Github\Hexel\SpacePlanning\fsx\Parse\xml\space1.xml""")
-let xs = xd.Nodes()
 
+let rec processElement (element: XElement) (path: string) =
+    let size = element.Attribute("size").Value
+    let newPath = sprintf "%s.%s" path element.Name.LocalName
+    let output = sprintf "(%s/%s/%s)" newPath size element.Name.LocalName
+    
+    let childElements = element.Elements()
+    if Seq.isEmpty childElements then
+        output
+    else
+        let childrenOutput = childElements |> Seq.map (fun e -> processElement e newPath)
+        sprintf "%s,%s" output (String.concat"," childrenOutput)
+
+let output = xd.Root.Elements() |> Seq.map (fun e -> processElement e "1") |> String.concat(",")
+
+printfn "%s" output
