@@ -387,10 +387,6 @@ open Coxel
 let og:Hxl = OG(0,0,0)
 let sq = VCSE
 let t2 = coxel sq [|og,Refid "0",Count 10,Label "A"|] [||]
-//let t22 = (cxlHxl t2[0] [||]).Prph
-//let o1 = t2[0].Hxls
-//let t3 = Array.zip3 (t22[0..6]) [|6;12;12;12;6;6;6|] [|"B";"C";"D";"E";"F";"G";"H"|]
-//let t4 = (coxel VCSE t3 o1)
 
 let treeStr = 
   [|[|("1", 5, "Foyer"); ("1.1", 10, "Study"); ("2", 20, "Living")|];                             
@@ -412,3 +408,4 @@ let st = coxel sq [|(og , a , b, c)|] [||]
 let c01 = (cxlHxl (Array.head st) [||]).Avbl
 
 #time "off"
+
