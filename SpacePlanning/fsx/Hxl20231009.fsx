@@ -1,18 +1,60 @@
 module Hexel =
-    ///<summary> Hexel is a repeating six sided hexagonal (irregular) module
+    ///<summary> 
+    /// Hexel is a repeating six sided hexagonal (irregular) module
     /// Collections of hexels in a hexagonal grid form Coxels
     /// A hexel can have a maximum of six neighbouring/adjacent hexels
-    /// All neighbouring hexels share at least one common edge <summary>
-    type Hxl = 
-        | OG of x:int * y:int * z:int
-        | OP of x:int * y:int * z:int
+    /// All neighbouring hexels share at least one common edge 
+    /// </summary>
 
-    type Sqn = 
-        // Vertical,Horizontal,Clockwise,Anticlockwise,North,South,East,West
+    ///<summary> 
+    /// Hexel types 
+    /// </summary>
+    
+    type Hxl = 
+        ///<typeparam name="AV"> AvaiIable Hexels </typeparam>
+        ///<typeparam name="RV"> Reserved Hexels </typeparam>
+        | AV of x:int * y:int * z:int
+        | RV of x:int * y:int * z:int
+
+    /// <summary> 
+    /// Sequence specifies the orientation of hexels,
+    /// the direction of flow of adjacent hexels
+    /// and the position of the first of the six adjaent hexels 
+    /// </summary>
+    /// <remarks> 
+    /// <para>
+    /// Horizontal refers to a Flat Top hexagonal grid
+    /// 
+    ///  ___ N N ___     ___     ___     ___     ___     ___
+    /// /N W\___/N E\___/   \___/   \___/   \___/   \___/   \
+    /// \___/   \___/   \___/   \___/   \___/   \___/   \___/
+    /// /S W\___/S E\___/   \___/   \___/   \___/   \___/   \
+    /// \___/S S\___/   \___/   \___/   \___/   \___/   \___/
+    /// 
+    /// </para>
+    /// <para>
+    /// Vertical refers to a Pointy Top hexagonal grid 
+    /// 
+    ///   |NW |NE|   |   |   |   |   |   |   |   |   |   |
+    ///  /\  /\  /\  /\  /\  /\  /\  /\  /\  /\  /\  /\  /\ 
+    /// /  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \
+    /// |WW |   |EE |   |   |   |   |   |   |   |   |   |  |
+    /// \  /\  /\  /\  /\  /\  /\  /\  /\  /\  /\  /\  /\  /
+    ///  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/  \/ 
+    ///   |SW |SE|   |   |   |   |   |   |   |   |   |   |
+    /// 
+    /// </para>
+    /// </remarks>
+    
+    type Sqn =   
+        ///<typeparam name="VCEE"> Orientation:Vertical, Flow:Clockwise, Start:East </typeparam>
+        ///<typeparam name="VAEE"> Orientation:Vertical, Flow:Anti-Clockwise, Start:East </typeparam>
+        /// <typeparam name="VCSE"> Orientation:Vertical, Flow:Anti-Clockwise, Start:South-East </typeparam>
+        /// <typeparam name="HCNN"> Orientation:Horizontal, Flow:Clockwise, Start:North </typeparam>
         | VCEE | VAEE | VCSE | VASE | VCSW | VASW | VCWW | VAWW | VCNW | VANW | VCNE | VANE
         | HCNN | HANN | HCNE | HANE | HCSE | HASE | HCSS | HASS | HCSW | HASW | HCNW | HANW
 
-    // Sequence Variations
+    // Sequence Locations
     let sequence 
         (sqn:Sqn) =  
         match sqn with 
@@ -43,14 +85,14 @@ module Hexel =
     
     // Identity Hexel
     let identity = 
-        OG(0x0,0x0, 0x0)
+        AV(0x0,0x0, 0x0)
 
     // Get Coordinates
     let hxlCrd 
         (hxl : Hxl) = 
         match hxl with 
-        | OG (a,b,c) -> (a,b,c)
-        | OP (a,b,c) -> (a,b,c)
+        | AV (a,b,c) -> (a,b,c)
+        | RV (a,b,c) -> (a,b,c)
 
     // Standardize type
     let allOG 
@@ -58,7 +100,7 @@ module Hexel =
         
         hxo
         |> Array.map(fun x -> hxlCrd x)
-        |> Array.map(fun x -> OG x)
+        |> Array.map(fun x -> AV x)
 
     // Get Hexel from Tuple
     let getHxls 
@@ -74,10 +116,10 @@ module Hexel =
         (hxo: Hxl) = 
         
         match hxo with 
-        | OG (x,y,z) -> Array.map 
+        | AV (x,y,z) -> Array.map 
                             (fun (a,b) -> 
-                            OG(x+a, y+b,z))(sequence sqn)
-        | OP (x,y,z) -> [|OP(x,y,z)|]
+                            AV(x+a, y+b,z))(sequence sqn)
+        | RV (x,y,z) -> [|RV(x,y,z)|]
 
     // Increment Hexel
     let increment 
@@ -387,9 +429,11 @@ module Coxel =
 # time "on"
 open Hexel
 open Coxel
-let og:Hxl = OG(0,0,0)
+let og:Hxl = AV(0,0,0)
 let sq = VCSE
 let t2 = coxel sq [|og,Refid "0",Count 10,Label "A"|] [||]
+
+#time "off"
 
 let treeStr = 
   [|[|("1", 5, "Foyer"); ("1.1", 10, "Study"); ("2", 20, "Living")|];                             
@@ -410,5 +454,5 @@ let a,b,c = treeRef |> Array.concat |> Array.head
 let st = coxel sq [|(og , a , b, c)|] [||]
 let c01 = (cxlHxl (Array.head st) [||]).Avbl
 
-#time "off"
+
 
