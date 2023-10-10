@@ -1,5 +1,8 @@
 module Hexel =
-
+    ///<summary> Hexel is a repeating six sided hexagonal (irregular) module
+    /// Collections of hexels in a hexagonal grid form Coxels
+    /// A hexel can have a maximum of six neighbouring/adjacent hexels
+    /// All neighbouring hexels share at least one common edge <summary>
     type Hxl = 
         | OG of x:int * y:int * z:int
         | OP of x:int * y:int * z:int
