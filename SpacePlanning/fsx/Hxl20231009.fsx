@@ -1,6 +1,6 @@
 module Hexel =
     ///<summary> 
-    /// Hexel is a repeating six sided hexagonal (irregular) module
+    /// Hexel is a repeating six sided irregular hexagonal  module
     /// Collections of hexels in a hexagonal grid form Coxels
     /// A hexel can have a maximum of six neighbouring/adjacent hexels
     /// All neighbouring hexels share at least one common edge 
