@@ -1,12 +1,12 @@
 module Hexel =
-    ///<summary> 
+    /// <summary> 
     /// Hexel is a repeating six sided irregular hexagonal  module
     /// Collections of hexels in a hexagonal grid form Coxels
     /// A hexel can have a maximum of six neighbouring/adjacent hexels
     /// All neighbouring hexels share at least one common edge 
     /// </summary>
 
-    ///<summary> 
+    /// <summary> 
     /// Hexel types 
     /// </summary>
     
@@ -74,7 +74,11 @@ module Hexel =
         | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22
         | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34
 
-    // Sequence Locations
+    /// <summary>
+    /// Sequence Locations: Location of adjacent/neighbouring hexels relative to the host hexel
+    /// Each array begins with the location of Host hexel followed by the rest in a particular order
+    /// Hexadecimal number system - 0x0:0, 0x1:1, 0x2:2, 0xFFFFFFFF:-1, 0xFFFFFFFE:-2
+    /// </summary>
     let sequence 
         (sqn:Sqn) =  
         match sqn with 
@@ -103,7 +107,9 @@ module Hexel =
         | SQ33 -> [|0x0,0x0; 0xFFFFFFFE,0x1; 0x0,0x2; 0x2,0x1; 0x2,0xFFFFFFFF; 0x0,0xFFFFFFFE; 0xFFFFFFFE,0xFFFFFFFF|]
         | SQ34 -> [|0x0,0x0; 0xFFFFFFFE,0x1; 0xFFFFFFFE,0xFFFFFFFF; 0x0,0xFFFFFFFE; 0x2,0xFFFFFFFF; 0x2,0x1; 0x0,0x2|]
     
-    // Identity Hexel
+    /// <summary> 
+    /// Identity Hexel: Available (AV) Hexel at origin 
+    /// </summary>
     let identity = 
         AV(0x0,0x0, 0x0)
 
