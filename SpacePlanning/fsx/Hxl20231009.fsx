@@ -113,7 +113,7 @@ module Hexel =
     let identity = 
         AV(0x0,0x0, 0x0)
 
-    // Get Coordinates
+    // Get integers from hxl
     let hxlCrd 
         (hxl : Hxl) = 
         match hxl with 
