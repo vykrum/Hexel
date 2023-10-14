@@ -8,6 +8,7 @@ module Hexel =
 
     /// <summary> 
     /// Hexel types 
+    /// Categorization based on location availabity 
     /// </summary>
     
     type Hxl = 
@@ -108,19 +109,24 @@ module Hexel =
         | SQ34 -> [|0x0,0x0; 0xFFFFFFFE,0x1; 0xFFFFFFFE,0xFFFFFFFF; 0x0,0xFFFFFFFE; 0x2,0xFFFFFFFF; 0x2,0x1; 0x0,0x2|]
     
     /// <summary> 
-    /// Identity Hexel: Available (AV) Hexel at origin 
+    /// Identity Hexel: Available (AV) Hexel at global origin 
     /// </summary>
     let identity = 
         AV(0x0,0x0, 0x0)
 
-    // Get integers from hxl
+    /// <summary>
+    /// Extract coordinates (tuple of integers) from hxl
+    /// </summary>
     let hxlCrd 
         (hxl : Hxl) = 
         match hxl with 
         | AV (a,b,c) -> (a,b,c)
         | RV (a,b,c) -> (a,b,c)
 
-    // Standardize type
+    /// <summary>
+    /// Standardize type by converting all hexels to type AV 
+    /// Useful when the type isn't criteria for comparison
+    /// </summary>
     let allOG 
         (hxo:Hxl[]) = 
         
