@@ -1,16 +1,10 @@
 module Hexel =
-    /// <summary> 
-    /// Hexel is a repeating six sided irregular hexagonal  module
-    /// Collections of hexels in a hexagonal grid form Coxels
+    /// <summary> Hexel is a location representing an irregular hexagonal module.
+    /// Collections of hexels in a hexagonal grid form Coxels.
     /// A hexel can have a maximum of six neighbouring/adjacent hexels
-    /// All neighbouring hexels share at least one common edge 
-    /// </summary>
+    /// All neighbouring hexels share at least one common edge </summary>
 
-    /// <summary> 
-    /// Hexel types 
-    /// Categorization based on location availabity 
-    /// </summary>
-    
+    /// <summary> Hexel types: Categorization based on location availabity </summary>
     type Hxl = 
         ///<typeparam name="AV"> AvaiIable Hexels </typeparam>
         ///<typeparam name="RV"> Reserved Hexels </typeparam>
@@ -23,11 +17,8 @@ module Hexel =
         | Refid of string
         | Count of int
 
-    /// <summary> 
-    /// Sequence specifies the orientation of hexels,
-    /// the direction of flow of adjacent hexels
-    /// and the position of the first of the six adjaent hexels 
-    /// </summary>
+    /// <summary> Sequence specifies the orientation of hexels, the direction of flow of 
+    /// adjacent hexels and the position of the first of the six adjaent hexels </summary>
     /// <remarks> 
     /// <para>
     /// Horizontal refers to a Flat Top hexagonal grid
@@ -81,11 +72,11 @@ module Hexel =
         | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22
         | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34
 
-    /// <summary>
-    /// Sequence Locations: Location of adjacent/neighbouring hexels relative to the host hexel
+    /// <summary> Sequence Locations: Location of adjacent/neighbouring hexels relative to the host hexel
     /// Each array begins with the location of Host hexel followed by the rest in a particular order
-    /// Hexadecimal number system - 0x0:0, 0x1:1, 0x2:2, 0xFFFFFFFF:-1, 0xFFFFFFFE:-2
-    /// </summary>
+    /// Hexadecimal number system - 0x0:0, 0x1:1, 0x2:2, 0xFFFFFFFF:-1, 0xFFFFFFFE:-2 </summary>
+    /// <param name="sqn"> Sequence to follow. </param>
+    /// <returns> An array of two dimensional surrounding locations </returns>
     let sequence 
         (sqn:Sqn) =  
         match sqn with 
@@ -114,25 +105,18 @@ module Hexel =
         | SQ33 -> [|0x0,0x0; 0xFFFFFFFE,0x1; 0x0,0x2; 0x2,0x1; 0x2,0xFFFFFFFF; 0x0,0xFFFFFFFE; 0xFFFFFFFE,0xFFFFFFFF|]
         | SQ34 -> [|0x0,0x0; 0xFFFFFFFE,0x1; 0xFFFFFFFE,0xFFFFFFFF; 0x0,0xFFFFFFFE; 0x2,0xFFFFFFFF; 0x2,0x1; 0x0,0x2|]
     
-    /// <summary> 
-    /// Identity Hexel: Available (AV) Hexel at global origin 
-    /// </summary>
+    /// <summary> Identity Hexel: Available (AV) Hexel at global origin </summary>
     let identity = 
         AV(0x0,0x0, 0x0)
 
-    /// <summary>
-    /// Extract coordinates (tuple of integers) from hxl
-    /// </summary>
+    /// <summary> Extract coordinates (tuple of integers) from hxl </summary>
     let hxlCrd 
         (hxl : Hxl) = 
         match hxl with 
         | AV (a,b,c) -> (a,b,c)
         | RV (a,b,c) -> (a,b,c)
 
-    /// <summary>
-    /// Standardize type by converting all hexels to type AV 
-    /// Useful when the type isn't criteria for comparison
-    /// </summary>
+    /// <summary> Standardize type by converting all hexels to type AV </summary>
     let allOG 
         (hxo:Hxl[]) = 
         
@@ -140,7 +124,7 @@ module Hexel =
         |> Array.map(fun x -> hxlCrd x)
         |> Array.map(fun x -> AV x)
 
-    // Get Hexel from Tuple
+    /// <summary> Get Hexel from Tuple </summary>
     let getHxls 
         (hxo : (Hxl*int)[]) = 
         
@@ -148,7 +132,10 @@ module Hexel =
         |> Array.map(fun x 
                         -> fst x)
                         
-    // Adjacent Hexels
+    /// <summary> Adjacent Hexels </summary>
+    /// <param name="sqn"> Sequence to follow. </param>
+    /// <param name="hxo"> Tuple containing Base hexel of collection and size. </param> 
+    /// <returns> An array of six adjacent hexels. </returns>
     let adjacent 
         (sqn: Sqn)
         (hxo: Hxl) = 
@@ -159,12 +146,15 @@ module Hexel =
                             AV(x+a, y+b,z))(sequence sqn)
         | RV (x,y,z) -> [|RV(x,y,z)|]
 
-    // Increment Hexel
+    /// <summary> Increment Hexel </summary>
+    /// <param name="sqn"> Sequence to follow. </param>
+    /// <param name="hxo"> Tuple containing Base hexel of collection and size. </param> 
+    /// <param name="occ"> Occupied/Unavailable hexels. </param>
+    /// <returns> Tuple containing the next hexel and size. </returns>
     let increment 
         (sqn : Sqn)
         (hxo : Hxl * int) 
         (occ : Hxl[]) = 
-        
         let occ = Array.concat 
                     [|
                         occ
@@ -192,7 +182,7 @@ module Hexel =
             | None -> (identity,0xFFFFFFFF)
         | _ -> (identity,0xFFFFFFFF)
 
-    // Available Adjacent Hexels
+    /// <summary> Available Adjacent Hexels </summary>
     let available 
         (sqn : Sqn)
         (hxo : obj)
@@ -209,7 +199,7 @@ module Hexel =
             (Array.append occ [|hx1|])
         |> Array.length
 
-    // Increment Hexels
+    /// <summary> Increment Hexels </summary>
     let increments 
         (sqn : Sqn)
         (hxo : (Hxl*int)[]) 
