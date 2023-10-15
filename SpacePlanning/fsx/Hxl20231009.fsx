@@ -5,17 +5,11 @@ module Hexel =
     /// All neighbouring hexels share at least one common edge </summary>
 
     /// <summary> Hexel types: Categorization based on location availabity </summary>
+    ///<typeparam name="AV"> AvaiIable Hexels </typeparam>
+    ///<typeparam name="RV"> Reserved Hexels </typeparam>
     type Hxl = 
-        ///<typeparam name="AV"> AvaiIable Hexels </typeparam>
-        ///<typeparam name="RV"> Reserved Hexels </typeparam>
         | AV of x:int * y:int * z:int
         | RV of x:int * y:int * z:int
-
-    /// Properties
-    type Prp = 
-        | Label of string
-        | Refid of string
-        | Count of int
 
     /// <summary> Sequence specifies the orientation of hexels, the direction of flow of 
     /// adjacent hexels and the position of the first of the six adjaent hexels </summary>
@@ -43,32 +37,31 @@ module Hexel =
     /// 
     /// </para>
     /// </remarks>
-    
-    type Sqn =   
-        /// <typeparam name="SQ11"> Orientation:Vertical, Flow:Clockwise, Start:East </typeparam>
-        /// <typeparam name="SQ12"> Orientation:Vertical, Flow:Anti-Clockwise, Start:East </typeparam>
-        /// <typeparam name="SQ13"> Orientation:Vertical, Flow:Clockwise, Start:South-East </typeparam>
-        /// <typeparam name="SQ14"> Orientation:Vertical, Flow:Anti-Clockwise, Start:South-East </typeparam>
-        /// <typeparam name="SQ15"> Orientation:Vertical, Flow:Clockwise, Start:South-West </typeparam>
-        /// <typeparam name="SQ16"> Orientation:Vertical, Flow:Anti-Clockwise, Start:South-West </typeparam>
-        /// <typeparam name="SQ17"> Orientation:Vertical, Flow:Clockwise, Start:West </typeparam>
-        /// <typeparam name="SQ18"> Orientation:Vertical, Flow:Anti-Clockwise, Start:West </typeparam>
-        /// <typeparam name="SQ19"> Orientation:Vertical, Flow:Clockwise, Start:North-West </typeparam>
-        /// <typeparam name="SQ20"> Orientation:Vertical, Flow:Anti-Clockwise, Start:North-West </typeparam>
-        /// <typeparam name="SQ21"> Orientation:Vertical, Flow:Clockwise, Start:North-East </typeparam>
-        /// <typeparam name="SQ22"> Orientation:Vertical, Flow:Anti-Clockwise, Start:North-East </typeparam>
-        /// <typeparam name="SQ23"> Orientation:Horizontal, Flow:Clockwise, Start:North </typeparam>
-        /// <typeparam name="SQ24"> Orientation:Horizontal, Flow:Anti-Clockwise, Start:North </typeparam>
-        /// <typeparam name="SQ25"> Orientation:Horizontal, Flow:Clockwise, Start:North-East </typeparam>
-        /// <typeparam name="SQ26"> Orientation:Horizontal, Flow:Anti-Clockwise, Start:North-East </typeparam>
-        /// <typeparam name="SQ27"> Orientation:Horizontal, Flow:Clockwise, Start:South-East </typeparam>
-        /// <typeparam name="SQ28"> Orientation:Horizontal, Flow:Anti-Clockwise, Start:South-East </typeparam>
-        /// <typeparam name="SQ29"> Orientation:Horizontal, Flow:Clockwise, Start:South </typeparam>
-        /// <typeparam name="SQ30"> Orientation:Horizontal, Flow:Anti-Clockwise, Start:South </typeparam>
-        /// <typeparam name="SQ31"> Orientation:Horizontal, Flow:Clockwise, Start:South-West </typeparam>
-        /// <typeparam name="SQ32"> Orientation:Horizontal, Flow:Anti-Clockwise, Start:South-West </typeparam>
-        /// <typeparam name="SQ33"> Orientation:Horizontal, Flow:Clockwise, Start:North-West </typeparam>
-        /// <typeparam name="SQ34"> Orientation:Horizontal, Flow:Anti-Clockwise, Start:North-West </typeparam>
+    /// <typeparam name="SQ11"> Orientation:Vertical, Flow:Clockwise, Start:East </typeparam>
+    /// <typeparam name="SQ12"> Orientation:Vertical, Flow:Anti-Clockwise, Start:East </typeparam>
+    /// <typeparam name="SQ13"> Orientation:Vertical, Flow:Clockwise, Start:South-East </typeparam>
+    /// <typeparam name="SQ14"> Orientation:Vertical, Flow:Anti-Clockwise, Start:South-East </typeparam>
+    /// <typeparam name="SQ15"> Orientation:Vertical, Flow:Clockwise, Start:South-West </typeparam>
+    /// <typeparam name="SQ16"> Orientation:Vertical, Flow:Anti-Clockwise, Start:South-West </typeparam>
+    /// <typeparam name="SQ17"> Orientation:Vertical, Flow:Clockwise, Start:West </typeparam>
+    /// <typeparam name="SQ18"> Orientation:Vertical, Flow:Anti-Clockwise, Start:West </typeparam>
+    /// <typeparam name="SQ19"> Orientation:Vertical, Flow:Clockwise, Start:North-West </typeparam>
+    /// <typeparam name="SQ20"> Orientation:Vertical, Flow:Anti-Clockwise, Start:North-West </typeparam>
+    /// <typeparam name="SQ21"> Orientation:Vertical, Flow:Clockwise, Start:North-East </typeparam>
+    /// <typeparam name="SQ22"> Orientation:Vertical, Flow:Anti-Clockwise, Start:North-East </typeparam>
+    /// <typeparam name="SQ23"> Orientation:Horizontal, Flow:Clockwise, Start:North </typeparam>
+    /// <typeparam name="SQ24"> Orientation:Horizontal, Flow:Anti-Clockwise, Start:North </typeparam>
+    /// <typeparam name="SQ25"> Orientation:Horizontal, Flow:Clockwise, Start:North-East </typeparam>
+    /// <typeparam name="SQ26"> Orientation:Horizontal, Flow:Anti-Clockwise, Start:North-East </typeparam>
+    /// <typeparam name="SQ27"> Orientation:Horizontal, Flow:Clockwise, Start:South-East </typeparam>
+    /// <typeparam name="SQ28"> Orientation:Horizontal, Flow:Anti-Clockwise, Start:South-East </typeparam>
+    /// <typeparam name="SQ29"> Orientation:Horizontal, Flow:Clockwise, Start:South </typeparam>
+    /// <typeparam name="SQ30"> Orientation:Horizontal, Flow:Anti-Clockwise, Start:South </typeparam>
+    /// <typeparam name="SQ31"> Orientation:Horizontal, Flow:Clockwise, Start:South-West </typeparam>
+    /// <typeparam name="SQ32"> Orientation:Horizontal, Flow:Anti-Clockwise, Start:South-West </typeparam>
+    /// <typeparam name="SQ33"> Orientation:Horizontal, Flow:Clockwise, Start:North-West </typeparam>
+    /// <typeparam name="SQ34"> Orientation:Horizontal, Flow:Anti-Clockwise, Start:North-West </typeparam>
+    type Sqn =  
         | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22
         | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34
 
@@ -105,29 +98,30 @@ module Hexel =
         | SQ33 -> [|0x0,0x0; 0xFFFFFFFE,0x1; 0x0,0x2; 0x2,0x1; 0x2,0xFFFFFFFF; 0x0,0xFFFFFFFE; 0xFFFFFFFE,0xFFFFFFFF|]
         | SQ34 -> [|0x0,0x0; 0xFFFFFFFE,0x1; 0xFFFFFFFE,0xFFFFFFFF; 0x0,0xFFFFFFFE; 0x2,0xFFFFFFFF; 0x2,0x1; 0x0,0x2|]
     
-    /// <summary> Identity Hexel: Available (AV) Hexel at global origin </summary>
+    /// <summary> Identity Hexel </summary>
+    /// <returns> Available (AV) Hexel at global origin </returns>
     let identity = 
         AV(0x0,0x0, 0x0)
 
-    /// <summary> Extract coordinates (tuple of integers) from hxl </summary>
+    /// <summary> Extract coordinates from hxl </summary>
+    /// <returns> Tuple of integers representing three dimensional coordinates </returns>
     let hxlCrd 
         (hxl : Hxl) = 
         match hxl with 
         | AV (a,b,c) -> (a,b,c)
         | RV (a,b,c) -> (a,b,c)
 
-    /// <summary> Standardize type by converting all hexels to type AV </summary>
+    /// <summary> Standardize hexel type </summary>
+    /// <returns> Converts all hexels to type AV </returns>
     let allOG 
-        (hxo:Hxl[]) = 
-        
-        hxo
+        (hxl:Hxl[]) = 
+        hxl
         |> Array.map(fun x -> hxlCrd x)
         |> Array.map(fun x -> AV x)
 
     /// <summary> Get Hexel from Tuple </summary>
     let getHxls 
         (hxo : (Hxl*int)[]) = 
-        
         hxo
         |> Array.map(fun x 
                         -> fst x)
@@ -138,8 +132,7 @@ module Hexel =
     /// <returns> An array of six adjacent hexels. </returns>
     let adjacent 
         (sqn: Sqn)
-        (hxo: Hxl) = 
-        
+        (hxo: Hxl) =
         match hxo with 
         | AV (x,y,z) -> Array.map 
                             (fun (a,b) -> 
@@ -186,8 +179,7 @@ module Hexel =
     let available 
         (sqn : Sqn)
         (hxo : obj)
-        (occ : Hxl[]) = 
-        
+        (occ : Hxl[]) =  
         let occ = occ |> allOG
         let hx1 = match hxo with 
                     | :? (Hxl*int) as (a,_) -> a
@@ -204,7 +196,6 @@ module Hexel =
         (sqn : Sqn)
         (hxo : (Hxl*int)[]) 
         (occ : Hxl[]) = 
-        
         let occ = (Array.append occ (getHxls hxo)) |> allOG
         let inc = 
             Array.scan (fun ac st -> 
@@ -238,7 +229,13 @@ module Hexel =
 
 module Coxel =
     open Hexel
-  
+
+    /// Properties
+    type Prp = 
+        | Label of string
+        | Refid of string
+        | Count of int
+
     type Cxl = 
         {
             Name : Prp
@@ -256,7 +253,7 @@ module Coxel =
         | Refid prp -> prp
         | Count prp -> prp.ToString()
 
-    // Coxel
+    /// Coxel
     let coxel 
         (sqn : Sqn)
         (ini : (Hxl*Prp*Prp*Prp)[])
@@ -340,7 +337,7 @@ module Coxel =
                                                 })szn idn cl1
         cxl
 
-    // Classify Coxel Hexels
+    /// Classify Coxel Hexels
     let cxlHxl
         (cxl : Cxl) 
         (occ : Hxl[]) = 
