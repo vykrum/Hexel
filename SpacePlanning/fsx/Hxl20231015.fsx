@@ -9,20 +9,68 @@ module Hexel =
     /// <summary> 
     /// Hexel types 
     /// Categorization based on location availabity 
-    /// </summary>
-    
+    /// </summary> 
     type Hxl = 
         ///<typeparam name="AV"> AvaiIable Hexels </typeparam>
         ///<typeparam name="RV"> Reserved Hexels </typeparam>
         | AV of x:int * y:int * z:int
         | RV of x:int * y:int * z:int
 
-    /// Properties
-    type Prp = 
-        | Label of string
-        | Refid of string
-        | Count of int
+    /// <summary>
+    /// Count of a collection of hexels
+    /// </summary>
+    type Siz = Siz of cnt:int
 
+    /// <summary>
+    /// Initializer : Indicates the base hexel and size of collection
+    /// </summary>
+    type Hxi = Hxi of hxl:Hxl * cnt:Siz
+    
+    /// <summary>
+    /// Extract coordinates as tuple of integers from Hexel
+    /// </summary>
+    let hxlVal 
+        (hxl : Hxl) = 
+        match hxl with 
+        | AV (a,b,c) -> (a,b,c)
+        | RV (a,b,c) -> (a,b,c)
+
+    /// <summary>
+    /// Get (Hexel,Siz) value from Hexel Initializer type
+    /// </summary>     
+    let hxiVal 
+        (hxi:Hxi[]) = 
+        Array.map (fun x -> 
+                                let (Hxi (hxl,cnt)) = x
+                                hxl,cnt) hxi
+        
+    /// <summary>
+    /// Get Integer value from Size type
+    /// </summary>   
+    let sizVal
+        (siz:Siz[]) =
+        Array.map (fun x -> 
+                                let (Siz i) = x
+                                i)siz
+  
+   /// <summary>
+   /// Get Hexel from Initializer
+   /// </summary>
+    let hxiHxl 
+        (hxi : Hxi[]) = 
+        hxi
+        |> hxiVal 
+        |> Array.map(fun x -> fst x)
+    
+    /// <summary>
+    /// Get Size from Initializer
+    /// </summary>
+    let hxiSiz
+        (hxi : Hxi[]) = 
+        hxi
+        |> hxiVal
+        |> Array.map(fun x -> snd x)    
+        
     /// <summary> 
     /// Sequence specifies the orientation of hexels,
     /// the direction of flow of adjacent hexels
@@ -51,8 +99,7 @@ module Hexel =
     ///   |SW |SE|   |   |   |   |   |   |   |   |   |   |
     /// 
     /// </para>
-    /// </remarks>
-    
+    /// </remarks> 
     type Sqn =   
         /// <typeparam name="SQ11"> Orientation:Vertical, Flow:Clockwise, Start:East </typeparam>
         /// <typeparam name="SQ12"> Orientation:Vertical, Flow:Anti-Clockwise, Start:East </typeparam>
@@ -121,15 +168,6 @@ module Hexel =
         AV(0x0,0x0, 0x0)
 
     /// <summary>
-    /// Extract coordinates (tuple of integers) from hxl
-    /// </summary>
-    let hxlCrd 
-        (hxl : Hxl) = 
-        match hxl with 
-        | AV (a,b,c) -> (a,b,c)
-        | RV (a,b,c) -> (a,b,c)
-
-    /// <summary>
     /// Standardize type by converting all hexels to type AV 
     /// Useful when the type isn't criteria for comparison
     /// </summary>
@@ -137,17 +175,9 @@ module Hexel =
         (hxo:Hxl[]) = 
         
         hxo
-        |> Array.map(fun x -> hxlCrd x)
+        |> Array.map(fun x -> hxlVal x)
         |> Array.map(fun x -> AV x)
 
-    // Get Hexel from Tuple
-    let getHxls 
-        (hxo : (Hxl*int)[]) = 
-        
-        hxo
-        |> Array.map(fun x 
-                        -> fst x)
-                        
     // Adjacent Hexels
     let adjacent 
         (sqn: Sqn)
@@ -162,17 +192,18 @@ module Hexel =
     // Increment Hexel
     let increment 
         (sqn : Sqn)
-        (hxo : Hxl * int) 
+        (hxi : Hxl*Siz) 
         (occ : Hxl[]) = 
         
         let occ = Array.concat 
                     [|
                         occ
-                        [|(fst hxo)|]
+                        [|(fst hxi)|]
                         [|identity|]
                     |] |> allOG
-        match hxo with 
-        | x,y when y >= 0x0 -> 
+        
+        match hxi with 
+        | x,y when (sizVal [|y|])[0] >= 0x0 -> 
             let inc1 = x 
                     |> adjacent sqn
                     |> Array.except occ
@@ -189,8 +220,8 @@ module Hexel =
                             | None -> Array.tryHead inc1
             match inc2 with 
             | Some a -> a, y
-            | None -> (identity,0xFFFFFFFF)
-        | _ -> (identity,0xFFFFFFFF)
+            | None -> (identity,Siz 0xFFFFFFFF)
+        | _ -> (identity,Siz 0xFFFFFFFF)
 
     // Available Adjacent Hexels
     let available 
@@ -212,30 +243,34 @@ module Hexel =
     // Increment Hexels
     let increments 
         (sqn : Sqn)
-        (hxo : (Hxl*int)[]) 
+        (hxi : Hxi[]) 
         (occ : Hxl[]) = 
         
-        let occ = (Array.append occ (getHxls hxo)) |> allOG
+        let hxo = hxiVal hxi
+        let hx1 = Array.map (fun x -> fst x) hxo
+        let occ = (Array.append occ hx1) |> allOG
         let inc = 
             Array.scan (fun ac st -> 
             let occ = (Array.concat [|occ;[|fst st|];[|fst ac|];[|identity|]|]) |> allOG
             increment sqn st (Array.append[|fst ac|] occ )) 
                 hxo[0] hxo
                 |> Array.tail
+                |> Array.map (fun x -> Hxi x)
         
         let replaceDuplicate 
             (sqn : Sqn)
-            (hxo : (Hxl*int)[]) 
-            (inc : (Hxl*int)[]) 
+            (hxo : Hxi[]) 
+            (inc : Hxi[]) 
             (occ : Hxl[]) =
             
-            let in1 = Array.map (fun x -> snd x)inc
-            let lc1 = getHxls hxo 
-            let ic1 = getHxls inc 
+            let in1 = sizVal (hxiSiz inc)
+            let lc1 = hxiHxl hxo 
+            let hsz = hxiVal hxo
+            let ic1 = hxiHxl inc 
             let oc1 = Array.concat[|occ;lc1;ic1|] |> allOG
             let id1 = Array.map(fun y -> Array.findIndex (fun x -> x = y)ic1)ic1
             let bl1 = Array.map2 (fun x y -> x=y) [|(0x0)..(Array.length ic1)-(0x1)|] id1   
-            let tp1 = Array.zip3 bl1 ic1 hxo  
+            let tp1 = Array.zip3 bl1 ic1 hsz
             tp1 |> Array.map2 (fun d (a,b,c) 
                                 -> match a with 
                                     | true -> b,d
@@ -244,17 +279,21 @@ module Hexel =
                                             | false -> (fst c),0xFFFFFFFF
                                             | true -> fst(increment sqn c oc1),d) in1
         
-        replaceDuplicate sqn hxo inc occ
+        replaceDuplicate sqn hxi inc occ
 
 module Coxel =
     open Hexel
     
+    /// Properties
+    type Prp = 
+        | Label of string
+        | Refid of string
 
     type Cxl = 
         {
             Name : Prp
             Rfid : Prp
-            Size : Prp
+            Size : Siz
             Seqn : Sqn
             Base : Hxl
             Hxls : Hxl[]
@@ -265,15 +304,15 @@ module Coxel =
         match prp with 
         | Label prp -> prp
         | Refid prp -> prp
-        | Count prp -> prp.ToString()
 
     // Coxel
     let coxel 
         (sqn : Sqn)
-        (ini : (Hxl*Prp*Prp*Prp)[])
+        (ini : (Hxl*Prp*Siz*Prp)[])
         (occ : Hxl[]) = 
         
-        let bas = Array.map(fun (x,_,y,_) -> x,int(prpVlu y)) ini
+        let bas = Array.map(fun (x,_,y,_) -> x,y) ini
+        let hxi = Array.map (fun x -> Hxi x) bas
         let szn = Array.map(fun (_,_,y,z) -> y,z) ini
         let idn = Array.map (fun(x,y,_,_)->x,y) ini
 
@@ -281,31 +320,36 @@ module Coxel =
                 bas
                 |> Array.map (fun x -> snd x)
                 |> Array.max
-        let acc = Array.chunkBySize 1 bas
-        let occ = (Array.append occ (getHxls bas)) |> allOG 
+        let acc = Array.chunkBySize 1 hxi
+        let occ = (Array.append 
+            occ 
+            (Array.map(fun x -> fst x) bas)) 
+                |> allOG 
         
         let rec clsts 
-            (hxo: (Hxl*int)[])
+            (hxi : Hxi[])
             (occ : Hxl[])
-            (acc:(Hxl*int)[][])
-            (cnt : int) = 
+            (acc : Hxi[][])
+            (cnt : Siz) = 
             
-            match cnt with 
+            match (sizVal [|cnt|])[0] with 
             | c when c < 0x1 -> acc
             | _ -> 
                     let occ = 
                         acc 
                         |> Array.concat 
-                        |> getHxls
+                        |> hxiHxl
                         |> Array.append occ
-                        |> Array.append (getHxls hxo)
+                        |> Array.append (hxiHxl hxi)
                         |> Array.append [|identity|]
                         |> Array.distinct
                         |> allOG
-
-                    let rpt = Array.map (fun x 
-                                            -> (snd x) - 0x1) hxo
-                    let Hxl =  
+                    let rpt = hxi 
+                                        |> hxiVal 
+                                        |> Array.map (fun (_,x) ->x) 
+                                        |> sizVal
+                                        |> Array.map (fun x -> x - 0x1) 
+                    let hxi =  
                         acc
                         |> Array.map (fun x
                                         -> Array.filter (fun a 
@@ -315,30 +359,33 @@ module Coxel =
                         |> Array.map (fun x 
                                         -> match x with
                                             | Some a -> a 
-                                            | None -> (identity,0xFFFFFFFF))                
+                                            | None -> Hxi (identity,Siz 0xFFFFFFFF))
+                        |> hxiVal                
                         |> Array.map2 (fun x y 
                                         -> fst y, x) rpt
+                        |> Array.map (fun (x,y) -> Hxi (x,Siz y))
                     
-                    let inc = increments sqn Hxl occ
+                    let inc = increments sqn hxi occ 
+                            |> Array.map (fun (x,y) -> Hxi (x,Siz y))
                             
                     let acc = Array.map2  (fun x y
                                             -> Array.append x y) 
                                 acc
                                 (Array.chunkBySize 1 inc)
 
-                    let occ = Array.concat[|getHxls (Array.concat [|Array.concat acc; inc;Hxl|]);occ|] |> allOG
+                    let occ = Array.concat[|hxiHxl (Array.concat [|Array.concat acc; inc;hxi|]);occ|] |> allOG
 
-                    (clsts Hxl occ acc (cnt - 0x1))
+                    (clsts hxi occ acc (Siz((sizVal [|cnt|])[0] - 0x1)))
 
 
         let cls = 
-            clsts bas occ acc cnt
+            clsts hxi occ acc cnt
                 |> Array.map(fun x 
-                                -> Array.filter(fun (_,z) -> z >= 0) x)
+                                -> Array.filter(fun z -> ((hxiSiz x) |> sizVal |> Array.head)>0) x)
 
         let cl1 = 
             cls
-            |> Array.map(fun x -> getHxls x)
+            |> Array.map(fun x -> hxiHxl x)
         
         let cxl = Array.map3 (fun x y z -> 
                                                 {
@@ -465,7 +512,7 @@ open Hexel
 open Coxel
 let og:Hxl = AV(0,0,0)
 let sq = SQ11
-let t2 = coxel sq [|og,Refid "0",Count 10,Label "A"|] [||]
+let t2 = coxel sq [|og,Refid "0", Siz 10 ,Label "A"|] [||]
 
 #time "off"
 
@@ -482,7 +529,7 @@ let treeStr =
 let treeRef = treeStr 
             |> Array.map (fun x 
                             ->(Array.map(fun (a,b,c) 
-                                            -> Refid a, Count b, Label c))x)
+                                            -> Refid a, Siz b, Label c))x)
 
 let a,b,c = treeRef |> Array.concat |> Array.head
 let st = coxel sq [|(og , a , b, c)|] [||]
