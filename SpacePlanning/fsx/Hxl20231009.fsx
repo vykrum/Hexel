@@ -248,8 +248,7 @@ module Hexel =
 
 module Coxel =
     open Hexel
-    
-
+  
     type Cxl = 
         {
             Name : Prp
@@ -448,7 +447,6 @@ module Coxel =
         let br1= snd cl4
 
         // Output : Base, Hxls, Core, Prph, Brdr, Avbl
-        
         {|
             Base = cxl.Base
             Hxls = cl1
