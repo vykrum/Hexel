@@ -104,6 +104,7 @@ module Hexel =
         AV(0x0,0x0, 0x0)
 
     /// <summary> Extract coordinates from hxl </summary>
+    /// <param name="hexel"> Hexel of type AV/RV. </param>
     /// <returns> Tuple of integers representing three dimensional coordinates </returns>
     let hxlCrd 
         (hxl : Hxl) = 
@@ -112,6 +113,7 @@ module Hexel =
         | RV (a,b,c) -> (a,b,c)
 
     /// <summary> Standardize hexel type </summary>
+    /// <param name="hxl"> An array of hexels. </param>
     /// <returns> Converts all hexels to type AV </returns>
     let allOG 
         (hxl:Hxl[]) = 
@@ -128,7 +130,7 @@ module Hexel =
                         
     /// <summary> Adjacent Hexels </summary>
     /// <param name="sqn"> Sequence to follow. </param>
-    /// <param name="hxo"> Tuple containing Base hexel of collection and size. </param> 
+    /// <param name="hxo"> Base hexel. </param> 
     /// <returns> An array of six adjacent hexels. </returns>
     let adjacent 
         (sqn: Sqn)
@@ -176,6 +178,10 @@ module Hexel =
         | _ -> (identity,0xFFFFFFFF)
 
     /// <summary> Available Adjacent Hexels </summary>
+    /// <param name="sqn"> Sequence to follow. </param>
+    /// <param name="hxo"> Hexel or Tuple containing Base hexel of collection and size. </param> 
+    /// <param name="occ"> Array of Occupied/Unavailable hexels. </param>
+    /// <returns> The count of unoccupied surrounding hexels. </returns>
     let available 
         (sqn : Sqn)
         (hxo : obj)
@@ -192,6 +198,10 @@ module Hexel =
         |> Array.length
 
     /// <summary> Increment Hexels </summary>
+    /// <param name="sqn"> Sequence to follow. </param>
+    /// <param name="hxo"> Array of Tuples containing Base hexel of collection and size. </param> 
+    /// <param name="occ"> Array of Occupied/Unavailable hexels. </param>
+    /// <returns> Array of Tuples containing Base hexel of collection and reduced size. </returns>
     let increments 
         (sqn : Sqn)
         (hxo : (Hxl*int)[]) 
@@ -204,6 +214,12 @@ module Hexel =
                 hxo[0] hxo
                 |> Array.tail
         
+        /// <summary> Generate alternate hexel in cases where there are overlapping hexels </summary>
+        /// <param name="sqn"> Sequence to follow. </param>
+        /// <param name="hxo"> Array of Tuples containing Base hexel of collection and size. </param> 
+        /// <param name="hxo"> Array of Tuples containing Incremental hexel of collection and reduced size. </param>
+        /// <param name="occ"> Array of Occupied/Unavailable hexels. </param>
+        /// <returns> Array of Tuples containing alternate incremental hexel of collection and reduced size. </returns>
         let replaceDuplicate 
             (sqn : Sqn)
             (hxo : (Hxl*int)[]) 
