@@ -488,6 +488,3 @@ let treeRef = treeStr
 let a,b,c = treeRef |> Array.concat |> Array.head
 let st = coxel sq [|(og , a , b, c)|] [||]
 let c01 = (cxlHxl (Array.head st) [||]).Avbl
-
-
-
