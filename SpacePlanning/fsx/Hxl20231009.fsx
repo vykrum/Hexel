@@ -256,6 +256,12 @@ module Coxel =
         | Count of int
 
     /// <summary> Coxel type consists of hexels and properties </summary>
+    /// <typeparam name="Name"> Coxel Name </typeparam>
+    /// <typeparam name="Rfid"> Reference ID </typeparam>
+    /// <typeparam name="Size"> Number of hexels </typeparam>
+    /// <typeparam name="Seqn"> Sequence of hexel arrangement </typeparam>
+    /// <typeparam name="Base"> Base hexel </typeparam>
+    /// <typeparam name="Hxls"> Constituent Hexels </typeparam>
     type Cxl = 
         {
             Name : Prp
