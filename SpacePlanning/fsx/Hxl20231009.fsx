@@ -245,13 +245,17 @@ module Hexel =
 
 module Coxel =
     open Hexel
-
-    /// Properties
+    /// <summary> Coxels are primarily a collections of unique hexels </summary>
+    /// <summary> Coxel Properties </summary>
+    /// <typeparam name="Label"> Name </typeparam>
+    /// <typeparam name="Refid"> Unique reference ID </typeparam>
+    /// <typeparam name="Count"> ANumber of hexels in Coxel </typeparam>
     type Prp = 
         | Label of string
         | Refid of string
         | Count of int
 
+    /// <summary> Coxel consists of hexels and properties </summary>
     type Cxl = 
         {
             Name : Prp
