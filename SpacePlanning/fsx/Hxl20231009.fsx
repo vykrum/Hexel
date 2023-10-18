@@ -272,6 +272,10 @@ module Coxel =
             Hxls : Hxl[]
         }  
 
+    /// <summary> Property value types </summary>
+    /// <typeparam name="Label">  Name </typeparam>
+    /// <typeparam name="Refid">  Reference ID </typeparam>
+    /// <typeparam name="Count">  Number of hexels as a string </typeparam>
     let prpVlu 
         (prp : Prp) = 
         match prp with 
@@ -279,7 +283,10 @@ module Coxel =
         | Refid prp -> prp
         | Count prp -> prp.ToString()
 
-    /// Coxel
+    /// <summary> Creating coxel </summary>
+    /// <param name="sqn"> Sequence to follow. </param>
+    /// <param name="ini"> A tuple containing base hexel, Reference Id, Count/Size, Label. </param>
+    /// <param name="occ"> Hexels that are unavailable. </param>
     let coxel 
         (sqn : Sqn)
         (ini : (Hxl*Prp*Prp*Prp)[])
