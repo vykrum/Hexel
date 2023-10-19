@@ -285,8 +285,9 @@ module Coxel =
 
     /// <summary> Creating coxel </summary>
     /// <param name="sqn"> Sequence to follow. </param>
-    /// <param name="ini"> A tuple containing base hexel, Reference Id, Count/Size, Label. </param>
+    /// <param name="ini"> An array of tuples containing base hexel, Reference Id, Count/Size, Label. </param>
     /// <param name="occ"> Hexels that are unavailable. </param>
+    /// <returns> An array of coxels </returns>
     let coxel 
         (sqn : Sqn)
         (ini : (Hxl*Prp*Prp*Prp)[])
@@ -370,7 +371,10 @@ module Coxel =
                                                 })szn idn cl1
         cxl
 
-    /// Classify Coxel Hexels
+    /// <summary> Categorize constituent Hexels within a Coxel </summary>
+    /// <param name="cxl"> A coxel. </param>
+    /// <param name="occ"> Hexels that are unavailable. </param>
+    /// <returns> An anonymous record of categorized hexels  </returns>
     let cxlHxl
         (cxl : Cxl) 
         (occ : Hxl[]) = 
