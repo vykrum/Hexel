@@ -1,21 +1,21 @@
 module Hexel =
     /// <summary> Hexel is a location representing an irregular hexagonal module.
     /// Collections of hexels in a hexagonal grid form Coxels.
-    /// A hexel can have a maximum of six neighbouring/adjacent hexels
+    /// A hexel can have a maximum of six neighbouring/adjacent hexels.
     /// All neighbouring hexels share at least one common edge </summary>
 
-    /// <summary> Hexel types: Categorization based on location availabity </summary>
-    ///<typeparam name="AV"> AvaiIable Hexels </typeparam>
-    ///<typeparam name="RV"> Reserved Hexels </typeparam>
+    /// <summary> Hexel types: Categorization based on location availabity. </summary>
+    ///<typeparam name="AV"> AvaiIable Hexels. </typeparam>
+    ///<typeparam name="RV"> Reserved Hexels. </typeparam>
     type Hxl = 
         | AV of x:int * y:int * z:int
         | RV of x:int * y:int * z:int
 
     /// <summary> Sequence specifies the orientation of hexels, the direction of flow of 
-    /// adjacent hexels and the position of the first of the six adjaent hexels </summary>
+    /// adjacent hexels and the position of the first of the six adjaent hexels. </summary>
     /// <remarks> 
     /// <para>
-    /// Horizontal refers to a Flat Top hexagonal grid
+    /// Horizontal refers to a Flat Top hexagonal grid.
     /// 
     ///  ___ N N ___     ___     ___     ___     ___     ___
     /// /N W\___/N E\___/   \___/   \___/   \___/   \___/   \
@@ -25,7 +25,7 @@ module Hexel =
     /// 
     /// </para>
     /// <para>
-    /// Vertical refers to a Pointy Top hexagonal grid 
+    /// Vertical refers to a Pointy Top hexagonal grid. 
     /// 
     ///   |NW |NE|   |   |   |   |   |   |   |   |   |   |
     ///  /\  /\  /\  /\  /\  /\  /\  /\  /\  /\  /\  /\  /\ 
@@ -65,11 +65,11 @@ module Hexel =
         | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22
         | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34
 
-    /// <summary> Sequence Locations: Location of adjacent/neighbouring hexels relative to the host hexel
-    /// Each array begins with the location of Host hexel followed by the rest in a particular order
+    /// <summary> Sequence Locations: Location of adjacent/neighbouring hexels relative to the host hexel.
+    /// Each array begins with the location of Host hexel followed by the rest in a particular order.
     /// Hexadecimal number system - 0x0:0, 0x1:1, 0x2:2, 0xFFFFFFFF:-1, 0xFFFFFFFE:-2 </summary>
     /// <param name="sqn"> Sequence to follow. </param>
-    /// <returns> An array of two dimensional surrounding locations </returns>
+    /// <returns> An array of two dimensional surrounding locations. </returns>
     let sequence 
         (sqn:Sqn) =  
         match sqn with 
@@ -98,21 +98,21 @@ module Hexel =
         | SQ33 -> [|0x0,0x0; 0xFFFFFFFE,0x1; 0x0,0x2; 0x2,0x1; 0x2,0xFFFFFFFF; 0x0,0xFFFFFFFE; 0xFFFFFFFE,0xFFFFFFFF|]
         | SQ34 -> [|0x0,0x0; 0xFFFFFFFE,0x1; 0xFFFFFFFE,0xFFFFFFFF; 0x0,0xFFFFFFFE; 0x2,0xFFFFFFFF; 0x2,0x1; 0x0,0x2|]
     
-    /// <summary> Identity Hexel </summary>
-    /// <returns> Available (AV) Hexel at global origin </returns>
+    /// <summary> Identity Hexel. </summary>
+    /// <returns> Available (AV) Hexel at global origin. </returns>
     let identity = 
         AV(0x0,0x0, 0x0)
 
-    /// <summary> Extract coordinates from hxl </summary>
+    /// <summary> Extract coordinates from hexel. </summary>
     /// <param name="hexel"> Hexel of type AV/RV. </param>
-    /// <returns> Tuple of integers representing three dimensional coordinates </returns>
+    /// <returns> Tuple of integers representing three dimensional coordinates. </returns>
     let hxlCrd 
         (hxl : Hxl) = 
         match hxl with 
         | AV (a,b,c) -> (a,b,c)
         | RV (a,b,c) -> (a,b,c)
 
-    /// <summary> Standardize hexel type </summary>
+    /// <summary> Standardize hexel type. </summary>
     /// <param name="hxl"> An array of hexels. </param>
     /// <returns> Converts all hexels to type AV </returns>
     let allOG 
@@ -121,14 +121,14 @@ module Hexel =
         |> Array.map(fun x -> hxlCrd x)
         |> Array.map(fun x -> AV x)
 
-    /// <summary> Get Hexel from Tuple </summary>
+    /// <summary> Get Hexel from Tuple. </summary>
     let getHxls 
         (hxo : (Hxl*int)[]) = 
         hxo
         |> Array.map(fun x 
                         -> fst x)
                         
-    /// <summary> Adjacent Hexels </summary>
+    /// <summary> Adjacent Hexels. </summary>
     /// <param name="sqn"> Sequence to follow. </param>
     /// <param name="hxo"> Base hexel. </param> 
     /// <returns> An array of six adjacent hexels. </returns>
@@ -141,7 +141,7 @@ module Hexel =
                             AV(x+a, y+b,z))(sequence sqn)
         | RV (x,y,z) -> [|RV(x,y,z)|]
 
-    /// <summary> Increment Hexel </summary>
+    /// <summary> Increment Hexel. </summary>
     /// <param name="sqn"> Sequence to follow. </param>
     /// <param name="hxo"> Tuple containing Base hexel of collection and size. </param> 
     /// <param name="occ"> Occupied/Unavailable hexels. </param>
@@ -177,7 +177,7 @@ module Hexel =
             | None -> (identity,0xFFFFFFFF)
         | _ -> (identity,0xFFFFFFFF)
 
-    /// <summary> Available Adjacent Hexels </summary>
+    /// <summary> Available Adjacent Hexels. </summary>
     /// <param name="sqn"> Sequence to follow. </param>
     /// <param name="hxo"> Hexel or Tuple containing Base hexel of collection and size. </param> 
     /// <param name="occ"> Array of Occupied/Unavailable hexels. </param>
@@ -197,7 +197,7 @@ module Hexel =
             (Array.append occ [|hx1|])
         |> Array.length
 
-    /// <summary> Increment Hexels </summary>
+    /// <summary> Increment Hexels. </summary>
     /// <param name="sqn"> Sequence to follow. </param>
     /// <param name="hxo"> Array of Tuples containing Base hexel of collection and size. </param> 
     /// <param name="occ"> Array of Occupied/Unavailable hexels. </param>
@@ -255,13 +255,13 @@ module Coxel =
         | Refid of string
         | Count of int
 
-    /// <summary> Coxel type consists of hexels and properties </summary>
-    /// <typeparam name="Name"> Coxel Name </typeparam>
-    /// <typeparam name="Rfid"> Reference ID </typeparam>
-    /// <typeparam name="Size"> Number of hexels </typeparam>
-    /// <typeparam name="Seqn"> Sequence of hexel arrangement </typeparam>
-    /// <typeparam name="Base"> Base hexel </typeparam>
-    /// <typeparam name="Hxls"> Constituent Hexels </typeparam>
+    /// <summary> Coxel type consists of hexels and properties. </summary>
+    /// <typeparam name="Name"> Coxel Name. </typeparam>
+    /// <typeparam name="Rfid"> Reference ID. </typeparam>
+    /// <typeparam name="Size"> Number of hexels. </typeparam>
+    /// <typeparam name="Seqn"> Sequence of hexel arrangement. </typeparam>
+    /// <typeparam name="Base"> Base hexel. </typeparam>
+    /// <typeparam name="Hxls"> Constituent Hexels. </typeparam>
     type Cxl = 
         {
             Name : Prp
@@ -273,9 +273,9 @@ module Coxel =
         }  
 
     /// <summary> Property value types </summary>
-    /// <typeparam name="Label">  Name </typeparam>
-    /// <typeparam name="Refid">  Reference ID </typeparam>
-    /// <typeparam name="Count">  Number of hexels as a string </typeparam>
+    /// <typeparam name="Label">  Name of coxel. </typeparam>
+    /// <typeparam name="Refid">  Reference ID. </typeparam>
+    /// <typeparam name="Count">  Number of hexels as a string. </typeparam>
     let prpVlu 
         (prp : Prp) = 
         match prp with 
@@ -283,11 +283,11 @@ module Coxel =
         | Refid prp -> prp
         | Count prp -> prp.ToString()
 
-    /// <summary> Creating coxel </summary>
+    /// <summary> Creating an array of coxels. </summary>
     /// <param name="sqn"> Sequence to follow. </param>
     /// <param name="ini"> An array of tuples containing base hexel, Reference Id, Count/Size, Label. </param>
     /// <param name="occ"> Hexels that are unavailable. </param>
-    /// <returns> An array of coxels </returns>
+    /// <returns> An array of coxels. </returns>
     let coxel 
         (sqn : Sqn)
         (ini : (Hxl*Prp*Prp*Prp)[])
@@ -371,19 +371,26 @@ module Coxel =
                                                 })szn idn cl1
         cxl
 
-    /// <summary> Categorize constituent Hexels within a Coxel </summary>
+    /// <summary> Categorize constituent Hexels within a Coxel. </summary>
     /// <param name="cxl"> A coxel. </param>
     /// <param name="occ"> Hexels that are unavailable. </param>
-    /// <returns> An anonymous record of categorized hexels  </returns>
+    /// <returns> Hexels categorized as Base, Hxls, Core, Prph, Brdr, Avbl. </returns>
     let cxlHxl
         (cxl : Cxl) 
         (occ : Hxl[]) = 
-
-        // Boundry Hexels Ring
+        /// <summary> Boundry Hexels Ring. </summary>
+        /// <param name="sqn"> Sequence to follow. </param>
+        /// <param name="hxl"> All constituent hexels. </param>
+        /// <returns> Boundary/Peripheral hexels. </returns>
         let bndSqn 
             (sqn : Sqn) 
             (hxl : Hxl[]) = 
-        
+            /// <summary> Arrange/sort hexels in continuous sequence. </summary>
+            /// <param name="sqn"> Sequence to follow. </param>
+            /// <param name="hxl"> Array of hexels. </param>
+            /// <param name="acc"> Accumulator for recursive function. </param>
+            /// <param name="cnt"> Counter. </param>
+            /// <returns> Array of sorted hexels </returns>
             let rec arr 
                 (sqn : Sqn) 
                 (hxl : Hxl[]) 
@@ -416,11 +423,10 @@ module Coxel =
             | true -> a1
             | false -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) false
 
-        // Hexel Ring Segment Sequence
+        /// <summary> Hexel Ring Segment Sequence. </summary>
         let cntSqn
             (sqn : Sqn)
-            (hxl : Hxl[]) = 
-        
+            (hxl : Hxl[]) =      
             let rec ctSq 
                 (sqn : Sqn)
                 (hxl : Hxl[])
@@ -446,13 +452,13 @@ module Coxel =
             | false -> ctSq sqn (Array.rev hxl) ([|Array.last hxl|]) cnt
 
         let cl1 = cxl.Hxls
-        // Bounding Hexels
+        /// Bounding Hexels
         let cl2 =  Array.tail cl1
         let cl3 = Array.partition(fun x-> (available cxl.Seqn x occ) > 0) cl2
         let bd1 = fst  cl3
         let bd2 = bndSqn cxl.Seqn bd1
         
-        // Core Hexels
+        /// Core Hexels
         let cr1 = snd cl3
         
         let oc1 = Array.concat
@@ -463,14 +469,13 @@ module Coxel =
         
         let cl4 = Array.partition(fun x-> (available cxl.Seqn x oc1) > 0) bd2
         
-        // Available Hexels
+        /// Available Hexels
         let av1= fst cl4
         let av2 = cntSqn cxl.Seqn av1
         
-        // Border Hexels
+        /// Border Hexels
         let br1= snd cl4
-
-        // Output : Base, Hxls, Core, Prph, Brdr, Avbl
+ 
         {|
             Base = cxl.Base
             Hxls = cl1
