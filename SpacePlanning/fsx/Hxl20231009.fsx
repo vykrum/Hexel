@@ -486,7 +486,7 @@ module Coxel =
         |}    
 
 
-// Testing
+// Test
 # time "on"
 open Hexel
 open Coxel
