@@ -286,7 +286,7 @@ module Coxel =
     /// <summary> Creating an array of coxels. </summary>
     /// <param name="sqn"> Sequence to follow. </param>
     /// <param name="ini"> An array of tuples containing base hexel, Reference Id, Count/Size, Label. </param>
-    /// <param name="occ"> Hexels that are unavailable. </param>
+    /// <param name="occ"> Unavailable hexels. </param>
     /// <returns> An array of coxels. </returns>
     let coxel 
         (sqn : Sqn)
@@ -373,7 +373,7 @@ module Coxel =
 
     /// <summary> Categorize constituent Hexels within a Coxel. </summary>
     /// <param name="cxl"> A coxel. </param>
-    /// <param name="occ"> Hexels that are unavailable. </param>
+    /// <param name="occ"> Unavailable hexels. </param>
     /// <returns> Hexels categorized as Base, Hxls, Core, Prph, Brdr, Avbl. </returns>
     let cxlHxl
         (cxl : Cxl) 
@@ -486,7 +486,7 @@ module Coxel =
         |}    
 
 
-// Testing Zo
+// Testing Zone
 # time "on"
 open Hexel
 open Coxel
