@@ -266,7 +266,7 @@ module Hexel =
             | a when cnt <= 0x1 -> acc
             | _ -> 
                 let hxl = Array.except acc hxl
-                let hx1 = ((Array.Parallel.filter (fun x -> Array.contains x hxl) 
+                let hx1 = ((Array.filter (fun x -> Array.contains x hxl) 
                                 (adjacent sqn (Array.last acc))))                
                 let hx2 = match opt with 
                                 | false -> Array.tryHead hx1
@@ -303,7 +303,7 @@ module Hexel =
                     let b = Array.last acc
                     let hxl = Array.except [|b|] hxl
                     let d = (adjacent sqn b) |> Array.tail
-                    let e = d |> Array.Parallel.filter(fun x -> Array.contains x hxl) |> Array.tryHead
+                    let e = d |> Array.filter(fun x -> Array.contains x hxl) |> Array.tryHead
                     let f = match e with 
                                 | Some a -> [|a|]
                                 | None -> [||]
@@ -373,7 +373,7 @@ module Coxel =
         let cnt = 
                 bas
                 |> Array.Parallel.map (fun x -> snd x)
-                |> Array.Parallel.max
+                |> Array.max
         let acc = Array.chunkBySize 1 bas
         let occ = (Array.append occ (getHxls bas)) |> allOG 
         
@@ -401,7 +401,7 @@ module Coxel =
                     let Hxl =  
                         acc
                         |> Array.Parallel.map (fun x
-                                                -> Array.Parallel.filter (fun a 
+                                                -> Array.filter (fun a 
                                                                             -> (available sqn a occ) > 0x0) x)
                         |> Array.Parallel.map (fun x 
                                                 -> Array.tryHead x)
@@ -427,7 +427,7 @@ module Coxel =
         let cls = 
             clsts bas occ acc cnt
                 |> Array.Parallel.map(fun x 
-                                        -> Array.Parallel.filter(fun (_,z) -> z >= 0) x)
+                                        -> Array.filter(fun (_,z) -> z >= 0) x)
 
         let cl1 = 
             cls
