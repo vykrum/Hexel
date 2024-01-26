@@ -449,7 +449,7 @@ module Coxel =
     /// <param name="occ"> Unavailable hexels. </param>
     /// <returns> Hexels categorized as Base, Hxls, Core, Prph, Brdr, Avbl. </returns>
     let cxlHxl
-        (cxl : Cxl) 
+        (cxl : Cxl)     
         (occ : Hxl[]) = 
 
         /// Bounding Hexels
@@ -487,7 +487,7 @@ module Coxel =
         |}    
 
 
-// Test Zone
+// Testing Zone
 # time "on"
 open Hexel
 open Coxel
