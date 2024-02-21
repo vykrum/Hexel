@@ -517,4 +517,6 @@ let st = coxel sq [|(og , a , b, c)|] [||]
 let c01 = (cxlHxl (Array.head st) [||]).Avbl
 
 // Rectangle Border
+let wdt = 10
+let hgt = 10
 
