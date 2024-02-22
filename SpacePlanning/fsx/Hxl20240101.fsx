@@ -112,14 +112,18 @@ module Hexel =
         | AV (a,b,c) -> (a,b,c)
         | RV (a,b,c) -> (a,b,c)
 
-    /// <summary> Standardize hexel type. </summary>
+    /// <summary> Standardize hexels to type AV </summary>
+    /// <param name="rev"> If true, Standardize to type RV. </param>
     /// <param name="hxl"> An array of hexels. </param>
     /// <returns> Converts all hexels to type AV </returns>
-    let allOG 
+    let allAV 
+        (rev:bool)
         (hxl:Hxl[]) = 
         hxl
         |> Array.Parallel.map(fun x -> hxlCrd x)
-        |> Array.Parallel.map(fun x -> AV x)
+        |> Array.Parallel.map(fun x -> match rev with 
+                                                        | true -> RV x
+                                                        | false -> AV x)
 
     /// <summary> Get Hexel from Tuple. </summary>
     let getHxls 
@@ -155,7 +159,7 @@ module Hexel =
                         occ
                         [|(fst hxo)|]
                         [|identity|]
-                    |] |> allOG
+                    |] |> allAV false
         match hxo with 
         | x,y when y >= 0x0 -> 
             let inc1 = x 
@@ -186,7 +190,7 @@ module Hexel =
         (sqn : Sqn)
         (hxo : obj)
         (occ : Hxl[]) =  
-        let occ = occ |> allOG
+        let occ = occ |> allAV false
         let hx1 = match hxo with 
                     | :? (Hxl*int) as (a,_) -> a
                     | :? Hxl as b ->  b
@@ -206,10 +210,10 @@ module Hexel =
         (sqn : Sqn)
         (hxo : (Hxl*int)[]) 
         (occ : Hxl[]) = 
-        let occ = (Array.append occ (getHxls hxo)) |> allOG
+        let occ = (Array.append occ (getHxls hxo)) |> allAV false
         let inc = 
             Array.scan (fun ac st -> 
-            let occ = (Array.concat [|occ;[|fst st|];[|fst ac|];[|identity|]|]) |> allOG
+            let occ = (Array.concat [|occ;[|fst st|];[|fst ac|];[|identity|]|]) |> allAV false
             increment sqn st (Array.append[|fst ac|] occ )) 
                 hxo[0] hxo
                 |> Array.tail
@@ -229,7 +233,7 @@ module Hexel =
             let in1 = Array.map (fun x -> snd x)inc
             let lc1 = getHxls hxo 
             let ic1 = getHxls inc 
-            let oc1 = Array.concat[|occ;lc1;ic1|] |> allOG
+            let oc1 = Array.concat[|occ;lc1;ic1|] |> allAV false
             let id1 = Array.map(fun y -> Array.findIndex (fun x -> x = y)ic1)ic1
             let bl1 = Array.map2 (fun x y -> x=y) [|(0x0)..(Array.length ic1)-(0x1)|] id1   
             let tp1 = Array.zip3 bl1 ic1 hxo  
@@ -375,7 +379,7 @@ module Coxel =
                 |> Array.Parallel.map (fun x -> snd x)
                 |> Array.max
         let acc = Array.chunkBySize 1 bas
-        let occ = (Array.append occ (getHxls bas)) |> allOG 
+        let occ = (Array.append occ (getHxls bas)) |> allAV false 
         
         let rec clsts 
             (hxo: (Hxl*int)[])
@@ -394,7 +398,7 @@ module Coxel =
                         |> Array.append (getHxls hxo)
                         |> Array.append [|identity|]
                         |> Array.distinct
-                        |> allOG
+                        |> allAV false
 
                     let rpt = Array.Parallel.map (fun x 
                                                     -> (snd x) - 0x1) hxo
@@ -419,7 +423,7 @@ module Coxel =
                                 acc
                                 (Array.chunkBySize 1 inc)
 
-                    let occ = Array.concat[|getHxls (Array.concat [|Array.concat acc; inc;Hxl|]);occ|] |> allOG
+                    let occ = Array.concat[|getHxls (Array.concat [|Array.concat acc; inc;Hxl|]);occ|] |> allAV false
 
                     (clsts Hxl occ acc (cnt - 0x1))
 
@@ -466,7 +470,7 @@ module Coxel =
                     [|
                         occ 
                         cxl.Hxls
-                    |] |> allOG
+                    |] |> allAV false
         
         let cl4 = Array.Parallel.partition(fun x-> (available cxl.Seqn x oc1) > 0) bd2
         
