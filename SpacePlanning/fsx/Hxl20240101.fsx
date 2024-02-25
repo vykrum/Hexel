@@ -525,14 +525,17 @@ let wdt = 10
 let hgt = 10
 
 let hrVr 
-    (sqn : Sqn) = 
-    let xic = match sqn with 
+    (sqn : Sqn)
+    (wdt : int)
+    (hgt : int) = 
+    
+    let wic = match sqn with 
                 | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22 -> (1,0)
                 | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34 -> (2,1)
-    let yic = match sqn with 
+    let hic = match sqn with 
                 | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22 -> (1,2)
                 | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34 -> (0,1)
-    xic
+    
+    wic
 
-
-
+hrVr SQ11
