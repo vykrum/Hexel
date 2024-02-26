@@ -520,7 +520,7 @@ let a,b,c = treeRef |> Array.concat |> Array.head
 let st = coxel sq [|(og , a , b, c)|] [||]
 let c01 = (cxlHxl (Array.head st) [||]).Avbl
 
-// Rectangle Border Hexels
+// Geometry
 let wdt = 10
 let hgt = 10
 
@@ -530,12 +530,25 @@ let hrVr
     (hgt : int) = 
     
     let wic = match sqn with 
-                | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22 -> (1,0)
-                | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34 -> (2,1)
+                | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22 
+                    -> Array.map (fun x -> x,0) [|0..1..wdt|]
+                | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34 
+                    ->  [| 
+                            Array.map (fun x -> x,0) [|0..4..(wdt - (wdt%2))|]
+                            Array.map (fun x -> x,1) [|2..4..(wdt - (wdt%2) + 2)|]
+                        |]
+                        |> Array.transpose 
+                        |> Array.concat
+                        
+
+                        
     let hic = match sqn with 
-                | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22 -> (1,2)
-                | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34 -> (0,1)
+                | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22 
+                    -> (1,2)
+                | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34 
+                    -> (0,1)
+    
     
     wic
 
-hrVr SQ11
+hrVr SQ23 11 10
