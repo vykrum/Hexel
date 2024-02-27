@@ -529,6 +529,8 @@ let hrVr
     (shx : int*int)
     (ehx : int*int)
     (wdt : int) = 
+    let xsh = fst ehx - fst shx
+    let ysh = snd ehx - snd shx
     let vld = match sqn with 
                 | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22 
                     -> (fst shx,snd shx-snd shx%2),(fst ehx,snd ehx-snd ehx%2)
