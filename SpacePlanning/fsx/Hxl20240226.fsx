@@ -531,11 +531,30 @@ let hrVr
     (wdt : int) = 
     let xsh = fst ehx - fst shx
     let ysh = snd ehx - snd shx
+    
     let vld = match sqn with 
                 | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22 
-                    -> (fst shx,snd shx-snd shx%2),(fst ehx,snd ehx-snd ehx%2)
+                    ->  let stx = fst shx
+                        let sty =snd shx-snd shx%2
+                        let enx = fst ehx
+                        let eny = snd ehx-snd ehx%2
+                        
+                        let hxc = 
+                                            match (stx > enx) with
+                                            |true -> [|stx ..(-1).. enx|] 
+                                            |false -> [|stx ..1.. enx|]                
+                        hxc |> Array.splitInto (abs (eny - sty))
+
                 | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34
-                    -> (fst shx-fst shx%2, snd shx),(fst ehx-fst ehx%2,snd ehx)
+                    ->  let stx = fst shx-fst shx%2
+                        let sty =  snd shx
+                        let enx = fst ehx-fst ehx%2
+                        let eny = snd ehx
+                        let hxc = 
+                                            match (stx > enx) with
+                                            |true -> [|stx ..(-2).. enx|] 
+                                            |false -> [|stx ..2.. enx|]          
+                        hxc|> Array.splitInto (abs (eny - sty))
     
     let wic = match sqn with 
                 | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22 
@@ -556,4 +575,4 @@ let hrVr
 
     vld
 
-hrVr SQ22 (0,0) (5,5) 10
+hrVr SQ22 (15,10) (5,5) 10
