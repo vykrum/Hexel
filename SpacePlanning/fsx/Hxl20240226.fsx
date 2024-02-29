@@ -529,10 +529,16 @@ let hrVr
     (shx : int*int)
     (ehx : int*int)
     (wdt : int) = 
-    let xsh = fst ehx - fst shx
-    let ysh = snd ehx - snd shx
+    let sth = (fst shx),(snd shx-snd shx%2)
+    let enh = (fst ehx),(snd shx-snd ehx%2)
+    let hx1 = match (fst sth > fst enh) with
+                        |true -> [|fst sth ..(-1).. fst enh|] 
+                        |false -> [|fst sth ..1.. fst enh|]
+    //let hx2 = hx1 |> Array.splitInto (abs (snd enh - snd sth)/2)
     
-    let vld = match sqn with 
+    let vld = 
+    
+                match sqn with 
                 | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22 
                     ->  let stx = fst shx
                         let sty =snd shx-snd shx%2
@@ -541,19 +547,19 @@ let hrVr
                         
                         let hxc = 
                                             match (stx > enx) with
-                                            |true -> [|stx ..(-1).. enx|] 
-                                            |false -> [|stx ..1.. enx|]                
-                        hxc |> Array.splitInto (abs (eny - sty))
+                                            |true -> [|stx ..(-2).. enx|] 
+                                            |false -> [|stx ..2.. enx|]                
+                        hxc |> Array.splitInto (abs (eny - sty)/2)
 
                 | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34
-                    ->  let stx = fst shx-fst shx%2
+                    ->  let stx = fst shx-fst shx%4
                         let sty =  snd shx
-                        let enx = fst ehx-fst ehx%2
+                        let enx = fst ehx-fst ehx%4
                         let eny = snd ehx
                         let hxc = 
                                             match (stx > enx) with
-                                            |true -> [|stx ..(-2).. enx|] 
-                                            |false -> [|stx ..2.. enx|]          
+                                            |true -> [|stx ..(-4).. enx|] 
+                                            |false -> [|stx ..4.. enx|]          
                         hxc|> Array.splitInto (abs (eny - sty))
     
     let wic = match sqn with 
@@ -573,6 +579,6 @@ let hrVr
                 | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34 
                     -> (0,1)
 
-    vld
+    hx1
 
 hrVr SQ22 (15,10) (5,5) 10
