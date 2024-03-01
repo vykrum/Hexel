@@ -490,7 +490,6 @@ module Coxel =
             Avbl = av2
         |}    
 
-
 // Test Zone
 # time "on"
 open Hexel
@@ -498,7 +497,6 @@ open Coxel
 let og:Hxl = AV(0,0,0)
 let sq = SQ11
 let t2 = coxel sq [|og,Refid "0",Count 10,Label "A"|] [||]
-
 #time "off"
 
 let treeStr = 
@@ -530,11 +528,12 @@ let hrVr
     (ehx : int*int)
     (wdt : int) = 
     let sth = (fst shx),(snd shx-snd shx%2)
-    let enh = (fst ehx),(snd shx-snd ehx%2)
+    let enh = (fst ehx),(snd ehx-snd ehx%2)
     let hx1 = match (fst sth > fst enh) with
                         |true -> [|fst sth ..(-1).. fst enh|] 
                         |false -> [|fst sth ..1.. fst enh|]
-    //let hx2 = hx1 |> Array.splitInto (abs (snd enh - snd sth)/2)
+    let hx2 = hx1 
+            |> Array.splitInto ((abs((snd enh)-(snd sth)))/2)
     
     let vld = 
     
@@ -579,6 +578,6 @@ let hrVr
                 | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34 
                     -> (0,1)
 
-    hx1
+    hx2
 
-hrVr SQ22 (15,10) (5,5) 10
+hrVr SQ22 (15,10) (5,53) 10
