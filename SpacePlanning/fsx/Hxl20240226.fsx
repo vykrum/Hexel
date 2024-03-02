@@ -527,6 +527,11 @@ let hrVr
     (shx : int*int)
     (ehx : int*int)
     (wdt : int) = 
+    
+    let vld = match shx with 
+                | a,b when (b%4 = 0) -> (a + (a%2)),b
+                | _ , b-> fst shx  , (b + (b%2))
+    
     let sth = (fst shx),(snd shx-snd shx%2)
     let enh = (fst ehx),(snd ehx-snd ehx%2)
     let hx1 = match (fst sth > fst enh) with
