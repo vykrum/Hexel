@@ -521,13 +521,13 @@ let t2 = coxel sq [|og,Refid "0",Count 10,Label "A"|] [||]
 #time "off"
 
 let treeStr = 
-  [|[|("1", 5, "Foyer"); ("1.1", 10, "Study"); ("2", 20, "Living")|];                             
+  [|[|("1", 5, "Foyer"); ("1.1", 10, "Study"); ("2", 20, "Living")|];
     [|("2", 20, "Living"); ("3", 20, "Dining")|];
-    [|("3", 20, "Dining"); ("3.1", 15, "Bed-1"); ("3.2", 15, "Bed-2"); ("3.3", 15, "Bed-3"); ("3.4", 15, "Kitchen"); ("4", 20, "Staircase")|];                     
-    [|("3.1", 15, "Bed-1"); ("3.1.1", 5, "Bath-1")|];                                             
-    [|("3.2", 15, "Bed-2"); ("3.2.1", 5, "Dress-2")|];                                            
-    [|("3.2.1", 5, "Dress-2"); ("3.2.1.1", 5, "Bath-2")|];                                        
-    [|("3.3", 15, "Bed-3"); ("3.3.1", 5, "Dress-3"); ("3.3.2", 5, "Bath-3")|];                    
+    [|("3", 20, "Dining"); ("3.1", 15, "Bed-1"); ("3.2", 15, "Bed-2"); ("3.3", 15, "Bed-3"); ("3.4", 15, "Kitchen"); ("4", 20, "Staircase")|];
+    [|("3.1", 15, "Bed-1"); ("3.1.1", 5, "Bath-1")|];
+    [|("3.2", 15, "Bed-2"); ("3.2.1", 5, "Dress-2")|];
+    [|("3.2.1", 5, "Dress-2"); ("3.2.1.1", 5, "Bath-2")|];
+    [|("3.3", 15, "Bed-3"); ("3.3.1", 5, "Dress-3"); ("3.3.2", 5, "Bath-3")|];
     [|("3.4", 15, "Kitchen"); ("3.4.1", 5, "Utility")|]|]
 
 let treeRef = treeStr 
@@ -540,69 +540,26 @@ let st = coxel sq [|(og , a , b, c)|] [||]
 let c01 = (cxlHxl (Array.head st) [||]).Avbl
 
 // Shapes
-let wdt = 10
-let hgt = 10
 
-let hrVr 
+let hxlLin
     (sqn : Sqn)
-    (shx : int*int)
-    (ehx : int*int)
-    (wdt : int) = 
-    
-    let sth = (fst shx),(snd shx-snd shx%2)
-    let enh = (fst ehx),(snd ehx-snd ehx%2)
-    let hx1 = match (fst sth > fst enh) with
-                        |true -> [|fst sth ..(-1).. fst enh|] 
-                        |false -> [|fst sth ..1.. fst enh|]
-    let hx2 = hx1 
-            |> Array.splitInto ((abs((snd enh)-(snd sth)))/2)
-    
-    let vld = 
-    
-                match sqn with 
-                | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22 
-                    ->  let stx = fst shx
-                        let sty =snd shx-snd shx%2
-                        let enx = fst ehx
-                        let eny = snd ehx-snd ehx%2
-                        
-                        let hxc = 
-                                            match (stx > enx) with
-                                            |true -> [|stx ..(-2).. enx|] 
-                                            |false -> [|stx ..2.. enx|]                
-                        hxc |> Array.splitInto (abs (eny - sty)/2)
-
-                | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34
-                    ->  let stx = fst shx-fst shx%4
-                        let sty =  snd shx
-                        let enx = fst ehx-fst ehx%4
-                        let eny = snd ehx
-                        let hxc = 
-                                            match (stx > enx) with
-                                            |true -> [|stx ..(-4).. enx|] 
-                                            |false -> [|stx ..4.. enx|]          
-                        hxc|> Array.splitInto (abs (eny - sty))
-    
-    let wic = match sqn with 
-                | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22 
-                    -> Array.map (fun x -> x,0) [|0..1..wdt|]
-                | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34 
-                    ->  [| 
-                            Array.map (fun x -> x,0) [|0..4..(wdt - (wdt%2))|]
-                            Array.map (fun x -> x,1) [|2..4..(wdt - (wdt%2) + 2)|]
-                        |]
-                        |> Array.transpose 
-                        |> Array.concat
-                                           
-    let hic = match sqn with 
-                | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22 
-                    -> (1,2)
-                | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34 
-                    -> (0,1)
+    (shx : Hxl)
+    (ehx : Hxl) = 
+    let sca,scb,scc = shx |> hxlVld sqn |> hxlCrd
+    let eca,ecb,ecc = ehx |> hxlVld sqn |> hxlCrd
+    let itr = match sqn with
+                    | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22
+                        -> 1
+                    | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34
+                        -> 2
+    let sgn = match sign(eca-sca) with
+                    | 0 -> 1
+                    | _ -> sign(eca-sca)
+    let hx1 = [|sca ..sgn*itr.. eca|] 
+            |> Array.splitInto (Array.min[|(abs(eca-sca))+2;(abs(ecb-scb))+2|])
     
 
-    hx2
+    hx1,ecb,scb
     
 
-//hrVr SQ23 (15,16) (5,53) 10
-hxlVld SQ23 (AV (15,13,0))
+hxlLin SQ22 (AV(15,6,0)) (AV(17,23,0))
