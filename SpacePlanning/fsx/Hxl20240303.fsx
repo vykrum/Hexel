@@ -119,16 +119,29 @@ module Hexel =
     let hxlVld 
         (sqn : Sqn)
         (hxl : Hxl) = 
+            let validate 
+                sqn 
+                crx 
+                cry 
+                crz = 
+                    match sqn with
+                    | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22
+                        -> match crx,cry with 
+                            | a,b when (b%4 = 0) -> (a + (a%2)), b, crz
+                            | a,b when (a%2 = 0)-> a+1, (b + (b%2)), crz
+                            | _,b-> crx, (b + (b%2)), crz
+                    | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34
+                        -> match crx,cry with 
+                            | a,b when (a%4 = 0) -> a, (b + (b%2)), crz
+                            | a,b when (b%2 = 0) -> (a + (a%2)), b+1, crz
+                            | a , _->  (a + (a%2)), cry, crz
+            // Get hexel coordinayes
             let crx,cry,crz = hxlCrd hxl
-            let vld = match sqn with
-                            | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22
-                                -> match crx,cry with 
-                                    | a,b when (b%4 = 0) -> (a + (a%2)), b, crz
-                                    | _ , b-> crx, (b + (b%2)), crz
-                            | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34
-                                -> match crx,cry with 
-                                    | a,b when (a%4 = 0) -> a, (b + (b%2)), crz
-                                    | a , _->  (a + (a%2)), cry, crz
+            // Validate coordinates
+            let x1,y1,z1 = validate sqn crx cry crz
+            // Revalidate changed coordinates
+            let vld = validate sqn x1 y1 z1
+            // Hexels with validated coordinates
             match hxl with
             | AV(_) -> AV(vld)
             | RV(_) -> RV(vld)
@@ -556,10 +569,12 @@ let hxlLin
                     | 0 -> 1
                     | _ -> sign(eca-sca)
     let hx1 = [|sca ..sgn*itr.. eca|] 
-            |> Array.splitInto (Array.min[|(abs(eca-sca))+2;(abs(ecb-scb))+2|])
+            |> Array.splitInto (abs((eca-sca+2)/2))
     
 
-    hx1,ecb,scb
+    hx1,(sca,scb),(eca,ecb)
     
 
 hxlLin SQ22 (AV(15,6,0)) (AV(17,23,0))
+
+hxlVld SQ23 (AV(2,2,0))
