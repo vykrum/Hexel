@@ -533,7 +533,7 @@ let sq = SQ11
 let t2 = coxel sq [|og,Refid "0",Count 10,Label "A"|] [||]
 #time "off"
 
-let treeStr = 
+(* let treeStr = 
   [|[|("1", 5, "Foyer"); ("1.1", 10, "Study"); ("2", 20, "Living")|];
     [|("2", 20, "Living"); ("3", 20, "Dining")|];
     [|("3", 20, "Dining"); ("3.1", 15, "Bed-1"); ("3.2", 15, "Bed-2"); ("3.3", 15, "Bed-3"); ("3.4", 15, "Kitchen"); ("4", 20, "Staircase")|];
@@ -550,7 +550,7 @@ let treeRef = treeStr
 
 let a,b,c = treeRef |> Array.concat |> Array.head
 let st = coxel sq [|(og , a , b, c)|] [||]
-let c01 = (cxlHxl (Array.head st) [||]).Avbl
+let c01 = (cxlHxl (Array.head st) [||]).Avbl *)
 
 // Shapes
 
