@@ -562,9 +562,9 @@ let hxlLin
     let eca,ecb,ecc = ehx |> hxlVld sqn |> hxlCrd
     let itr = match sqn with
                     | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22
-                        -> 2
+                        -> 2,4
                     | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34
-                        -> 4
+                        -> 4,2
     let sga = match sign(eca-sca) with
                     | 0 -> 1
                     | _ -> sign(eca-sca)
@@ -574,17 +574,17 @@ let hxlLin
     let spl = match abs(eca-sca) with 
                     | 0 -> 1
                     | x when abs(ecb-scb) < x -> abs(ecb-scb)+1
-                    | _ -> abs(eca-sca)+1
-    let hx1 = [|sca ..sga*itr.. eca|] 
+                    | _ -> abs(eca-sca)
+    let hx1 = [|sca ..sga*(fst itr).. eca|]
             |> Array.splitInto spl
-    let hx2 = [|scb ..sgb*itr.. ecb|] 
+    let hx2 = [|scb ..sgb*(snd itr).. ecb|]
             |> Array.splitInto spl
     
 
     hx1,hx2,(sca,scb),(eca,ecb)
     
 
-hxlLin SQ22 (AV(15,6,0)) (AV(17,7,0))
+hxlLin SQ22 (AV(0,0,0)) (AV(15,-2,0))
 
-hxlVld SQ23 (AV(2,2,0))
+
 
