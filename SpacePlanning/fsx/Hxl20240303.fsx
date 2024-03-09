@@ -554,36 +554,33 @@ let c01 = (cxlHxl (Array.head st) [||]).Avbl *)
 
 // Shapes
 
-let hxlLin
+/// <summary> Ortogonal Hexel Sequence </summary>
+/// <param name="sqn"> Sequence to follow. </param>
+/// <param name="org"> Start Hexel. </param> 
+/// <param name="lgt"> Sequence Length. </param> 
+/// <param name="vrt"> Vertical / Horizontal. </param> 
+/// <returns> Array of sequential Hexels. </returns>
+let hxlOrt 
     (sqn : Sqn)
-    (shx : Hxl)
-    (ehx : Hxl) = 
-    let sca,scb,scc = shx |> hxlVld sqn |> hxlCrd
-    let eca,ecb,ecc = ehx |> hxlVld sqn |> hxlCrd
-    let itr = match sqn with
-                    | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22
-                        -> 2,2
-                    | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34
-                        -> 2,1
-    let sga = match sign(eca-sca) with
-                    | 0 -> 1
-                    | _ -> sign(eca-sca)
-    let sgb = match sign(ecb-scb) with
-                    | 0 -> 1
-                    | _ -> sign(ecb-scb)
-    let spl = match abs(eca-sca) with
-                    | 0 -> 1
-                    | x when abs(ecb-scb) < x -> abs(ecb-scb)
-                    | _ -> abs(eca-sca)
-    let hx1 = [|sca ..sga*(fst itr).. eca|]
-            |> Array.splitInto spl
-    let hx2 = [|scb ..sgb*(snd itr).. ecb|]
-            |> Array.splitInto spl
-    
-    hx1,hx2,(sca,scb),(eca,ecb)
-    
+    (org : Hxl)
+    (lgt : int)
+    (vrt : bool) =
+    let hxx,hxy,hxz = org |> hxlVld sqn |> hxlCrd
+    match sqn with
+    | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22
+        -> match vrt with 
+            | true -> [|hxy..4..(hxy+lgt)|]
+                    |> Array.map (fun y -> [|RV(hxx,y,hxz);RV(hxx+1,y+2,hxz)|])
+                    |> Array.concat
+            | false -> Array.map (fun x -> RV (x,hxy,hxz)) [|hxx..2..(hxx+lgt)|]
+    | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34
+        -> match vrt with
+            | true -> Array.map (fun y -> RV (hxx,y,hxz)) [|hxy..2..(hxy+lgt)|]
+            | false -> [|hxx..4..(hxx+lgt)|] 
+                    |> Array.map (fun x -> [|RV(x,hxy,hxz);RV(x+2,hxy+1,hxz)|])
+                    |> Array.concat
+            
 
-hxlLin SQ22 (AV(15,-2,0))(AV(0,0,0)) 
+hxlOrt SQ23 (AV(15,-2,0))9 false
 
-
-
+                            
