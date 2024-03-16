@@ -586,6 +586,6 @@ let hxlOrt
                     |> Array.take ((lgt/2)+1)
             
 
-hxlOrt SQ22 (AV(15,-6,0))9 true
+hxlOrt SQ22 (AV(15,-6,0))9 false
 
                             
