@@ -492,10 +492,12 @@ module Coxel =
 
         /// Bounding Hexels
         let cl1 = cxl.Hxls
-        let cl2 =  Array.tail cl1
-        let cl3 = Array.Parallel.partition(fun x-> (available cxl.Seqn x occ) > 0) cl2
-        let bd1 = fst  cl3
-        let bd2 = bndSqn cxl.Seqn bd1
+        let cl2 = match ((available cxl.Seqn cxl.Base cl1) > 0) with
+                        | false -> cl1
+                        | true -> Array.tail cl1
+        let cl3 = cl1 |> Array.Parallel.partition
+                    (fun x-> (available cxl.Seqn x cl2) > 0) 
+        let bd1 = cl3 |> fst |> bndSqn cxl.Seqn
         
         /// Core Hexels
         let cr1 = snd cl3
@@ -506,11 +508,11 @@ module Coxel =
                         cxl.Hxls
                     |] |> allAV false
         
-        let cl4 = Array.Parallel.partition(fun x-> (available cxl.Seqn x oc1) > 0) bd2
+        let cl4 = bd1 |> Array.Parallel.partition
+                    (fun x-> (available cxl.Seqn x oc1) > 0)
         
         /// Available Hexels
-        let av1= fst cl4
-        let av2 = cntSqn cxl.Seqn av1
+        let av1= cl4 |> fst |> cntSqn cxl.Seqn
         
         /// Border Hexels
         let br1= snd cl4
@@ -519,9 +521,9 @@ module Coxel =
             Base = cxl.Base
             Hxls = cl1
             Core = cr1
-            Prph = bd2
+            Prph = bd1
             Brdr = br1
-            Avbl = av2
+            Avbl = av1
         |}    
 
 module Shape = 
@@ -564,12 +566,12 @@ open Coxel
 open Shape
 let og:Hxl = AV(0,0,0)
 let sq = SQ11
-let t2 = coxel sq [|og,Refid "0",Count 10,Label "A"|] [||]
+let t2 = coxel sq [|og, Refid "0", Count 10, Label "A"|] [||]
 //let l1 = hxlOrt SQ22 (AV(15,-6,0))9 true
 #time "off"
 
 let treeStr = 
-  [|[|("1", 5, "Foyer"); ("1.1", 10, "Study"); ("2", 20, "Living")|];
+  [|[|("1", 15, "Foyer"); ("1.1", 10, "Study"); ("2", 20, "Living")|];
     [|("2", 20, "Living"); ("3", 20, "Dining")|];
     [|("3", 20, "Dining"); ("3.1", 15, "Bed-1"); ("3.2", 15, "Bed-2"); ("3.3", 15, "Bed-3"); ("3.4", 15, "Kitchen"); ("4", 20, "Staircase")|];
     [|("3.1", 15, "Bed-1"); ("3.1.1", 5, "Bath-1")|];
@@ -585,9 +587,4 @@ let treeRef = treeStr
 
 let a,b,c = treeRef |> Array.concat |> Array.head
 let st = coxel sq [|(og , a , b, c)|] [||]
-let c01 = (cxlHxl (Array.head st) [||]).Avbl
-         
-
-
-
-                            
+let c01 = (cxlHxl (Array.head st) [||])
