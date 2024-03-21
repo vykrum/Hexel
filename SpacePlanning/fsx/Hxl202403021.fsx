@@ -336,17 +336,21 @@ module Hexel =
             (acc : Hxl[])
             (cnt : int) = 
             match cnt with 
-            | a when a<=1 -> acc
+            | x when x<=1 -> acc
             | _ -> 
                     let b = Array.last acc
                     let hxl = Array.except [|b|] hxl
                     let d = (adjacent sqn b) |> Array.tail
-                    let e = d |> Array.filter(fun x -> Array.contains x hxl) |> Array.tryHead
+                    let e = d |> Array.filter
+                                (fun x -> Array.contains x hxl) 
+                                |> Array.tryHead
                     let f = match e with 
                                 | Some a -> [|a|]
                                 | None -> [||]
                     let acc = Array.append acc f
                     ctSq sqn hxl acc (cnt-1)
+        let hxl = hxl |> Array.sortByDescending 
+                    (fun x -> available sqn x hxl)
         let cnt = Array.length(hxl)
         let arr =  ctSq sqn hxl ([|Array.head hxl|]) cnt
         let bln = cnt = Array.length(arr)
@@ -495,7 +499,7 @@ module Coxel =
         let cl2 = match ((available cxl.Seqn cxl.Base cl1) > 0) with
                         | false -> cl1
                         | true -> Array.tail cl1
-        let cl3 = cl1 |> Array.Parallel.partition
+        let cl3 = cl2 |> Array.Parallel.partition
                     (fun x-> (available cxl.Seqn x cl2) > 0) 
         let bd1 = cl3 |> fst |> bndSqn cxl.Seqn
         
@@ -512,7 +516,7 @@ module Coxel =
                     (fun x-> (available cxl.Seqn x oc1) > 0)
         
         /// Available Hexels
-        let av1= cl4 |> fst |> cntSqn cxl.Seqn
+        let av1= cl4 |> fst |> (cntSqn cxl.Seqn)
         
         /// Border Hexels
         let br1= snd cl4
