@@ -235,6 +235,19 @@ module Hexel =
             (Array.append occ [|hx1|])
         |> Array.length
 
+    ///<summary> Assign Hexel type. </summary>
+    /// <param name="sqn"> Sequence to follow. </param>
+    /// <param name="occ"> Array of Occupied/Unavailable hexels. </param>
+    /// <param name="hxl"> All constituent hexels. </param>
+    /// <returns> Reassigned Hexel Types </returns>
+    let hxlTyp
+        (sqn : Sqn)
+        (occ : Hxl[])
+        (hxl : Hxl[]) = 
+        hxl |> Array.map (fun x -> match (available sqn x (Array.append occ hxl)) < 1 with 
+                                    | true -> RV(hxlCrd x)
+                                    | false -> AV(hxlCrd x))
+
     /// <summary> Increment Hexels. </summary>
     /// <param name="sqn"> Sequence to follow. </param>
     /// <param name="hxo"> Array of Tuples containing Base hexel of collection and size. </param> 
@@ -470,7 +483,7 @@ module Coxel =
             clsts bas occ acc cnt
                 |> Array.Parallel.map(fun x 
                                         -> Array.filter(fun (_,z) -> z >= 0) x)
-
+        
         let cl1 = 
             cls
             |> Array.Parallel.map(fun x -> getHxls x)
@@ -482,7 +495,7 @@ module Coxel =
                                                     Size = fst x
                                                     Seqn = sqn
                                                     Base = fst y
-                                                    Hxls = z
+                                                    Hxls = z |> hxlTyp sqn (Array.append occ z)
                                                 })szn idn cl1
         cxl
 
@@ -491,43 +504,28 @@ module Coxel =
     /// <param name="occ"> Unavailable hexels. </param>
     /// <returns> Hexels categorized as Base, Hxls, Core, Prph, Brdr, Avbl. </returns>
     let cxlHxl
-        (cxl : Cxl)     
-        (occ : Hxl[]) = 
+        (cxl : Cxl)  = 
 
-        /// Bounding Hexels
-        let cl1 = cxl.Hxls
-        let cl2 = match ((available cxl.Seqn cxl.Base cl1) > 0) with
-                        | false -> cl1
-                        | true -> Array.tail cl1
-        let cl3 = cl2 |> Array.Parallel.partition
-                    (fun x-> (available cxl.Seqn x cl2) > 0) 
-        let bd1 = cl3 |> fst |> bndSqn cxl.Seqn
-        
-        /// Core Hexels
-        let cr1 = snd cl3
-        
-        let oc1 = Array.concat
-                    [|
-                        occ 
-                        cxl.Hxls
-                    |] |> allAV false
-        
-        let cl4 = bd1 |> Array.Parallel.partition
-                    (fun x-> (available cxl.Seqn x oc1) > 0)
-        
-        /// Available Hexels
-        let av1= cl4 |> fst |> (cntSqn cxl.Seqn)
-        
-        /// Border Hexels
-        let br1= snd cl4
- 
+        let avrv = cxl.Hxls 
+                |> Array.Parallel.partition
+                    (fun x -> x = AV(hxlCrd x))
+        let rv01 = (snd avrv) 
+                |> Array.Parallel.partition
+                    (fun x-> (available 
+                        cxl.Seqn 
+                        x 
+                        (snd avrv)) < 1)
+
         {|
             Base = cxl.Base
-            Hxls = cl1
-            Core = cr1
-            Prph = bd1
-            Brdr = br1
-            Avbl = av1
+            Hxls = cxl.Hxls
+            Core = rv01 |> fst 
+            Prph = (Array.append
+                (fst avrv) 
+                (snd rv01)) 
+                |> bndSqn cxl.Seqn
+            Brdr = rv01 |> snd |> bndSqn cxl.Seqn
+            Avbl = avrv |> fst |> bndSqn cxl.Seqn
         |}    
 
 module Shape = 
@@ -568,9 +566,10 @@ module Shape =
 open Hexel
 open Coxel
 open Shape
-let og:Hxl = AV(0,0,0)
+let og:Hxl = AV(1,2,0)
 let sq = SQ11
-let t2 = coxel sq [|og, Refid "0", Count 10, Label "A"|] [||]
+let oc  = (hxlOrt sq (AV(-50,0,0)) 100 false) |> allAV true
+let t2 = coxel sq [|og, Refid "0", Count 10, Label "A"|] oc
 //let l1 = hxlOrt SQ22 (AV(15,-6,0))9 true
 #time "off"
 
@@ -590,5 +589,5 @@ let treeRef = treeStr
                                             -> Refid a, Count b, Label c))x)
 
 let a,b,c = treeRef |> Array.concat |> Array.head
-let st = coxel sq [|(og , a , b, c)|] [||]
-let c01 = (cxlHxl (Array.head st) [||])
+let st = coxel sq [|(og , a , b, c)|] oc
+let c01 = cxlHxl (Array.head st) 
