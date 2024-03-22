@@ -300,7 +300,7 @@ module Hexel =
     /// <returns> Boundary/Peripheral hexels. </returns>
     let bndSqn 
         (sqn : Sqn) 
-        (hxl : Hxl[]) = 
+        (hxo : Hxl[]) = 
         /// <summary> Arrange/sort hexels in continuous sequence. </summary>
         /// <param name="sqn"> Sequence to follow. </param>
         /// <param name="hxl"> Array of hexels. </param>
@@ -327,7 +327,9 @@ module Hexel =
                                 | None -> [||]
                 let acc = Array.append acc  hx3
                 arr sqn hxl acc (cnt-1) opt
-        
+
+        let hxl = hxo|> Array.sortByDescending 
+                    (fun x -> available sqn x hxo)
         let a1 = 
             match hxl with 
             | [||] -> [||]
@@ -335,14 +337,20 @@ module Hexel =
 
         let b1 = Array.length a1 = Array.length hxl
         
-        match b1 with 
-        | true -> a1
-        | false -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) false
+        let ar1 = match b1 with 
+                    | true -> a1
+                    | false -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) false
+        match hxo with 
+        | [||] -> [||]
+        | _ ->  match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with 
+                | true -> ar1
+                | false -> allAV true ar1
 
     /// <summary> Hexel Ring Segment Sequence. </summary>
     let cntSqn
         (sqn : Sqn)
-        (hxl : Hxl[]) =      
+        (hxo : Hxl[]) =      
+        let hxl = allAV false hxo
         let rec ctSq 
             (sqn : Sqn)
             (hxl : Hxl[])
@@ -362,14 +370,22 @@ module Hexel =
                                 | None -> [||]
                     let acc = Array.append acc f
                     ctSq sqn hxl acc (cnt-1)
+
         let hxl = hxl |> Array.sortByDescending 
                     (fun x -> available sqn x hxl)
         let cnt = Array.length(hxl)
-        let arr =  ctSq sqn hxl ([|Array.head hxl|]) cnt
+        let arr =  match hxl with 
+                        | [||] -> [||]
+                        | _ -> ctSq sqn hxl ([|Array.head hxl|]) cnt
         let bln = cnt = Array.length(arr)
-        match bln with 
-        | true -> arr
-        | false -> ctSq sqn (Array.rev hxl) ([|Array.last hxl|]) cnt
+        let ar1 = match bln with 
+                    | true -> arr
+                    | false -> ctSq sqn (Array.rev hxl) ([|Array.last hxl|]) cnt
+        match hxo with 
+        | [||] -> [||]
+        | _ ->  match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with 
+                | true -> ar1
+                | false -> allAV true ar1
 
 module Coxel =
     open Hexel
@@ -513,19 +529,33 @@ module Coxel =
                 |> Array.Parallel.partition
                     (fun x-> (available 
                         cxl.Seqn 
-                        x 
-                        (snd avrv)) < 1)
-
+                        (AV(hxlCrd x)) 
+                        (allAV false (cxl.Hxls))) < 1)
+        let av01 = match (snd rv01) with 
+                    | [||] -> avrv |> fst |> bndSqn cxl.Seqn
+                    | _ -> avrv |> fst |> cntSqn cxl.Seqn
+        let br01 = match (fst rv01) with 
+                    | [||] -> rv01 |> snd |> bndSqn cxl.Seqn
+                    | _ -> rv01 |> snd |> cntSqn cxl.Seqn
+         
+        let pr01 = match av01 with 
+                        | [||] -> br01
+                        | _ -> match br01 with 
+                                | [||] -> av01
+                                | _ -> match adjacent 
+                                        cxl.Seqn 
+                                        (Array.last av01) 
+                                        |> allAV true
+                                        |> Array.contains (Array.head br01) with 
+                                        | true -> Array.append av01 br01
+                                        | false -> Array.append av01 (Array.rev br01)
         {|
             Base = cxl.Base
             Hxls = cxl.Hxls
             Core = rv01 |> fst 
-            Prph = (Array.append
-                (fst avrv) 
-                (snd rv01)) 
-                |> bndSqn cxl.Seqn
-            Brdr = rv01 |> snd |> bndSqn cxl.Seqn
-            Avbl = avrv |> fst |> bndSqn cxl.Seqn
+            Prph = pr01
+            Brdr = br01
+            Avbl = av01 
         |}    
 
 module Shape = 
@@ -566,9 +596,11 @@ module Shape =
 open Hexel
 open Coxel
 open Shape
-let og:Hxl = AV(1,2,0)
+let og:Hxl = AV(0,0,0)
+//let og:Hxl = AV(1,2,0)
 let sq = SQ11
-let oc  = (hxlOrt sq (AV(-50,0,0)) 100 false) |> allAV true
+let oc = [||]
+//let oc  = (hxlOrt sq (AV(-50,0,0)) 100 false) |> allAV true
 let t2 = coxel sq [|og, Refid "0", Count 10, Label "A"|] oc
 //let l1 = hxlOrt SQ22 (AV(15,-6,0))9 true
 #time "off"
