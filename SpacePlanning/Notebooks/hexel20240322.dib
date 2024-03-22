@@ -1,3 +1,9 @@
+#!meta
+
+{"kernelInfo":{"defaultKernelName":"csharp","items":[{"aliases":[],"name":"csharp"}]}}
+
+#!fsharp
+
 module Hexel =
     /// <summary> Hexel is a location representing an irregular hexagonal module.
     /// Collections of hexels in a hexagonal grid form Coxels.
@@ -387,6 +393,8 @@ module Hexel =
                 | true -> ar1
                 | false -> allAV true ar1
 
+#!fsharp
+
 module Coxel =
     open Hexel
     /// <summary> Coxels are primarily a collections of unique hexels </summary>
@@ -558,6 +566,8 @@ module Coxel =
             Avbl = av01 
         |}    
 
+#!fsharp
+
 module Shape = 
     open Hexel
     /// <summary> Ortogonal Hexel Sequence </summary>
@@ -591,6 +601,8 @@ module Shape =
                         |> Array.concat
                         |> Array.take ((lgt/2)+1)
 
+#!fsharp
+
 // Test Zone
 # time "on"
 open Hexel
@@ -623,3 +635,4 @@ let treeRef = treeStr
 let a,b,c = treeRef |> Array.concat |> Array.head
 let st = coxel sq [|(og , a , b, c)|] oc
 let c01 = cxlHxl (Array.head st) 
+c01
