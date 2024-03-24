@@ -665,16 +665,38 @@ module Parse =
         (seq : Sqn)
         (bas : Hxl)
         (occ : Hxl[])
-        (treeStr: (string*int*string)[][])  = 
-        let treeSt01 = 
-            treeStr 
+        (str : string) = 
+        
+        let avlReq 
+            (tr01 : (Prp*Prp*Prp)[][]) = 
+            let chlMap = 
+                tr01
+                |> Array.map(fun x -> Array.head x,Array.length x)
+                |> Array.map(fun ((a,_,_),b) ->  a, b-1) 
+                |> Map.ofArray
+            
+            let chdCnt = 
+                tr01
+                |> Array.map(fun x -> 
+                    Array.map(fun (a,_,_) 
+                                -> Map.tryFind a chlMap)x)
+                |> Array.map (fun x 
+                                -> Array.map(fun y 
+                                                -> match y with 
+                                                    | Some y -> y
+                                                    | None -> 0)x)
+            chdCnt
+
+        let tree01 = 
+            spaceSeq str 
                 |> Array.map (fun x -> 
                     Array.map(fun (a,b,c) 
                                 -> Refid a, Count b, Label c)x)
+
         // Generate base coxel
-        let id,ct,lb = treeSt01 |> Array.concat |> Array.head
+        let id,ct,lb = tree01 |> Array.concat |> Array.head
         let baseCxl = coxel seq ([|bas, id, ct, lb|]) occ
-        baseCxl
+        avlReq tree01 
 
 // Test Zone
 open Hexel
@@ -693,4 +715,4 @@ let a = treeRef
             SQ11 
             (AV(1,2,0))
             ((hxlOrt SQ11 (AV(-50,0,0)) 100 false) |> allAV true)
-            treeStr
+            spaceStr
