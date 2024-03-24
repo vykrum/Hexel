@@ -505,13 +505,14 @@ module Coxel =
             |> Array.Parallel.map(fun x -> getHxls x)
         
         let cxl = Array.map3 (fun x y z -> 
+                                                let hx1 = z |> hxlTyp sqn (Array.append occ z)
                                                 {
                                                     Name = snd x
                                                     Rfid = snd y
                                                     Size = fst x
                                                     Seqn = sqn
-                                                    Base = fst y
-                                                    Hxls = z |> hxlTyp sqn (Array.append occ z)
+                                                    Base = Array.head hx1
+                                                    Hxls = Array.tail hx1
                                                 })szn idn cl1
         cxl
 
@@ -666,7 +667,7 @@ module Parse =
         (bas : Hxl)
         (occ : Hxl[])
         (str : string) = 
-        
+        (*         
         let avlReq 
             (tr01 : (Prp*Prp*Prp)[][]) = 
             let chlMap = 
@@ -686,7 +687,7 @@ module Parse =
                                                     | Some y -> y
                                                     | None -> 0)x)
             chdCnt
-
+        *)
         let tree01 = 
             spaceSeq str 
                 |> Array.map (fun x -> 
@@ -695,8 +696,32 @@ module Parse =
 
         // Generate base coxel
         let id,ct,lb = tree01 |> Array.concat |> Array.head
-        let baseCxl = coxel seq ([|bas, id, ct, lb|]) occ
-        avlReq tree01 
+        let accCxl = coxel seq ([|bas, id, ct, lb|]) occ
+        let mapCxl = accCxl |> Array.map(fun x -> x,x.Rfid) |> Map.ofArray
+
+        let cxlCxl 
+            (seq : Sqn)
+            (tr01 : (Prp*Prp*Prp)[])
+            (acc : Cxl[]) 
+            (occ : Hxl[]) = 
+            let mapAcc = acc |> Array.map(fun x -> x,x.Rfid) |> Map.ofArray
+            let cnt = (Array.length tr01) - 1
+            let bsId = 
+                        acc 
+                        |> Array.map(fun x -> x.Rfid,x) 
+                        |> Map.ofArray
+                        |> Map.find (tr01 |> Array.map (fun (a,_,_) -> a) |> Array.head)
+                        
+            let chHx = bsId.Hxls |> Array.filter (fun x -> (AV(hxlCrd x))=x)
+            let chBs = Array.take cnt chHx
+            let chPr = Array.tail tr01
+            coxel 
+                seq
+                (Array.map2 (fun a (b, c, d) -> a,b,c,d) chBs chPr)
+                occ
+        Array.append
+            accCxl     
+            (cxlCxl seq (Array.head tree01) accCxl (Array.append occ (Array.head accCxl).Hxls))
 
 // Test Zone
 open Hexel
