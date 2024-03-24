@@ -592,6 +592,8 @@ module Shape =
                         |> Array.take ((lgt/2)+1)
 
 module Parse = 
+    open Hexel
+    open Coxel
     let spaceSeq 
         (spaceStr:string) = 
         
@@ -657,55 +659,28 @@ module Parse =
             |> Array.map (fun z 
                             -> (Array.map (fun (x,y) 
                                             -> x, fst y, snd y))z)
-        
         spcKey    
 
+    let treeRef 
+        (seq : Sqn)
+        (bas : Hxl)
+        (occ : Hxl[])
+        (treeStr: (string*int*string)[][])  = 
+        let treeSt01 = 
+            treeStr 
+                |> Array.map (fun x -> 
+                    Array.map(fun (a,b,c) 
+                                -> Refid a, Count b, Label c)x)
+        // Generate base coxel
+        let id,ct,lb = treeSt01 |> Array.concat |> Array.head
+        let baseCxl = coxel seq ([|bas, id, ct, lb|]) occ
+        baseCxl
+
 // Test Zone
-# time "on"
 open Hexel
 open Coxel
 open Shape
 open Parse
-//let og:Hxl = AV(0,0,0)
-//let og:Hxl = AV(1,2,0)
-//let sq = SQ11
-//let oc = [||]
-//et oc  = (hxlOrt sq (AV(-50,0,0)) 100 false) |> allAV true
-//let t2 = coxel sq [|og, Refid "0", Count 10, Label "A"|] oc
-//let l1 = hxlOrt SQ22 (AV(15,-6,0))9 true
-#time "off"
-
-(* let treeStr = 
-  [|[|("1", 15, "Foyer"); ("1.1", 10, "Study"); ("2", 20, "Living")|];
-    [|("2", 20, "Living"); ("3", 20, "Dining")|];
-    [|("3", 20, "Dining"); ("3.1", 15, "Bed-1"); ("3.2", 15, "Bed-2"); ("3.3", 15, "Bed-3"); ("3.4", 15, "Kitchen"); ("4", 20, "Staircase")|];
-    [|("3.1", 15, "Bed-1"); ("3.1.1", 5, "Bath-1")|];
-    [|("3.2", 15, "Bed-2"); ("3.2.1", 5, "Dress-2")|];
-    [|("3.2.1", 5, "Dress-2"); ("3.2.1.1", 5, "Bath-2")|];
-    [|("3.3", 15, "Bed-3"); ("3.3.1", 5, "Dress-3"); ("3.3.2", 5, "Bath-3")|];
-    [|("3.4", 15, "Kitchen"); ("3.4.1", 5, "Utility")|]|]
- *)
-
-
-//let a,b,c = treeRef |> Array.concat |> Array.head
-//let st = coxel sq [|(identity , a , b, c)|] oc
-//let c01 = cxlHxl (Array.head st) 
-
-let treeRef 
-    (seq : Sqn)
-    (bas : Hxl)
-    (occ : Hxl[])
-    (treeStr: (string*int*string)[][])  = 
-    let treeSt01 = 
-        treeStr 
-            |> Array.map (fun x -> 
-                Array.map(fun (a,b,c) 
-                            -> Refid a, Count b, Label c)x)
-    // Generate base coxel
-    let id,ct,lb = treeSt01 |> Array.concat |> Array.head
-    let baseCxl = coxel seq ([|bas, id, ct, lb|]) occ
-    baseCxl
-
 // Sample Format
 let spaceStr =
      "(1/5/Foyer),(2/20/Living),(3/20/Dining),
@@ -714,7 +689,8 @@ let spaceStr =
     (3.1.1/5/Bath-1),(3.2.1/5/Dress-2),(3.3.1/5/Dress-3),
     (3.3.2/5/Bath-3),(3.4.1/5/Utility),(3.2.1.1/5/Bath-2)"
 let treeStr = spaceSeq spaceStr
-let sq1 = SQ11
-let bs1 = AV(1,2,0)
-let oc1 = (hxlOrt sq1 (AV(-50,0,0)) 100 false) |> allAV true
-let a = treeRef  SQ11 bs1 oc1 treeStr
+let a = treeRef  
+            SQ11 
+            (AV(1,2,0))
+            ((hxlOrt SQ11 (AV(-50,0,0)) 100 false) |> allAV true)
+            treeStr
