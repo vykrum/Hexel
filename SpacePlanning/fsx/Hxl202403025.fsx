@@ -439,7 +439,7 @@ module Coxel =
         
         let bas = Array.Parallel.map(fun (x,_,y,_) -> x,int(prpVlu y)) ini
         let szn = Array.Parallel.map(fun (_,_,y,z) -> y,z) ini
-        let idn = Array.Parallel.map (fun(x,y,_,_)->x,y) ini
+        let idn = Array.Parallel.map (fun(x,y,_,_)-> x,y) ini
 
         let cnt = 
                 bas
@@ -490,7 +490,12 @@ module Coxel =
                                 acc
                                 (Array.chunkBySize 1 inc)
 
-                    let occ = Array.concat[|getHxls (Array.concat [|Array.concat acc; inc;Hxl|]);occ|] |> allAV false
+                    let occ = Array.concat[|getHxls 
+                        (Array.concat [|
+                        Array.concat acc
+                        inc
+                        Hxl|]);occ|] 
+                            |> allAV false
 
                     (clsts Hxl occ acc (cnt - 0x1))
 
@@ -507,12 +512,16 @@ module Coxel =
             |> Array.Parallel.map(fun x -> getHxls x)
         let cl01 = 
             cl00
-            |> Array.Parallel.map(fun x -> Array.tail x)
-            |> Array.Parallel.map(fun x -> Array.filter(fun y -> (available sqn y x) < 5)x)
-        let cl1 = Array.map2 (fun x y -> Array.append [|Array.head x|] y) cl00 cl01
-        
+            |> Array.Parallel.map(fun x 
+                                    -> Array.filter(fun y 
+                                                        -> (available sqn y x) < 5)x)
+         
+        let cl1 = Array.map2 (fun x y 
+                                    -> Array.append [|Array.head x|] y) cl00 cl01
+
         let cxl = Array.map3 (fun x y z -> 
-                                                let hx1 = z |> hxlTyp sqn (Array.append occ z)
+                                                let hx1 = z 
+                                                        |> hxlTyp sqn (Array.append occ z)
                                                 
                                                 {
                                                     Name = snd x
@@ -520,7 +529,7 @@ module Coxel =
                                                     Size = fst x
                                                     Seqn = sqn
                                                     Base = Array.head hx1
-                                                    Hxls = hx1
+                                                    Hxls = Array.except ([|Array.head hx1|]) hx1
                                                 })szn idn cl1
         cxl
 
@@ -704,8 +713,12 @@ module Parse =
 
         // Generate base coxel
         let id,ct,lb = tree01 |> Array.concat |> Array.head
-        let accCxl = coxel seq ([|bas, id, ct, lb|]) occ
-        let oc1 = (Array.concat [|occ; [|bas|]; (Array.head accCxl).Hxls|])
+        let cti  = match ct with Count x -> Count (x-1) | _ -> Count 0
+                        
+        let ac1 = coxel seq ([|bas, id, cti, lb|]) occ
+        // Include base Hexel among base Coxel Hexels
+        let ac2 = {(Array.head ac1) with Cxl.Hxls = (Array.append [|bas|] (Array.head ac1).Hxls)}
+        let oc1 = (Array.concat [|occ; [|bas|]; (Array.head ac1).Hxls|])
 
         let cxlCxl 
             (seq : Sqn)
@@ -714,13 +727,13 @@ module Parse =
             (acc : Cxl[]) = 
             
             let cnt = (Array.length tre) - 1
-            let bsId = 
+            let bsCx = 
                         acc 
                         |> Array.map(fun x -> x.Rfid,x) 
                         |> Map.ofArray
                         |> Map.find (tre |> Array.map (fun (a,_,_) -> a) |> Array.head)
                         
-            let chHx = bsId.Hxls |> Array.filter (fun x -> (AV(hxlCrd x))=x)
+            let chHx = bsCx.Hxls |> Array.filter (fun x -> (AV(hxlCrd x))=x)
             let chBs = Array.take cnt chHx
             let chPr = Array.tail tre
             let cxc1 = coxel 
@@ -753,7 +766,7 @@ module Parse =
                         | None -> acc
             a
 
-        cxCxCx seq tree01 oc1 accCxl
+        cxCxCx seq tree01 oc1 [|ac2|]
 
 
 // Test Zone
@@ -763,11 +776,11 @@ open Shape
 open Parse
 // Sample Format
 let spaceStr =
-     "(1/5/Foyer),(2/20/Living),(3/20/Dining),
-    (4/10/Staircase),(1.1/10/Study),(3.1/15/Bed-1),
-    (3.2/15/Bed-2),(3.3/15/Bed-3),(3.4/15/Kitchen),
-    (3.1.1/5/Bath-1),(3.2.1/5/Dress-2),(3.3.1/5/Dress-3),
-    (3.3.2/5/Bath-3),(3.4.1/5/Utility),(3.2.1.1/5/Bath-2)"
+     "(1/7/Foyer),(2/12/Living),(3/9/Dining),
+    (4/8/Staircase),(1.1/11/Study),(3.1/14/Bed-1),
+    (3.2/14/Bed-2),(3.3/16/Bed-3),(3.4/13/Kitchen),
+    (3.1.1/6/Bath-1),(3.2.1/5/Dress-2),(3.3.1/7/Dress-3),
+    (3.3.2/6/Bath-3),(3.4.1/8/Utility),(3.2.1.1/4/Bath-2)"
 let treeStr = spaceSeq spaceStr
 let a = spaceCxl 
             SQ11 
