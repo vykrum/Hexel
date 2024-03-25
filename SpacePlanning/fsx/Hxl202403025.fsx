@@ -766,7 +766,7 @@ module Parse =
                         | None -> acc
             a
 
-        cxCxCx seq tree01 oc1 [|ac2|]
+        cxCxCx seq tree01 oc1 ac1
 
 
 // Test Zone
