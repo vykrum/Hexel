@@ -697,31 +697,56 @@ module Parse =
         // Generate base coxel
         let id,ct,lb = tree01 |> Array.concat |> Array.head
         let accCxl = coxel seq ([|bas, id, ct, lb|]) occ
-        let mapCxl = accCxl |> Array.map(fun x -> x,x.Rfid) |> Map.ofArray
+        let occ = (Array.append occ (Array.head accCxl).Hxls)
 
         let cxlCxl 
             (seq : Sqn)
-            (tr01 : (Prp*Prp*Prp)[])
-            (acc : Cxl[]) 
-            (occ : Hxl[]) = 
-            let mapAcc = acc |> Array.map(fun x -> x,x.Rfid) |> Map.ofArray
-            let cnt = (Array.length tr01) - 1
+            (tre : (Prp*Prp*Prp)[])
+            (occ : Hxl[])
+            (acc : Cxl[]) = 
+            
+            let cnt = (Array.length tre) - 1
             let bsId = 
                         acc 
                         |> Array.map(fun x -> x.Rfid,x) 
                         |> Map.ofArray
-                        |> Map.find (tr01 |> Array.map (fun (a,_,_) -> a) |> Array.head)
+                        |> Map.find (tre |> Array.map (fun (a,_,_) -> a) |> Array.head)
                         
             let chHx = bsId.Hxls |> Array.filter (fun x -> (AV(hxlCrd x))=x)
             let chBs = Array.take cnt chHx
-            let chPr = Array.tail tr01
-            coxel 
-                seq
-                (Array.map2 (fun a (b, c, d) -> a,b,c,d) chBs chPr)
-                occ
-        Array.append
-            accCxl     
-            (cxlCxl seq (Array.head tree01) accCxl (Array.append occ (Array.head accCxl).Hxls))
+            let chPr = Array.tail tre
+            let cxc1 = coxel 
+                        seq
+                        (Array.map2 (fun a (b, c, d) -> a,b,c,d) chBs chPr)
+                        occ
+            // Reassigning Hexel types
+            let chHx1 = Array.map (fun x -> x.Hxls) cxc1
+            let chOc1 = Array.append occ (Array.concat chHx1)
+            let chHx2 = Array.map (fun x -> hxlTyp seq chOc1 x) chHx1
+            let chHx3 = hxlTyp seq chOc1 (Array.map (fun x -> x.Base) cxc1)
+            let cxc2 = Array.map3 (fun x y z -> {x with Cxl.Hxls = y; Cxl.Base = z}) cxc1 chHx2 chHx3
+            cxc2
+
+        let rec cxCxCx
+            (seq : Sqn)
+            (tre : (Prp*Prp*Prp)[][])
+            (occ : Hxl[])
+            (acc : Cxl[]) =
+            
+            let a = match Array.tryHead tre with 
+                        | Some a 
+                            -> let tr1 = a
+                               let occ = Array.append occ (Array.head acc).Hxls
+                               let tre = Array.tail tre
+                               let acc = Array.append 
+                                            acc 
+                                            (cxlCxl seq a occ acc)
+                               cxCxCx seq tre occ acc
+                        | None -> acc
+            a
+
+        cxCxCx seq tree01 occ accCxl
+
 
 // Test Zone
 open Hexel
