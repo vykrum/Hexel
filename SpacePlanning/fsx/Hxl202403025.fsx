@@ -609,6 +609,9 @@ module Shape =
                         |> Array.concat
                         |> Array.take ((lgt/2)+1)
 
+    //Create coxel perimeter
+
+
 module Parse = 
     open Hexel
     open Coxel
