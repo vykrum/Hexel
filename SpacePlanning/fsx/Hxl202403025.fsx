@@ -584,6 +584,9 @@ module Shape =
     /// <param name="lgt"> Sequence Length. </param> 
     /// <param name="vrt"> Vertical / Horizontal. </param> 
     /// <returns> Array of Sequential Reserved Hexels. </returns>
+    
+    type Shp = 
+        | HxFl | HxPt | QdSq | RhHr | RhVr | PrFl | PrAn
     let hxlOrt 
         (sqn : Sqn)
         (org : Hxl)
@@ -609,7 +612,29 @@ module Shape =
                         |> Array.concat
                         |> Array.take ((lgt/2)+1)
 
-    //Create coxel perimeter
+    // Hexel Vertices
+    let vertex
+        (sqn : Sqn)
+        (shp : Shp)
+        (hxl : Hxl) = 
+        let hxCr = match sqn with 
+                    | SQ11 | SQ12 | SQ13 | SQ14 | SQ15 | SQ16 | SQ17 | SQ18 | SQ19 | SQ20 | SQ21 | SQ22 
+                        -> match shp with
+                            | HxPt -> [|0,0; 1,1; 2,0; 2,-1; 1,-2; 0,-1|]
+                            | QdSq -> [|0,0; 2,0; 2,-2; 0,-2|]
+                            | RhVr -> [|0,0; 1,2; 2,0; 1,-2|]
+                            | PrFl -> [|0,0; 2,0; 1,-2; -1,-2|]
+                            | _ -> [|0,0; 1,1; 2,0; 2,-1; 1,-2; 0,-1|]
+                    | SQ23 | SQ24 | SQ25 | SQ26 | SQ27 | SQ28 | SQ29 | SQ30 | SQ31 | SQ32 | SQ33 | SQ34
+                        -> match shp with
+                            | HxFl -> [|0,0; 1,1; 2,1; 3,0; 2,-1; 1,-1|]
+                            | RhHr -> [|0,0; 2,1; 4,0; 2,-1|]
+                            | PrAn -> [|0,0; 2,1; 2,-1; 0,-2|]
+                            | _ -> [|0,0; 1,1; 2,1; 3,0; 2,-1; 1,-1|]
+        let x, y, _ = hxl |> hxlCrd 
+        hxCr |> Array.map(fun (a,b)-> a + x, b + y)
+        
+    // Coxel perimeter
 
 
 module Parse = 
