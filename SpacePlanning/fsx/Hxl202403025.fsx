@@ -585,6 +585,14 @@ module Shape =
     /// <param name="vrt"> Vertical / Horizontal. </param> 
     /// <returns> Array of Sequential Reserved Hexels. </returns>
     
+    /// <summary> Module shape in tessalated hexagonal grid. </summary>
+    /// <typeparam name="HxFl"> Hexagon Flat-Top. </typeparam>
+    /// <typeparam name="HxPt"> Hexagon Pointy-Top. </typeparam>
+    /// <typeparam name="QdSq"> Square. </typeparam>
+    /// <typeparam name="PrFl"> Parallelogram Flat. </typeparam>
+    /// <typeparam name="PrAn"> Parallelogram Angled. </typeparam>
+    /// <typeparam name="RhHr"> Rhombus Horizontal. </typeparam>
+    /// <typeparam name="RhVr"> Rhombus Vertical. </typeparam>
     type Shp = 
         | HxFl | HxPt | QdSq | RhHr | RhVr | PrFl | PrAn
     let hxlOrt 
@@ -633,7 +641,7 @@ module Shape =
                             | _ -> [|0,0; 1,1; 2,1; 3,0; 2,-1; 1,-1|]
         let x, y, _ = hxl |> hxlCrd 
         hxCr |> Array.map(fun (a,b)-> a + x, b + y)
-        
+
     // Coxel perimeter
 
 
