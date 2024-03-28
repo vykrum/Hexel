@@ -643,9 +643,6 @@ module Shape =
         let x, y, _ = hxl |> hxlCrd 
         hxCr |> Array.map(fun (a,b)-> a + x, b + y)
 
-    // Coxel perimeter
-
-
 module Parse = 
     open Hexel
     open Coxel
@@ -804,7 +801,6 @@ module Parse =
             a
 
         cxCxCx seq tree01 oc1 ac1
-
 
 // Test Zone
 open Hexel
