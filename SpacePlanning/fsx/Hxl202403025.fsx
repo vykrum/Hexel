@@ -747,11 +747,23 @@ module Parse =
 
         // Generate base coxel
         let id,ct,lb = tree01 |> Array.concat |> Array.head
-        let cti  = match ct with Count x -> Count (x-1) | _ -> Count 0
-                        
-        let ac1 = coxel seq ([|bas, id, cti, lb|]) occ
+        let cti  = match ct with 
+                    | Count x when x>0 -> Count (x-1) 
+                    | _ -> Count 0       
+        let ac1 = match cti with 
+                    | Count a when a < 1 -> coxel seq ([|identity, id, cti, lb|]) occ
+                    | _ -> coxel seq ([|bas, id, cti, lb|]) occ
+        let bs1 = match cti with 
+                    | Count a when a > 0 -> [|bas|]
+                    | _ ->[||]
         // Include base Hexel among base Coxel Hexels
-        let ac2 = {(Array.head ac1) with Cxl.Hxls = (Array.append [|bas|] (Array.head ac1).Hxls)}
+        let ac2 = [|{(Array.head ac1) with 
+                        Cxl.Hxls = hxlTyp 
+                            seq 
+                            occ 
+                            (Array.append 
+                            bs1
+                            (Array.head ac1).Hxls)}|]
         let oc1 = (Array.concat [|occ; [|bas|]; (Array.head ac1).Hxls|])
 
         let cxlCxl 
@@ -759,8 +771,6 @@ module Parse =
             (tre : (Prp*Prp*Prp)[])
             (occ : Hxl[])
             (acc : Cxl[]) = 
-            
-            let cnt = (Array.length tre) - 1
             let bsCx = 
                         acc 
                         |> Array.map(fun x -> x.Rfid,x) 
@@ -768,7 +778,12 @@ module Parse =
                         |> Map.find (tre |> Array.map (fun (a,_,_) -> a) |> Array.head)
                         
             let chHx = bsCx.Hxls |> Array.filter (fun x -> (AV(hxlCrd x))=x)
-            let chBs = Array.take cnt chHx
+            let cnt = (Array.length tre) - 1
+            let chBs = match (Array.length chHx) >= cnt with 
+                        | true -> Array.take cnt chHx
+                        | false -> Array.append 
+                                    chHx 
+                                    (Array.replicate (cnt - (Array.length chHx)) identity)
             let chPr = Array.tail tre
             let cxc1 = coxel 
                         seq
@@ -800,7 +815,7 @@ module Parse =
                         | None -> acc
             a
 
-        cxCxCx seq tree01 oc1 ac1
+        cxCxCx seq tree01 oc1 ac2
 
 // Test Zone
 open Hexel
@@ -809,15 +824,16 @@ open Shape
 open Parse
 // Sample Format
 let spaceStr =
-     "(1/7/Foyer),(2/12/Living),(3/9/Dining),
+     "(1/7/Foyer),(2/0/Living),(3/9/Dining),
     (4/9/Staircase),(1.1/11/Study),(3.1/14/Bed-1),
     (3.2/14/Bed-2),(3.3/16/Bed-3),(3.4/13/Kitchen),
     (3.1.1/6/Bath-1),(3.2.1/5/Dress-2),(3.3.1/7/Dress-3),
     (3.3.2/6/Bath-3),(3.4.1/8/Utility),(3.2.1.1/4/Bath-2)"
 let treeStr = spaceSeq spaceStr
 let sqn = VRCWEE
+//coxel sqn [|(AV(0,0,0), Refid "B", Count 0, Label "A")|] [||]
 let a = spaceCxl 
             sqn 
             (AV(1,2,0))
             ((hxlOrt sqn (AV(-50,0,0)) 100 false) |> allAV true)
-            spaceStr
+            spaceStr 
