@@ -646,6 +646,9 @@ module Shape =
 module Parse = 
     open Hexel
     open Coxel
+    /// <summary> Categorize constituent Hexels within a Coxel. </summary>
+    /// <param name="spaceStr"> Properly formatted string (RefId,Count,Lablel) </param>
+    /// <returns> Array of string arrays (RefId as string * Count as int * Label as string)  </returns>
     let spaceSeq 
         (spaceStr:string) = 
         
@@ -713,6 +716,11 @@ module Parse =
                                             -> x, fst y, snd y))z)
         spcKey    
 
+    /// <summary> Generate coxels based on string data. </summary>
+    /// <param name="seq"> Sequence. </param>
+    /// <param name="bas"> Base hexel. </param>
+    /// <param name="occ"> Unavailable hexels. </param>
+    /// <returns> Coxel array </returns>    
     let spaceCxl 
         (seq : Sqn)
         (bas : Hxl)
