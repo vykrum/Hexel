@@ -832,9 +832,9 @@ open Shape
 open Parse
 // Sample Format
 let spaceStr =
-     "(1/7/Foyer),(2/12/Living),(3/9/Dining),
-    (1.1/11/Study),(2.1/9/Staircase),(3.1/14/Bed-1),
-    (3.2/14/Bed-2),(3.3/16/Bed-3),(3.4/13/Kitchen),
+     "(1/7/Foyer),(2/10/Living),(3/9/Dining),
+    (1.1/11/Study),(2.1/9/Staircase),(3.1/12/Bed-1),
+    (3.2/13/Bed-2),(3.3/12/Bed-3),(3.4/11/Kitchen),
     (3.1.1/6/Bath-1),(3.2.1/5/Dress-2),(3.3.1/7/Dress-3),
     (3.3.2/6/Bath-3),(3.4.1/8/Utility),(3.2.1.1/4/Bath-2)"
 let treeStr = spaceSeq spaceStr
