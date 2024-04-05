@@ -70,7 +70,7 @@ module Hexel =
     /// Hexadecimal number system - 0x0:0, 0x1:1, 0x2:2, 0xFFFFFFFF:-1, 0xFFFFFFFE:-2 </summary>
     /// <param name="sqn"> Sequence to follow. </param>
     /// <returns> An array of two dimensional surrounding locations. </returns>
-    let sequence 
+    let sequence
         (sqn:Sqn) =  
         match sqn with 
         | VRCWEE -> [|0x0,0x0; 0x2,0x0; 0x1,0xFFFFFFFE; 0xFFFFFFFF,0xFFFFFFFE; 0xFFFFFFFE,0x0; 0xFFFFFFFF,0x2; 0x1,0x2|]
@@ -106,7 +106,7 @@ module Hexel =
     /// <summary> Extract coordinates from hexel. </summary>
     /// <param name="hexel"> Hexel of type AV/RV. </param>
     /// <returns> Tuple of integers representing three dimensional coordinates. </returns>
-    let hxlCrd 
+    let hxlCrd
         (hxl : Hxl) = 
         match hxl with 
         | AV (a,b,c) -> (a,b,c)
@@ -116,7 +116,7 @@ module Hexel =
     /// <param name="sqn"> Sequence to follow. </param>
     /// <param name="hxl"> Hexel whose coordinates need to be validated. </param> 
     /// <returns> Valid hexel coordinates. </returns>
-    let hxlVld 
+    let hxlVld
         (sqn : Sqn)
         (hxl : Hxl) = 
             let validate 
@@ -150,7 +150,7 @@ module Hexel =
     /// <param name="rev"> If true, Standardize to type RV. </param>
     /// <param name="hxl"> An array of hexels. </param>
     /// <returns> Converts all hexels to type AV </returns>
-    let allAV 
+    let allAV
         (rev:bool)
         (hxl:Hxl[]) = 
         hxl
@@ -160,7 +160,7 @@ module Hexel =
                                                         | false -> AV x)
 
     /// <summary> Get Hexel from Tuple. </summary>
-    let getHxls 
+    let getHxls
         (hxo : (Hxl*int)[]) = 
         hxo
         |> Array.Parallel.map(fun x 
@@ -170,7 +170,7 @@ module Hexel =
     /// <param name="sqn"> Sequence to follow. </param>
     /// <param name="hxo"> Base hexel. </param> 
     /// <returns> An array of six adjacent hexels. </returns>
-    let adjacent 
+    let adjacent
         (sqn: Sqn)
         (hxo: Hxl) =
         match hxo with 
@@ -184,7 +184,7 @@ module Hexel =
     /// <param name="hxo"> Tuple containing Base hexel of collection and size. </param> 
     /// <param name="occ"> Occupied/Unavailable hexels. </param>
     /// <returns> Tuple containing the next hexel and size. </returns>
-    let increment 
+    let increment
         (sqn : Sqn)
         (hxo : Hxl * int) 
         (occ : Hxl[]) = 
@@ -220,7 +220,7 @@ module Hexel =
     /// <param name="hxo"> Hexel or Tuple containing Base hexel of collection and size. </param> 
     /// <param name="occ"> Array of Occupied/Unavailable hexels. </param>
     /// <returns> The count of unoccupied surrounding hexels. </returns>
-    let available 
+    let available
         (sqn : Sqn)
         (hxo : obj)
         (occ : Hxl[]) =  
@@ -253,7 +253,7 @@ module Hexel =
     /// <param name="hxo"> Array of Tuples containing Base hexel of collection and size. </param> 
     /// <param name="occ"> Array of Occupied/Unavailable hexels. </param>
     /// <returns> Array of Tuples containing Base hexel of collection and reduced size. </returns>
-    let increments 
+    let increments
         (sqn : Sqn)
         (hxo : (Hxl*int)[]) 
         (occ : Hxl[]) = 
@@ -298,7 +298,7 @@ module Hexel =
     /// <param name="sqn"> Sequence to follow. </param>
     /// <param name="hxl"> All constituent hexels. </param>
     /// <returns> Boundary/Peripheral hexels. </returns>
-    let bndSqn 
+    let bndSqn
         (sqn : Sqn) 
         (hxo : Hxl[]) = 
         /// <summary> Arrange/sort hexels in continuous sequence. </summary>
@@ -420,7 +420,7 @@ module Coxel =
     /// <typeparam name="Label">  Name of coxel. </typeparam>
     /// <typeparam name="Refid">  Reference ID. </typeparam>
     /// <typeparam name="Count">  Number of hexels as a string. </typeparam>
-    let prpVlu 
+    let prpVlu
         (prp : Prp) = 
         match prp with 
         | Label prp -> prp
@@ -432,7 +432,7 @@ module Coxel =
     /// <param name="ini"> An array of tuples containing base hexel, Reference Id, Count/Size, Label. </param>
     /// <param name="occ"> Unavailable hexels. </param>
     /// <returns> An array of coxels. </returns>
-    let coxel 
+    let coxel
         (sqn : Sqn)
         (ini : (Hxl*Prp*Prp*Prp)[])
         (occ : Hxl[]) = 
@@ -595,7 +595,7 @@ module Shape =
     /// <typeparam name="RhVr"> Rhombus Vertical. </typeparam>
     type Shp = 
         | HxFl | HxPt | QdSq | RhHr | RhVr | PrFl | PrAn
-    let hxlOrt 
+    let hxlOrt
         (sqn : Sqn)
         (org : Hxl)
         (lgt : int)
@@ -833,10 +833,10 @@ open Parse
 // Sample Format
 let spaceStr =
      "(1/7/Foyer),(2/10/Living),(3/9/Dining),
-    (1.1/11/Study),(2.1/9/Staircase),(3.1/12/Bed-1),
-    (3.2/13/Bed-2),(3.3/12/Bed-3),(3.4/11/Kitchen),
-    (3.1.1/6/Bath-1),(3.2.1/5/Dress-2),(3.3.1/7/Dress-3),
-    (3.3.2/6/Bath-3),(3.4.1/8/Utility),(3.2.1.1/4/Bath-2)"
+    (1.1/11/Study),(2.1/9/Staircase),(3.1/12/Kitchen),
+    (3.2/13/Bed-1),(3.3/12/Bed-2),(3.4/11/Bed-3),
+    (3.1.1/8/Utility),(3.2.1/6/Bath-1),(3.3.1/5/Dress-2),
+    (3.4.1/7/Dress-3),(3.4.2/6/Bath-3),(3.2.1.1/4/Bath-2)"
 let treeStr = spaceSeq spaceStr
 let sqn = VRCWEE
 //coxel sqn [|(AV(0,0,0), Refid "B", Count 0, Label "A")|] [||]
