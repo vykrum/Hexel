@@ -836,7 +836,7 @@ let spaceStr =
     (1.1/11/Study),(2.1/9/Staircase),(3.1/12/Kitchen),
     (3.2/13/Bed-1),(3.3/12/Bed-2),(3.4/11/Bed-3),
     (3.1.1/8/Utility),(3.2.1/6/Bath-1),(3.3.1/5/Dress-2),
-    (3.4.1/7/Dress-3),(3.4.2/6/Bath-3),(3.2.1.1/4/Bath-2)"
+    (3.4.1/7/Dress-3),(3.4.2/6/Bath-3),(3.3.1.1/4/Bath-2)"
 let treeStr = spaceSeq spaceStr
 let sqn = VRCWEE
 //coxel sqn [|(AV(0,0,0), Refid "B", Count 0, Label "A")|] [||]
