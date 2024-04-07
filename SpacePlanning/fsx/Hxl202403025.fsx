@@ -883,8 +883,22 @@ let vrBdCt = vrBd
                                             -> Map.find 
                                                 y 
                                                 vrHxCt)x)
+let vrBdCdCt = Array.map2 (fun x y ->Array.map2(fun a b -> a,b)x y) vrBd vrBdCt
+// Break Index in vertex sequence
+let vrBrIn = vrBdCdCt
+            |> Array.map(fun x 
+                            -> Array.tryFindIndexBack (fun y -> (snd y)<3)x)
+            |> Array.map (fun x 
+                            -> Option.defaultWith (fun () -> 0)x)
+            |> Array.map2 (fun x y 
+                            -> match y<5 with
+                                | false -> x
+                                | true ->   let a,b = Array.splitAt y x
+                                            Array.append b a  )vrBdCdCt 
+            |> Array.map (fun x -> Array.filter(fun (_,y)-> y<3)x)
+            |> Array.concat
+            |> Array.map (fun x -> fst x)
 
-
-
+vrBrIn
 
 
