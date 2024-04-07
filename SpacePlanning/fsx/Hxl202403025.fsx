@@ -294,7 +294,7 @@ module Hexel =
         
         replaceDuplicate sqn hxo inc occ
 
-    /// <summary> Boundary Hexels Ring. </summary>
+    /// <summary> Hexel Ring Boundary Sequence. </summary>
     /// <param name="sqn"> Sequence to follow. </param>
     /// <param name="hxl"> All constituent hexels. </param>
     /// <returns> Boundary/Peripheral hexels. </returns>
@@ -328,23 +328,35 @@ module Hexel =
                 let acc = Array.append acc  hx3
                 arr sqn hxl acc (cnt-1) opt
 
-        let hxl = hxo|> Array.sortByDescending 
+        let hxl = hxo
+                |> Array.sortByDescending 
                     (fun x -> available sqn x hxo)
         let a1 = 
             match hxl with 
             | [||] -> [||]
             | _ -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) true
 
-        let b1 = Array.length a1 = Array.length hxl
+        let b1 = (Array.length a1) = Array.length hxl
         
         let ar1 = match b1 with 
                     | true -> a1
                     | false -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) false
-        match hxo with 
-        | [||] -> [||]
-        | _ ->  match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with 
-                | true -> ar1
-                | false -> allAV true ar1
+        let ar2 = 
+            match hxo with 
+            | [||] -> [||]
+            | _ ->  match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with 
+                    | true -> ar1
+                    | false -> allAV true ar1
+        
+        // Arrange clockwise
+        let ar3 = Array.windowed 2 ar2
+        let bln = Array.map(fun x 
+                                ->  let cdx1,cdy1,_ = hxlCrd (Array.head x)
+                                    let cdx2,cdy2,_ = hxlCrd (Array.last x)
+                                    (cdx2 - cdx1 >= 0) && (cdy1 - cdy2 >= 0)) ar3
+        match Array.contains false bln with
+        | true -> Array.rev ar2
+        | false -> ar2
 
     /// <summary> Hexel Ring Segment Sequence. </summary>
     let cntSqn
@@ -529,7 +541,7 @@ module Coxel =
                                                     Size = fst x
                                                     Seqn = sqn
                                                     Base = Array.head hx1
-                                                    Hxls = Array.except ([|Array.head hx1|]) hx1
+                                                    Hxls = Array.except occ hx1
                                                 })szn idn cl1
         cxl
 
@@ -839,9 +851,40 @@ let spaceStr =
     (3.4.1/7/Dress-3),(3.4.2/6/Bath-3),(3.3.1.1/4/Bath-2)"
 let treeStr = spaceSeq spaceStr
 let sqn = VRCWEE
-//coxel sqn [|(AV(0,0,0), Refid "B", Count 0, Label "A")|] [||]
-let a = spaceCxl 
+
+(* let a = spaceCxl 
             sqn 
             (AV(1,2,0))
             ((hxlOrt sqn (AV(-50,0,0)) 100 false) |> allAV true)
-            spaceStr 
+            spaceStr  *)
+
+let hx1 = ((coxel sqn [|(AV(0,0,0), Refid "B", Count 20, Label "A")|] [||])|> Array.head)
+let hx2 = Array.append hx1.Hxls [|hx1.Base|]
+// Boundary Hexels
+let hxBd = (cxlHxl hx1).Prph 
+        |> allAV false 
+        |> bndSqn sqn
+                
+// All hexel vertices
+let vrHx = Array.map(fun x -> vertex sqn HxPt x) hx2
+// Vertices shared Hexel Count 
+let vrHxCt = vrHx   
+            |> Array.concat 
+            |> Array.groupBy (fun n -> n)
+            |> Array.map (fun (x,y) -> x,Array.length y)
+            |> Map.ofArray
+// Boundary Hexel Vertices
+let vrBd = hxBd 
+        |>Array.map(fun x -> vertex sqn HxPt x) 
+// Vertex Cell Count 
+let vrBdCt = vrBd
+            |> Array.map(fun x 
+                            -> Array.map(fun y 
+                                            -> Map.find 
+                                                y 
+                                                vrHxCt)x)
+
+
+
+
+
