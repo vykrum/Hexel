@@ -655,7 +655,11 @@ module Shape =
                             | _ -> [|0x0,0x0; 0x1,0x1; 0x2,0x1; 0x3,0x0; 0x2,0xFFFFFFFF; 0x1,0xFFFFFFFF|]
                             
         let x, y, _ = hxl |> hxlCrd 
-        hxCr |> Array.map(fun (a,b)-> a + x, b + y) |> Array.map2 ( fun inx (vrx,vry) -> string(inx),vrx,vry) [|0..5|]
+        hxCr 
+        |> Array.map(fun (a,b)-> a + x, b + y) 
+        |> Array.map2 ( fun inx (vrx,vry) 
+                            -> string(inx),vrx,vry) 
+                            [|0..(Array.length hxCr)-1|]
 
     let cxlPrm
         (sqn : Sqn)
