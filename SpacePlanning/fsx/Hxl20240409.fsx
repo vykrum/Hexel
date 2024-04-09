@@ -330,7 +330,7 @@ module Hexel =
 
         let hxl = hxo
                 |> Array.sortByDescending 
-                    (fun x -> available sqn x hxo)
+                    (fun x -> available sqn (AV (hxlCrd x)) (allAV false hxo))
         let a1 = 
             match hxl with 
             | [||] -> [||]
@@ -349,14 +349,18 @@ module Hexel =
                     | false -> allAV true ar1
         
         // Arrange clockwise
-        let ar3 = Array.windowed 2 ar2
-        let bln = Array.map(fun x 
-                                ->  let cdx1,cdy1,_ = hxlCrd (Array.head x)
-                                    let cdx2,cdy2,_ = hxlCrd (Array.last x)
-                                    (cdx2 - cdx1 >= 0) && (cdy1 - cdy2 >= 0)) ar3
-        match Array.contains false bln with
-        | true -> Array.rev ar2
-        | false -> ar2
+        let ar3 = match (Array.length ar2)>2 with 
+                        | true -> 
+                                    // Graham Scan
+                                    let (px,py,_) = hxlCrd ar2[0]
+                                    let (qx,qy,_) = hxlCrd ar2[1]
+                                    let (rx,ry,_) = hxlCrd ar2[2]
+                                    let gsc = (qy - py) * (rx - qx) - (qx - px) * (ry - qy)
+                                    match gsc > 0 with 
+                                    | true -> Array.rev ar2
+                                    | false -> ar2
+                        | false -> ar2
+        ar3
 
     /// <summary> Hexel Ring Segment Sequence. </summary>
     let cntSqn
@@ -583,7 +587,7 @@ module Coxel =
             Base = cxl.Base
             Hxls = cxl.Hxls
             Core = rv01 |> fst 
-            Prph = pr01
+            Prph = pr01 
             Brdr = br01
             Avbl = av01 
         |}    
@@ -664,7 +668,7 @@ module Shape =
     let cxlPrm
         (sqn : Sqn)
         (cxl : Cxl) = 
-        let hx1 = cxl.Hxls 
+        let hx1 = cxl.Hxls |> allAV false 
         // Boundary Hexels
         let hxBd = (cxlHxl cxl).Prph 
                 |> allAV false 
@@ -838,17 +842,6 @@ module Parse =
         let ac1 = match cti with 
                     | Count a when a < 1 -> coxel seq ([|identity, id, cti, lb|]) occ
                     | _ -> coxel seq ([|bas, id, cti, lb|]) occ
-        let bs1 = match cti with 
-                    | Count a when a > 0 -> [|bas|]
-                    | _ ->[||]
-        // Include base Hexel among base Coxel Hexels
-        let ac2 = [|{(Array.head ac1) with 
-                        Cxl.Hxls = hxlTyp 
-                            seq 
-                            occ 
-                            (Array.append 
-                            bs1
-                            (Array.head ac1).Hxls)}|]
         let oc1 = (Array.concat [|occ; [|bas|]; (Array.head ac1).Hxls|])
 
         let cxlCxl 
@@ -900,7 +893,7 @@ module Parse =
                         | None -> acc
             a
 
-        cxCxCx seq tree01 oc1 ac2
+        cxCxCx seq tree01 oc1 ac1
 
 // Test Zone
 open Hexel
@@ -924,4 +917,5 @@ let a = spaceCxl
             spaceStr
 
 //let cx1 = ((coxel sqn [|(AV(0,0,0), Refid "B", Count 27, Label "A")|] [||])|> Array.head)
-cxlPrm sqn a[1]
+//cxlPrm sqn a[1]
+(cxlHxl a[1])
