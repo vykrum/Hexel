@@ -918,4 +918,4 @@ let a = spaceCxl
 
 //let cx1 = ((coxel sqn [|(AV(0,0,0), Refid "B", Count 27, Label "A")|] [||])|> Array.head)
 //cxlPrm sqn a[1]
-(cxlHxl a[2])
+bndSqn sqn ((cxlHxl a[1]).Prph)
