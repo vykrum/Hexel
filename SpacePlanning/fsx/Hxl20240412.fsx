@@ -567,14 +567,27 @@ module Coxel =
                                         |> Array.contains (Array.head br01) with 
                                         | true -> Array.append av01 br01
                                         | false -> Array.append av01 (Array.rev br01)
+        // Clockwise sequence
+        let pr02 = match Array.length pr01 > 2 with 
+                        | false -> pr01
+                        | true -> 
+                                let x1,y1,_ = hxlCrd (Array.last pr01)
+                                let x2,y2,_ = hxlCrd (Array.head pr01)
+                                let x3, y3,_ = hxlCrd (pr01[1])
+                                let gs = (x2-x1)*(y3-y1)-(y2-y1)*(x3-x1)
+                                match gs with 
+                                | 0 when x2 > x1 -> pr01
+                                | a when a < 0 -> pr01
+                                | _ -> Array.rev pr01
+
         {|
             Base = cxl.Base
             Hxls = cxl.Hxls
             Core = rv01 |> fst 
-            Prph = pr01 
+            Prph = pr02 
             Brdr = br01
             Avbl = av01 
-        |}    
+        |}
 
 module Shape = 
     open Hexel
@@ -902,4 +915,4 @@ let a = spaceCxl
 
 //let cx1 = ((coxel sqn [|(AV(0,0,0), Refid "B", Count 27, Label "A")|] [||])|> Array.head)
 //cxlPrm sqn a[1]
-bndSqn sqn (cxlHxl a[1]).Prph
+(cxlHxl a[1]).Prph
