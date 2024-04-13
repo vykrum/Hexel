@@ -527,8 +527,8 @@ module Coxel =
                                                     Size = fst x
                                                     Seqn = sqn
                                                     Base = Array.head hx1
-                                                    Hxls = match Array.length hx1 > 1 with 
-                                                            | true -> Array.tail hx1
+                                                    Hxls = match Array.length hx1 > 0 with 
+                                                            | true -> Array.except  ([|Array.head hx1|]) hx1
                                                             | false -> [||]
                                                 })szn idn cl1
         cxl
@@ -715,12 +715,13 @@ module Shape =
                                         | true ->   let a,b = Array.splitAt (y+1) x
                                                     Array.append b a  )a      
             b     
-        vrBrIn
-        |> Array.map (fun x -> Array.filter(fun (_,y)-> y<3)x)
-        |> Array.concat
-        |> Array.map (fun ((_,x,y),_) -> x,y)
-        |> Array.distinct
-
+        let vrBrIn1 = vrBrIn
+                    |> Array.map (fun x -> Array.filter(fun (_,y)-> y<3)x)
+                    |> Array.concat
+                    |> Array.map (fun ((_,x,y),_) -> x,y)
+                    |> Array.distinct
+        hxBd
+        
 module Parse = 
     open Hexel
     open Coxel
@@ -836,9 +837,10 @@ module Parse =
         let cti  = match ct with 
                     | Count x when x>0 -> Count (x-1) 
                     | _ -> Count 0       
-        let ac1 = match cti with 
+        let ac0 = match cti with 
                     | Count a when a < 1 -> coxel seq ([|identity, id, cti, lb|]) occ
                     | _ -> coxel seq ([|bas, id, cti, lb|]) occ
+        let ac1 = [|{ac0[0] with Hxls = Array.except occ (Array.append [|ac0[0].Base|] ac0[0].Hxls)}|]
         let oc1 = (Array.concat [|occ; [|bas|]; (Array.head ac1).Hxls|])
 
         let cxlCxl 
@@ -913,6 +915,6 @@ let a = spaceCxl
             ((hxlOrt sqn (AV(-50,0,0)) 100 false) |> allAV true)
             spaceStr
 
-//let cx1 = ((coxel sqn [|(AV(0,0,0), Refid "B", Count 27, Label "A")|] [||])|> Array.head)
+let cx1 = ((coxel sqn [|(AV(0,0,0), Refid "B", Count 27, Label "A")|] [||])|> Array.head)
 //cxlPrm sqn a[1]
-(cxlHxl a[1]).Prph
+//(cxlHxl a[1]).Prph
