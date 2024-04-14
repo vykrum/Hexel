@@ -647,7 +647,7 @@ module Shape =
                             | QdSq -> [|0x0,0x0; 0x2,0x0; 0x2,0xFFFFFFFE; 0x0,0xFFFFFFFE|]
                             | RhVr -> [|0x0,0x0; 0x1,0x2; 0x2,0x0; 0x1,0xFFFFFFFE|]
                             | PrFl -> [|0x0,0x0; 0x2,0x0; 0x1,0xFFFFFFFE; 0xFFFFFFFF,0xFFFFFFFE|]
-                            | _ -> [|0x0,0x0; 0x1,0x1; 0x2,0x0; 0x2,0xFFFFFFFF; 0x1,-2; 0x0,0xFFFFFFFF|]
+                            | _ -> [|0x0,0x0; 0x1,0x1; 0x2,0x0; 0x2,0xFFFFFFFF; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFF|]
                     | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
                         -> match shp with
                             | HxFl -> [|0x0,0x0; 0x1,0x1; 0x2,0x1; 0x3,0x0; 0x2,0xFFFFFFFF; 0x1,0xFFFFFFFF|]
@@ -663,13 +663,12 @@ module Shape =
                             [|0..(Array.length hxCr)-1|]
 
     let cxlPrm
-        (sqn : Sqn)
         (cxl : Cxl) = 
+        let sqn = cxl.Seqn
         let hx1 = cxl.Hxls |> allAV false 
         // Boundary Hexels
         let hxBd = (cxlHxl cxl).Prph
                 |> allAV false 
-                        
         // All hexel vertices
         let vrHx = Array.map(fun x -> vertex sqn HxPt x) hx1
         // Vertices shared Hexel Count 
@@ -715,7 +714,7 @@ module Shape =
                                                     Array.append b a  )a      
             b     
         let vrBrIn1 = vrBrIn
-                    |> Array.map (fun x -> Array.filter(fun (_,y)-> y<3)x)
+                    |> Array.map (fun x -> Array.filter(fun (_,y) -> y < 3)x)
                     |> Array.concat
                     |> Array.map (fun ((_,x,y),_) -> x,y)
                     |> Array.distinct
@@ -915,5 +914,6 @@ let a = spaceCxl
             spaceStr
 
 //let cx1 = ((coxel sqn [|(AV(0,0,0), Refid "B", Count 27, Label "A")|] [||])|> Array.head)
-cxlPrm sqn a[1]
+cxlPrm a[1]
 //(cxlHxl a[1]).Prph
+
