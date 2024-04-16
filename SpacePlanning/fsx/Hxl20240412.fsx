@@ -911,6 +911,6 @@ let a = spaceCxl
             spaceStr
 
 //let cx1 = ((coxel sqn [|(AV(0,0,0), Refid "B", Count 27, Label "A")|] [||])|> Array.head)
-cxlPrm a[1]
+Array.map (fun x -> cxlPrm x) a
 //(cxlHxl a[1]).Prph
 
