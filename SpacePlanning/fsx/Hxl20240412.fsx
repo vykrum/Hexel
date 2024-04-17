@@ -909,8 +909,8 @@ let a = spaceCxl
             (AV(1,2,0))
             ((hxlOrt sqn (AV(-50,0,0)) 100 false) |> allAV true)
             spaceStr
-
+a
 //let cx1 = ((coxel sqn [|(AV(0,0,0), Refid "B", Count 27, Label "A")|] [||])|> Array.head)
-Array.map (fun x -> cxlPrm x) a
+//Array.map (fun x -> cxlPrm x) a
 //(cxlHxl a[1]).Prph
 
