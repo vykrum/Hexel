@@ -913,4 +913,15 @@ a
 //let cx1 = ((coxel sqn [|(AV(0,0,0), Refid "B", Count 27, Label "A")|] [||])|> Array.head)
 //Array.map (fun x -> cxlPrm x) a
 //(cxlHxl a[1]).Prph
+let cxCrd = a
+            |> Array.map (fun x -> x.Hxls)
+            |> Array.map (fun x -> Array.map(fun y -> hxlCrd y)x)
+            |> Array.take 3
 
+let cxLbl = a
+            |> Array.map (fun x -> string x.Name)
+            |> Array.take 3
+
+let cxClr = [|"a";"b";"c"|]
+
+let cxPrp = Array.zip3 cxCrd cxLbl cxClr
