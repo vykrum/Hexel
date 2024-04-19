@@ -728,6 +728,7 @@ module Parse =
         
         let spaceMap = 
             ((spaceStr.Replace ("\n",""))
+                .Replace("\t","")
                 .Replace(" ",""))
                 .Split ","
                 |> Array.map(fun x -> x.Remove(0,1)) 
@@ -926,44 +927,3 @@ let cxCrd = a
 //let cxClr = [|"a";"b";"c"|]
 
 //let cxPrp = Array.zip3 cxCrd cxLbl cxClr
-
-let nstdCxls
-    (cxl : Cxl[])
-    (clr : string[])
-    (scl : int)
-    (shp : Shp)
-    (wdt : int) = 
-    let vrtx = vertex (Array.head cxl).Seqn shp (AV(0,0,0))
-                    |> Array.map (fun (_,x,y) -> [|x;y|])
-                    |> Array.concat
-                    |> Array.map (fun x -> string (x * scl)) 
-                    |> String.concat ","
-
-    let lbl = Array.map (fun x -> string x.Name) cxl
-    let crd = (Array.map (fun x -> x.Hxls) cxl) 
-              |> Array.map (fun x -> Array.map(fun y -> hxlCrd y)x)
-    // Shift and Scale Vertices
-    let padd = 10
-    let vtx1 = Array.map (fun x -> Array.map(fun (a,b,_) -> a*scl,b*scl)x) crd
-    let minX1 = fst (Array.minBy (fun (x,_) -> x) (Array.concat vtx1))
-    let minY1 = snd (Array.minBy (fun (_,x) -> x) (Array.concat vtx1))
-    let shfX = (-1 * minX1) + padd
-    let shfY = (-1 * minY1) + padd
-    let vtx2 = Array.map (fun x -> Array.map(fun (a,b) -> a+shfX,b+shfY)x) vtx1
-    svg {
-         attr.width wdt
-         attr.height wdt
-         //attr.``style`` $"viewBox: {minX1} {minY1} {wdt} {wdt};"
-         let prp = Array.zip3 vtx2 lbl clr
-                    
-         for cmp in prp do
-             let (xy,label,color) = cmp
-
-
-             for locn in xy do
-                    hxgn()
-                        .pt($"{vrtx}")
-                        .tr($"{locn}")
-                        .cl($"{color}")
-                        .Elt()
-        }
