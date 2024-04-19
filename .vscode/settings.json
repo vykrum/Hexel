@@ -1,3 +1,4 @@
 {
-    "FSharp.codeLenses.signature.enabled": true
+    "FSharp.codeLenses.signature.enabled": true,
+    "editor.inlayHints.enabled": "offUnlessPressed"
 }

@@ -342,7 +342,6 @@ module Coxel =
     let coxel
         (sqn : Sqn)
         (ini : (Hxl*Prp*Prp*Prp)[])
-        
         (occ : Hxl[]) = 
         
         let bas = Array.Parallel.map(fun (x,_,y,_) -> x,int(prpVlu y)) ini
@@ -822,6 +821,7 @@ module Parse =
                                                     | None -> 0)x)
             chdCnt
         *)
+        let bas = hxlVld seq bas
         let tree01 = 
             spaceSeq str 
                 |> Array.map (fun x -> 
@@ -905,19 +905,30 @@ let spaceStr =
 let treeStr = spaceSeq spaceStr
 let sqn = HRCWNW
 
-let a = spaceCxl 
+(* let a = spaceCxl 
             sqn 
             (AV(1,2,0))
             ((hxlOrt sqn (AV(-50,0,0)) 100 false) |> allAV true)
-            spaceStr
-a
+            spaceStr *)
+let bs = (AV(1,2,0))
+let bs1 = hxlVld sqn bs
+let bsOc = 
+    match sqn with 
+    | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE 
+        -> let a,b,c = hxlCrd (hxlVld sqn bs)
+           hxlOrt sqn (AV(a-51,b-2,c)) 100 false
+           |> allAV true
+    | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW 
+        -> let a,b,c = hxlCrd (hxlVld sqn bs)
+           hxlOrt sqn (AV(a-54,b-2,c)) 100 false
+           |> allAV true
 //let cx1 = ((coxel sqn [|(AV(0,0,0), Refid "B", Count 27, Label "A")|] [||])|> Array.head)
 //Array.map (fun x -> cxlPrm x) a
 //(cxlHxl a[1]).Prph
-let cxCrd = a
+(* let cxCrd = a
             |> Array.map (fun x -> x.Hxls)
             |> Array.map (fun x -> Array.map(fun y -> hxlCrd y)x)
-            |> Array.take 3
+            |> Array.take 3 *)
 
 (* let cxLbl = a
             |> Array.map (fun x -> prpVlu x.Name)
