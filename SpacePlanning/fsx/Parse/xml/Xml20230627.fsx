@@ -41,6 +41,10 @@ let rec processElement (element: XElement) (path: string) =
         let childrenOutput = childElements |> Seq.map (fun e -> processElement e newPath)
         sprintf "%s,%s" output (String.concat"," childrenOutput)
 
-let output = xd.Root.Elements() |> Seq.map (fun e -> processElement e "1") |> String.concat(",")
+//let output = xd.Root.Elements() |> Seq.map (fun e -> processElement e "1") |> String.concat(",")
+let prcs (xm: XDocument) = 
+  let z = xm.Root.Elements()
+  z
 
-printfn "%s" output
+prcs xd
+
