@@ -43,7 +43,7 @@ let rec processElement (element: XElement) (path: string) =
 
 //let output = xd.Root.Elements() |> Seq.map (fun e -> processElement e "1") |> String.concat(",")
 let prcs (xm: XDocument) = 
-  let z = xm.Root.Elements()
+  let z = xm.Root.Elements()|> Seq.map (fun e -> e.Attribute("size").Value)
   z
 
 prcs xd
