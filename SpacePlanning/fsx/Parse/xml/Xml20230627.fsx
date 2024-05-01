@@ -27,5 +27,12 @@
  *)
 // Test
 open System.Xml.Linq
-let xd = XDocument.Load("""C:\Users\vykru\Github\Hexel\SpacePlanning\fsx\Parse\xml\space1.xml""")
-xd.Root.FirstNode.ElementsAfterSelf
+open System.Xml
+//let xd = XElement.Load("""C:\Users\vykru\Github\Hexel\SpacePlanning\fsx\Parse\xml\space1.xml""")
+
+let xe= XmlReader.Create ("""C:\Users\vykru\Github\Hexel\SpacePlanning\fsx\Parse\xml\space1.xml""")
+let xa = xe.MoveToElement
+
+
+
+
