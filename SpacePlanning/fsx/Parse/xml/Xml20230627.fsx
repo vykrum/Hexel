@@ -1,4 +1,4 @@
-let xmls = """
+(* let xmls = """
 <residence id="0">                        
   <foyer id="1" size="5">            
     <study id="1.1" size="10"></study>                                    
@@ -24,28 +24,8 @@ let xmls = """
   <staircase id="4" size="15"></staircase>                                
 </residence>
 """
-
+ *)
 // Test
 open System.Xml.Linq
 let xd = XDocument.Load("""C:\Users\vykru\Github\Hexel\SpacePlanning\fsx\Parse\xml\space1.xml""")
-
-let rec processElement (element: XElement) (path: string) =
-    let size = element.Attribute("size").Value
-    let newPath = sprintf "%s.%s" path element.Name.LocalName
-    let output = sprintf "(%s/%s/%s)" newPath size element.Name.LocalName
-    
-    let childElements = element.Elements()
-    if Seq.isEmpty childElements then
-        output
-    else
-        let childrenOutput = childElements |> Seq.map (fun e -> processElement e newPath)
-        sprintf "%s,%s" output (String.concat"," childrenOutput)
-
-//let output = xd.Root.Elements() |> Seq.map (fun e -> processElement e "1") |> String.concat(",")
-let prcs (xm: XDocument) = 
-  let z = xm.Root.Elements()|> Seq.map (fun e -> e.Attribute("size").Value)
-  let x = String.concat "," z
-  x
-
-prcs xd
-
+xd.Root.FirstNode.ElementsAfterSelf
