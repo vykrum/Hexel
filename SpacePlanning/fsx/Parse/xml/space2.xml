@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <space>
     <label>residence</label>
     <space>
@@ -8,57 +7,57 @@
             <label>study</label>
             <size>10</size>
         </space>
-    </space>
-    <space>
-        <label>living</label>
-        <size>20</size>
-    </space>
-    <space>
-        <label>dining</label>
-        <size>20</size>
         <space>
-            <label>kitchen</label>
-            <size>15</size>
+            <label>living</label>
+            <size>20</size>
             <space>
-                <label>utility</label>
-                <size>5</size>
-            </space>
-        </space>
-        <space>
-            <label>bed-1</label>
-            <size>15</size>
-            <space>
-                <label>bath-1</label>
-                <size>5</size>
-            </space>
-        </space>
-        <space>
-            <label>bed-2</label>
-            <size>15</size>
-            <space>
-                <label>dress-2</label>
-                <size>5</size>
+                <label>dining</label>
+                <size>20</size>
                 <space>
-                    <label>bath-2</label>
-                    <size>5</size>
+                    <label>kitchen</label>
+                    <size>15</size>
+                    <space>
+                        <label>utility</label>
+                        <size>5</size>
+                    </space>
+                </space>
+                <space>
+                    <label>bed-1</label>
+                    <size>15</size>
+                    <space>
+                        <label>bath-1</label>
+                        <size>5</size>
+                    </space>
+                </space>
+                <space>
+                    <label>bed-2</label>
+                    <size>15</size>
+                    <space>
+                        <label>dress-2</label>
+                        <size>5</size>
+                        <space>
+                            <label>bath-2</label>
+                            <size>5</size>
+                        </space>
+                    </space>
+                </space>
+                <space>
+                    <label>bed-3</label>
+                    <size>15</size>
+                    <space>
+                        <label>dress-3</label>
+                        <size>5</size>
+                    </space>
+                    <space>
+                        <label>bath-3</label>
+                        <size>5</size>
+                    </space>
                 </space>
             </space>
         </space>
         <space>
-            <label>bed-3</label>
-            <size>15</size>
-            <space>
-                <label>dress-3</label>
-                <size>5</size>
-            </space>
-            <space>
-                <label>bath-3</label>
-                <size>5</size>
-            </space>
+            <label>staircase</label>
+            <size>5</size>
         </space>
-    </space>
-    <space>
-        <label>staircase</label>
-        <size>5</size>
     </space>
 </space>

@@ -27,12 +27,9 @@
  *)
 // Test
 open System.Xml.Linq
-let xx = XDocument.Load("""C:\Users\vykru\Github\Hexel\SpacePlanning\fsx\Parse\xml\space2.xml""")
+let xx = XElement.Load("""C:\Users\vykru\Github\Hexel\SpacePlanning\fsx\Parse\xml\space1.xml""")
 
 //let xe= XmlReader.Create ("""C:\Users\vykru\Github\Hexel\SpacePlanning\fsx\Parse\xml\space1.xml""")
-let xa = xx.FirstNode.NextNode.NextNode
-
-
-
+let xa = xx.Element("foyer").Elements()
 
 
