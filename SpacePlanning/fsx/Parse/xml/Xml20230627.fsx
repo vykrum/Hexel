@@ -25,11 +25,12 @@
 </residence>
 """
  *)
-// Test
+
 open System.Xml.Linq
 let xx = XElement.Load("""C:\Users\vykru\Github\Hexel\SpacePlanning\fsx\Parse\xml\space1.xml""")
 
 //let xe= XmlReader.Create ("""C:\Users\vykru\Github\Hexel\SpacePlanning\fsx\Parse\xml\space1.xml""")
 let xa = xx.Element("foyer").Elements()
+let xb = xa |> Seq.map (fun x -> x.Name.ToString()) |> String.concat ","
 
 
