@@ -951,3 +951,5 @@ let bsOc =
 //let cxClr = [|"a";"b";"c"|]
 
 //let cxPrp = Array.zip3 cxCrd cxLbl cxClr
+
+// Error / Exceptyion handling
