@@ -916,6 +916,7 @@ let spaceStr =
     (3.1.1/8/Utility),(3.2.1/6/Bath-1),(3.3.1/5/Dress-2),
     (3.4.1/7/Dress-3),(3.4.2/6/Bath-3),(3.3.1.1/4/Bath-2)"
 let treeStr = spaceSeq spaceStr
+
 let sqn = HRCWNW
 
 (* let a = spaceCxl 
@@ -953,3 +954,4 @@ let bsOc =
 //let cxPrp = Array.zip3 cxCrd cxLbl cxClr
 
 // Error / Exceptyion handling
+
