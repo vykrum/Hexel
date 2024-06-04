@@ -915,7 +915,7 @@ open Shape
 open Parse
 // Sample Format
 let spaceStr =
-     "(1/12/Foyer),(2/12/Living),(3/15/Dining),
+     "(1/10/Foyer),(2/12/Living),(3/15/Dining),
     (1.1/11/Study),(2.1/7/Staircase),(3.1/12/Kitchen),
     (3.2/13/Bed-1),(3.3/13/Bed-2),(3.4/11/Bed-3),
     (3.1.1/7/Utility),(3.2.1/6/Bath-1),(3.3.1/5/Dress-2),
