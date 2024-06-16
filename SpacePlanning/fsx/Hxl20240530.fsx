@@ -592,13 +592,6 @@ module Coxel =
 module Shape = 
     open Hexel
     open Coxel
-
-    /// <summary> Ortogonal Hexel Sequence </summary>
-    /// <param name="sqn"> Sequence to follow. </param>
-    /// <param name="org"> Start Hexel. </param> 
-    /// <param name="lgt"> Sequence Length. </param> 
-    /// <param name="vrt"> Vertical / Horizontal. </param> 
-    /// <returns> Array of Sequential Reserved Hexels. </returns>
     
     /// <summary> Module shape in tessalated hexagonal grid. </summary>
     /// <typeparam name="Hxg"> Hexagon. </typeparam>
@@ -647,6 +640,12 @@ module Shape =
                             -> string(inx),vrx,vry) 
                             [|0..(Array.length hxCr)-1|]
 
+    /// <summary> Ortogonal Hexel Sequence </summary>
+    /// <param name="sqn"> Sequence to follow. </param>
+    /// <param name="org"> Start Hexel. </param> 
+    /// <param name="lgt"> Sequence Length. </param> 
+    /// <param name="vrt"> Vertical / Horizontal. </param> 
+    /// <returns> Array of Sequential Reserved Hexels. </returns>
     let hxlOrt
         (sqn : Sqn)
         (org : Hxl)
