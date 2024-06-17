@@ -912,6 +912,7 @@ open Hexel
 open Coxel
 open Shape
 open Parse
+
 // Sample Format
 let spaceStr =
      "(1/10/Foyer),(2/12/Living),(3/15/Dining),
