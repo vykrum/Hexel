@@ -924,11 +924,11 @@ let treeStr = spaceSeq spaceStr
 
 let sqn = HRCWNW
 
-(* let a = spaceCxl 
+let a = spaceCxl 
             sqn 
             (AV(1,2,0))
             ((hxlOrt sqn (AV(-50,0,0)) 100 false) |> allAV true)
-            spaceStr *)
+            spaceStr
 let bs = (AV(1,2,0))
 let bs1 = hxlVld sqn bs
 let bsOc = 
@@ -941,8 +941,8 @@ let bsOc =
         -> let a,b,c = hxlCrd (hxlVld sqn bs)
            hxlOrt sqn (AV(a-54,b-2,c)) 100 false
            |> allAV true
-//let cx1 = ((coxel sqn [|(AV(0,0,0), Refid "B", Count 27, Label "A")|] [||])|> Array.head)
-//Array.map (fun x -> cxlPrm x) a
-//(cxlHxl a[1]).Prph
+let cx1 = ((coxel sqn [|(AV(0,0,0), Refid "B", Count 27, Label "A")|] [||])|> Array.head)
+Array.map (fun x -> cxlPrm x) a
+(cxlHxl a[1]).Prph
 
 
