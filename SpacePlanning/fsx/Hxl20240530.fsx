@@ -65,6 +65,7 @@ module Hexel =
         | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE 
         | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
 
+
     /// <summary> Sequence Locations: Location of adjacent/neighbouring hexels relative to the host hexel.
     /// Each array begins with the location of Host hexel followed by the rest in a particular order.
     /// Hexadecimal number system - 0x0:0, 0x1:1, 0x2:2, 0xFFFFFFFF:-1, 0xFFFFFFFE:-2 </summary>
@@ -915,7 +916,7 @@ open Parse
 
 // Sample Format
 let spaceStr =
-     "(1/12/Foyer),(2/12/Living),(3/15/Dining),
+     "(1/9/Foyer),(2/12/Living),(3/15/Dining),
     (1.1/11/Study),(2.1/7/Staircase),(3.1/12/Kitchen),
     (3.2/13/Bed-1),(3.3/13/Bed-2),(3.4/11/Bed-3),
     (3.1.1/7/Utility),(3.2.1/6/Bath-1),(3.3.1/5/Dress-2),
