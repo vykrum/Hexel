@@ -867,7 +867,7 @@ module Parse =
             let chHx = bsCx.Hxls |> Array.filter (fun x -> (AV(hxlCrd x))=x)
             let cnt = (Array.length tre) - 1
             //
-            // Rework to distribute room anchors......
+            // Rework to distribute room anchors.......
             //
             let chBs = match (Array.length chHx) >= cnt with 
                         | true -> Array.take cnt chHx
