@@ -868,9 +868,7 @@ module Parse =
             let chHx = bsCx.Hxls |> Array.filter (fun x -> (AV(hxlCrd x))=x)
             // Required host Hexel count
             let cnt = (Array.length tre) - 1
-            //
-            // Rework to distribute room anchors.......
-            //
+            // Seperated host hexels
             let chBs = match (Array.length chHx) >= cnt with 
                         | true -> 
                                     let divs =  ((Array.length chHx) / cnt)
