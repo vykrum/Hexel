@@ -790,7 +790,10 @@ module Parse =
             |> Array.sortBy (fun x -> Array.head x)
         
         let spcKy06 = 
-            spcKy05 
+            let a = match (Array.isEmpty spcKy05) with 
+                    |  true -> [|[|"1"|]|]
+                    | false -> spcKy05
+            a
             |> Array.map(fun x 
                             -> (Array.map (fun y 
                                             -> y, spaceMap 
@@ -924,32 +927,82 @@ let spaceStr =
     (3.2/13/Bed-1),(3.3/13/Bed-2),(3.4/11/Bed-3),
     (3.1.1/7/Utility),(3.2.1/6/Bath-1),(3.3.1/5/Dress-2),
     (3.4.1/7/Dress-3),(3.4.2/6/Bath-3),(3.3.1.1/4/Bath-2)"
-//let treeStr = spaceSeq spaceStr
+
+let spaceStr1=
+     "(1/27/Foyer),(2/12/Living)"
+(* 
+let spaceMap = 
+    ((spaceStr1.Replace ("\n",""))
+        .Replace("\t","")
+        .Replace(" ",""))
+        .Split ","
+        |> Array.map(fun x -> x.Remove(0,1)) 
+        |> Array.map(fun x -> x.Remove(x.Length-1,1))
+        |> Array.map (fun x -> x.Split "/") 
+        |> Array.map (fun x -> (x[0],(int x[1],x[2]))) 
+        |> Array.sortBy (fun (x,y) -> x)
+        |> Map.ofArray
+let spcKy01 = 
+            spaceMap 
+            |> Map.keys 
+            |> Array.ofSeq 
+            |> Array.groupBy(fun x 
+                                -> match (x.Length <= 1) with 
+                                    |true -> "0"
+                                    |false -> x.Substring (0, x.LastIndexOf(".")))
+
+let spcKy02 = 
+    spcKy01 
+    |> Array.head 
+    |> snd 
+    |> Array.windowed 2 
+    |> Array.map(fun x -> x[0],[|x[1]|])
+
+let spcKy03 = 
+    spcKy01 
+    |> Array.tail 
+    |> Array.partition (fun (x,y) -> x.Length = 1)
+
+let spcKy04 = 
+    (Array.append spcKy02 (fst spcKy03)) 
+    |> Array.groupBy (fun (x,y) -> x)
+    |> Array.map (fun x -> snd x)
+    |> Array.map (fun x 
+                    -> (Array.map(fun (y,z)
+                                    -> Array.append[|y|] z))x)
+    |> Array.map (fun x -> Array.concat x)
+    |> Array.map (fun x -> Array.distinct x)
+    |> Array.map (fun x -> Array.sort x)
+
+let spcKy05 = 
+    (snd spcKy03)
+    |> Array.map (fun (x,y) 
+                    -> Array.append [|x|] y)
+    |> Array.append spcKy04
+    |> Array.sortBy (fun x -> Array.head x)
+
+let spcKy06 = 
+    let a = match (Array.isEmpty spcKy05) with 
+            |  true -> [|[|"1"|]|]
+            | false -> spcKy05
+    a
+    |> Array.map(fun x 
+                    -> (Array.map (fun y 
+                                    -> y, spaceMap 
+                                    |> Map.find y))x)
+
+let spcKey =
+    spcKy06
+    |> Array.map (fun z 
+                    -> (Array.map (fun (x,y) 
+                                    -> x, fst y, snd y))z) *)
+
+
+let treeStr = spaceSeq spaceStr1
 
 let sqn = HRCWNW
-let spaceStr1 =
-     "(1/27/Foyer)"
-let spaceMap = 
-            ((spaceStr1.Replace ("\n",""))
-                .Replace("\t","")
-                .Replace(" ",""))
-                .Split ","
-                |> Array.map(fun x -> x.Remove(0,1)) 
-                |> Array.map(fun x -> x.Remove(x.Length-1,1))
-                |> Array.map (fun x -> x.Split "/") 
-                |> Array.map (fun x -> (x[0],(int x[1],x[2]))) 
-                |> Array.sortBy (fun (x,y) -> x)
-                |> Map.ofArray
 
-let spcKy01 = 
-    spaceMap 
-    |> Map.keys 
-    |> Array.ofSeq 
-    |> Array.groupBy(fun x 
-                        -> match (x.Length < 1) with 
-                            |true -> "0"
-                            |false -> x.Substring (0, x.LastIndexOf(".")))
-(* let bs = (AV(1,2,0))
+let bs = (AV(1,2,0))
 let bs1 = hxlVld sqn bs
 let bsOc = 
     match sqn with 
@@ -961,8 +1014,9 @@ let bsOc =
         -> let a,b,c = hxlCrd (hxlVld sqn bs)
            hxlOrt sqn (AV(a-54,b-2,c)) 100 false
            |> allAV true
-let cx1 = ((coxel sqn [|(AV(0,0,0), Refid "B", Count 27, Label "A")|] [||])|> Array.head)
-Array.map (fun x -> cxlPrm x) a
-(cxlHxl a[1]).Prph *)
 
+spaceCxl sqn bs1 bsOc spaceStr1
+
+//let cx1 = ((coxel sqn [|(AV(0,0,0), Refid "B", Count 27, Label "A")|] [||])|> Array.head)
+ 
 
