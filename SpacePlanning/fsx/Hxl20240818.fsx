@@ -912,7 +912,9 @@ module Parse =
                         | None -> acc
             a
 
-        cxCxCx seq tree01 oc1 ac1
+        match (Array.length (Array.concat tree01) < 2) with 
+        | true -> ac1
+        | false -> cxCxCx seq tree01 oc1 ac1
 
 // Test Zone
 open Hexel
@@ -929,9 +931,11 @@ let spaceStr =
     (3.4.1/7/Dress-3),(3.4.2/6/Bath-3),(3.3.1.1/4/Bath-2)"
 
 let spaceStr1=
-     "(1/27/Foyer),(2/12/Living)"
-(* 
-let spaceMap = 
+     "(1/27/Foyer)"
+
+
+ 
+(* let spaceMap = 
     ((spaceStr1.Replace ("\n",""))
         .Replace("\t","")
         .Replace(" ",""))
