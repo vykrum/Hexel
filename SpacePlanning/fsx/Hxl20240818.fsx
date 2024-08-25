@@ -933,76 +933,7 @@ let spaceStr =
 let spaceStr1=
      "(1/27/Foyer)"
 
-
- 
-(* let spaceMap = 
-    ((spaceStr1.Replace ("\n",""))
-        .Replace("\t","")
-        .Replace(" ",""))
-        .Split ","
-        |> Array.map(fun x -> x.Remove(0,1)) 
-        |> Array.map(fun x -> x.Remove(x.Length-1,1))
-        |> Array.map (fun x -> x.Split "/") 
-        |> Array.map (fun x -> (x[0],(int x[1],x[2]))) 
-        |> Array.sortBy (fun (x,y) -> x)
-        |> Map.ofArray
-let spcKy01 = 
-            spaceMap 
-            |> Map.keys 
-            |> Array.ofSeq 
-            |> Array.groupBy(fun x 
-                                -> match (x.Length <= 1) with 
-                                    |true -> "0"
-                                    |false -> x.Substring (0, x.LastIndexOf(".")))
-
-let spcKy02 = 
-    spcKy01 
-    |> Array.head 
-    |> snd 
-    |> Array.windowed 2 
-    |> Array.map(fun x -> x[0],[|x[1]|])
-
-let spcKy03 = 
-    spcKy01 
-    |> Array.tail 
-    |> Array.partition (fun (x,y) -> x.Length = 1)
-
-let spcKy04 = 
-    (Array.append spcKy02 (fst spcKy03)) 
-    |> Array.groupBy (fun (x,y) -> x)
-    |> Array.map (fun x -> snd x)
-    |> Array.map (fun x 
-                    -> (Array.map(fun (y,z)
-                                    -> Array.append[|y|] z))x)
-    |> Array.map (fun x -> Array.concat x)
-    |> Array.map (fun x -> Array.distinct x)
-    |> Array.map (fun x -> Array.sort x)
-
-let spcKy05 = 
-    (snd spcKy03)
-    |> Array.map (fun (x,y) 
-                    -> Array.append [|x|] y)
-    |> Array.append spcKy04
-    |> Array.sortBy (fun x -> Array.head x)
-
-let spcKy06 = 
-    let a = match (Array.isEmpty spcKy05) with 
-            |  true -> [|[|"1"|]|]
-            | false -> spcKy05
-    a
-    |> Array.map(fun x 
-                    -> (Array.map (fun y 
-                                    -> y, spaceMap 
-                                    |> Map.find y))x)
-
-let spcKey =
-    spcKy06
-    |> Array.map (fun z 
-                    -> (Array.map (fun (x,y) 
-                                    -> x, fst y, snd y))z) *)
-
-
-let treeStr = spaceSeq spaceStr1
+let treeStr = spaceSeq spaceStr
 
 let sqn = HRCWNW
 
@@ -1019,8 +950,13 @@ let bsOc =
            hxlOrt sqn (AV(a-54,b-2,c)) 100 false
            |> allAV true
 
-spaceCxl sqn bs1 bsOc spaceStr1
+let cxls1 = spaceCxl sqn bs1 bsOc spaceStr
 
 //let cx1 = ((coxel sqn [|(AV(0,0,0), Refid "B", Count 27, Label "A")|] [||])|> Array.head)
  
-
+let a = cxls1 |> Array.map (fun x -> x.Hxls) |> Array.concat |> Array.distinct 
+let b = a |> Array.map (fun x -> hxlCrd x) 
+let x = b |> Array.map (fun (x,_,_) -> x)
+let y = b |> Array.map (fun (_,y,_) -> y)
+let wdt = Array.max x - Array.min x 
+let hgt = Array.max y - Array.min y 
