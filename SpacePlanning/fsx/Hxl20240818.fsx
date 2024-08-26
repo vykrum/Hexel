@@ -924,39 +924,80 @@ open Parse
 
 // Sample Format
 let spaceStr =
-     "(1/27/Foyer),(2/12/Living),(3/15/Dining),
-    (1.1/11/Study),(2.1/7/Staircase),(3.1/12/Kitchen),
-    (3.2/13/Bed-1),(3.3/13/Bed-2),(3.4/11/Bed-3),
-    (3.1.1/7/Utility),(3.2.1/6/Bath-1),(3.3.1/5/Dress-2),
-    (3.4.1/7/Dress-3),(3.4.2/6/Bath-3),(3.3.1.1/4/Bath-2)"
-
-let spaceStr1=
-     "(1/27/Foyer)"
+     "(1/7/Foyer),(2/12/Living),(3/8/Dining),(1.1/9/Study),(2.1/12/Staircase),(3.1/14/Kitchen),(3.2/14/Bed-1),(3.3/18/Bed-2),(3.4/18/Bed-3),(3.1.1/6/Utility),(3.2.1/8/Bath-1),(3.3.1/10/Closet-2),(3.4.1/10/Closet-3),(3.4.2/10/Bath-3),(3.3.1.1/10/Bath-2)"
 
 let treeStr = spaceSeq spaceStr
 
-let sqn = HRCWNW
+let sqn = HRCCNN
 
-let bs = (AV(1,2,0))
-let bs1 = hxlVld sqn bs
+let bsNs = hxlVld sqn (AV(1,4,0))
 let bsOc = 
     match sqn with 
     | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE 
-        -> let a,b,c = hxlCrd (hxlVld sqn bs)
-           hxlOrt sqn (AV(a-51,b-2,c)) 100 false
-           |> allAV true
+        -> 
+            let a,b,c = hxlCrd bsNs
+            Array.append (hxlOrt sqn (hxlVld sqn (AV(a-100,b-2,c))) 200 false) (adjacent sqn (hxlVld sqn (AV(0,0,0))))
+            |> allAV true
     | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW 
-        -> let a,b,c = hxlCrd (hxlVld sqn bs)
-           hxlOrt sqn (AV(a-54,b-2,c)) 100 false
-           |> allAV true
-
-let cxls1 = spaceCxl sqn bs1 bsOc spaceStr
+        -> 
+            let a,b,c = hxlCrd bsNs
+            Array.append (hxlOrt sqn (hxlVld sqn (AV(a-104,b-2,c))) 200 false) (adjacent sqn (hxlVld sqn (AV(0,0,0))))
+            |> allAV true
+let cxCxl1 = spaceCxl sqn bsNs bsOc spaceStr
 
 //let cx1 = ((coxel sqn [|(AV(0,0,0), Refid "B", Count 27, Label "A")|] [||])|> Array.head)
  
-let a = cxls1 |> Array.map (fun x -> x.Hxls) |> Array.concat |> Array.distinct 
-let b = a |> Array.map (fun x -> hxlCrd x) 
-let x = b |> Array.map (fun (x,_,_) -> x)
-let y = b |> Array.map (fun (_,y,_) -> y)
-let wdt = Array.max x - Array.min x 
-let hgt = Array.max y - Array.min y 
+
+// Dropdown
+label{
+    attr.``for`` "scaleOptions"   
+}
+select{
+    attr.name "scaleOptions"
+    attr.``style`` "width: 25%;
+                    display: block;
+                    margin-left: 20px;
+                    margin-right: 20px;
+                    height: 24px;
+                    font-size: 12px;
+                    border: none;
+                    padding: 5px 10px;
+                    color: #646464;
+                    border-radius: 10px;
+                    text-align: center;
+                    background-color: #f9f9f9;
+                    font-family: 'Optima', Candara, Calibri"
+    attr.id "scaleOptions"
+    on.change (fun e -> 
+                        let value = (e.Value :?> string)
+                        let scaleSet = 
+                            match value with
+                            | "1" -> 1
+                            | "5" -> 5
+                            | "10" -> 10
+                            | "15" -> 15
+                            | _ -> 10
+
+                        dispatch (SetOpt1 beeset))
+    option {
+            attr.selected "true"
+            attr.value "10"
+            "Scale"
+    }
+    option {
+            attr.value "1"
+            "1"
+            }
+    option {
+            attr.value "5"
+            "5"
+            }
+    option {
+            attr.value "10"
+            "10"
+            }
+    option {
+            attr.value "15"
+            "15"
+            }
+}
