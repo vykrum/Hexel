@@ -589,6 +589,24 @@ module Coxel =
             Avbl = av01 
         |}
 
+    /// <summary> Count open/exposed Hexels. </summary>
+    /// <param name="cxl"> A coxel. </param>
+    /// <param name="sqn"> Sequence to follow. </param>
+    /// <returns> Hexels categorized as Base, Hxls, Core, Prph, Brdr, Avbl. </returns>
+    let cxlExp 
+        (cxl : Cxl[])
+        (sqn: Sqn) = 
+        let occ = cxl |> Array.map (fun x -> x.Hxls) |> Array.concat |> allAV false 
+        let cxlAvl 
+            (cx:Cxl)
+            (sq:Sqn)
+            (oc:Hxl[]) =
+            let hx = cx.Hxls |> allAV false 
+            hx |> Array.filter(fun x -> (available sq x oc)>0) |> Array.length
+        cxl |> Array.map (fun a -> cxlAvl a sqn occ)
+
+
+
 module Shape = 
     open Hexel
     open Coxel
@@ -925,8 +943,8 @@ open Parse
 // Sample Format
 let spaceStr =
      "(1/7/Foyer),(2/12/Living),(3/8/Dining),(1.1/9/Study),(2.1/12/Staircase),(3.1/14/Kitchen),(3.2/14/Bed-1),(3.3/18/Bed-2),(3.4/18/Bed-3),(3.1.1/6/Utility),(3.2.1/8/Bath-1),(3.3.1/10/Closet-2),(3.4.1/10/Closet-3),(3.4.2/10/Bath-3),(3.3.1.1/10/Bath-2)"
-
-let treeStr = spaceSeq spaceStr
+let spcStr1 = "(1/25/Dock),(1.1/25/Logistics),(1.2/25/Lab),(1.3/25/Habitation),(1.4/25/Power)"
+let treeStr = spaceSeq spcStr1
 
 let sqn = HRCCNN
 
@@ -943,61 +961,7 @@ let bsOc =
             let a,b,c = hxlCrd bsNs
             Array.append (hxlOrt sqn (hxlVld sqn (AV(a-104,b-2,c))) 200 false) (adjacent sqn (hxlVld sqn (AV(0,0,0))))
             |> allAV true
-let cxCxl1 = spaceCxl sqn bsNs bsOc spaceStr
+let cxCxl1 = spaceCxl sqn bsNs bsOc spcStr1
 
+cxlExp cxCxl1 sqn
 //let cx1 = ((coxel sqn [|(AV(0,0,0), Refid "B", Count 27, Label "A")|] [||])|> Array.head)
- 
-
-// Dropdown
-label{
-    attr.``for`` "scaleOptions"   
-}
-select{
-    attr.name "scaleOptions"
-    attr.``style`` "width: 25%;
-                    display: block;
-                    margin-left: 20px;
-                    margin-right: 20px;
-                    height: 24px;
-                    font-size: 12px;
-                    border: none;
-                    padding: 5px 10px;
-                    color: #646464;
-                    border-radius: 10px;
-                    text-align: center;
-                    background-color: #f9f9f9;
-                    font-family: 'Optima', Candara, Calibri"
-    attr.id "scaleOptions"
-    on.change (fun e -> 
-                        let value = (e.Value :?> string)
-                        let scaleSet = 
-                            match value with
-                            | "1" -> 1
-                            | "5" -> 5
-                            | "10" -> 10
-                            | "15" -> 15
-                            | _ -> 10
-
-                        dispatch (SetOpt1 beeset))
-    option {
-            attr.selected "true"
-            attr.value "10"
-            "Scale"
-    }
-    option {
-            attr.value "1"
-            "1"
-            }
-    option {
-            attr.value "5"
-            "5"
-            }
-    option {
-            attr.value "10"
-            "10"
-            }
-    option {
-            attr.value "15"
-            "15"
-            }
-}
