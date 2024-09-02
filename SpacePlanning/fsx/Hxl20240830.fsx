@@ -829,6 +829,7 @@ module Parse =
     /// <returns> Coxel array </returns>    
     [<TailCall>]
     let spaceCxl 
+        (rsl: int)
         (seq : Sqn)
         (bas : Hxl)
         (occ : Hxl[])
@@ -859,7 +860,7 @@ module Parse =
             spaceSeq str 
                 |> Array.map (fun x -> 
                     Array.map(fun (a,b,c) 
-                                -> Refid a, Count b, Label c)x)
+                                -> Refid a, Count (b*rsl), Label c)x)
 
         // Generate base coxel
         let id,ct,lb = tree01 |> Array.concat |> Array.head
@@ -959,7 +960,7 @@ let bsOc =
             let a,b,c = hxlCrd bsNs
             Array.append (hxlOrt sqn (hxlVld sqn (AV(a-104,b-2,c))) 200 false) (adjacent sqn (hxlVld sqn (AV(0,0,0))))
             |> allAV true
-let cxCxl1 = spaceCxl sqn bsNs bsOc spcStr1
+let cxCxl1 = spaceCxl 2 sqn bsNs bsOc spcStr1
 
-cxlExp cxCxl1 sqn
-//let cx1 = ((coxel sqn [|(AV(0,0,0), Refid "B", Count 27, Label "A")|] [||])|> Array.head)
+                
+                
