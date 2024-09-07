@@ -235,7 +235,7 @@ module Hexel =
             (Array.append occ [|hx1|])
         |> Array.length
 
-    ///<summary> Assign Hexel type. </summary>
+    /// <summary> Assign Hexel type. </summary>
     /// <param name="sqn"> Sequence to follow. </param>
     /// <param name="occ"> Array of Occupied/Unavailable hexels. </param>
     /// <param name="hxl"> All constituent hexels. </param>
@@ -247,6 +247,16 @@ module Hexel =
         hxl |> Array.map (fun x -> match (available sqn x (Array.append occ hxl)) < 1 with 
                                     | true -> RV(hxlCrd x)
                                     | false -> AV(hxlCrd x))
+
+    /// <summary> Reassign RV after evaluating as allAV </summary>
+    /// <param name="org"> All constituent hexels. </param>
+    /// <param name="hxl"> Subset of hexels. </param>
+    /// <returns> Restored Hexel Types </returns>
+    let hxlRst
+        (org : Hxl[])
+        (hxl : Hxl[]) =
+        let crd = Array.map (fun x -> hxlCrd x) hxl
+        org |> Array.filter (fun x -> (crd|> Array.contains (hxlCrd x)))
 
     /// <summary> Increment Hexels. </summary>
     /// <param name="sqn"> Sequence to follow. </param>
@@ -462,24 +472,27 @@ module Coxel =
             /// <returns> Array of sorted hexels </returns>
             let rec arr 
                 (sqn : Sqn) 
-                (hxl : Hxl[]) 
-                (acc : Hxl[]) 
+                (hx1 : Hxl[]) 
+                (ac1 : Hxl[]) 
                 (cnt : int)
                 (opt : bool) = 
-                match cnt with 
-                | a when cnt <= 0x1 -> acc
-                | _ -> 
-                    let hxl = Array.except acc hxl
-                    let hx1 = ((Array.filter (fun x -> Array.contains x hxl) 
-                                    (adjacent sqn (Array.last acc))))                
-                    let hx2 = match opt with 
-                                    | false -> Array.tryHead hx1
-                                    | true -> Array.tryLast hx1
-                    let hx3 = match hx2 with 
-                                    | Some a -> [|a|]
-                                    | None -> [||]
-                    let acc = Array.append acc  hx3
-                    arr sqn hxl acc (cnt-1) opt
+                let hxl = allAV false hx1
+                let acc = allAV false ac1
+                let ar1 =   match cnt with 
+                            | a when cnt <= 0x1 -> acc
+                            | _ -> 
+                                let hxl = Array.except acc hxl
+                                let hx1 = ((Array.filter (fun x -> Array.contains x hxl) 
+                                                (adjacent sqn (Array.last acc))))                
+                                let hx2 = match opt with 
+                                                | false -> Array.tryHead hx1
+                                                | true -> Array.tryLast hx1
+                                let hx3 = match hx2 with 
+                                                | Some a -> [|a|]
+                                                | None -> [||]
+                                let acc = Array.append acc  hx3
+                                arr sqn hxl acc (cnt-1) opt
+                hxlRst hx1 ar1
 
             let hxl = hxo|> Array.sortByDescending 
                         (fun x -> available sqn x hxo)
@@ -962,5 +975,5 @@ let bsOc =
             |> allAV true
 let cxCxl1 = spaceCxl 2 sqn bsNs bsOc spcStr1
 
-                
+cxlHxl cxCxl1[0]
                 
