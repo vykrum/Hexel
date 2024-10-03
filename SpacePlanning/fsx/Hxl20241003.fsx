@@ -153,15 +153,7 @@ module Hexel =
     /// <param name="rev"> If true, Standardize to type RV. </param>
     /// <param name="hxl"> An array of hexels. </param>
     /// <returns> Converts all hexels to type AV </returns>
-    let allAV 
-        (rev:bool)
-        (hxl:Hxl[]) = 
-        hxl
-        |> Array.Parallel.map(fun x -> hxlCrd x)
-        |> Array.Parallel.map(fun x -> match rev with 
-                                                        | true -> RV x
-                                                        | false -> AV x)
-    
+
     /// <summary> Change all hexel types to a uniform type.</summary>
     /// <param name="opt"> 1:AV, 2:RV, 3:EX. </param>
     /// <param name="hxl"> An array of hexels. </param>
