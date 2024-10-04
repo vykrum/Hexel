@@ -1216,4 +1216,4 @@ let hxlElm (sqn:Sqn) (hxl:Hxl[]) (occ:Hxl[])=
     let hx1 = elm sqn hxl acc
     hxlChk sqn occ hx1
 
-hxlElm seq hx1 [||]
+let r = hxlElm seq hx1 [||]
