@@ -502,14 +502,21 @@ module Coxel =
             // Avoid single unclustered cell towards the end
             let hxlElm (sqn:Sqn) (hxl:(Hxl*int)[]) (occ:Hxl[]) =
                 let hxl = Array.map (fun (x,y) -> AV(hxlCrd x),y) hxl
-                let acc = hxl |> Array.filter (fun x -> (available sqn x (getHxls hxl))<5)
+                let acc = 
+                                            let a = Array.rev hxl |> Array.tail
+                                            let b = a |> Array.filter (fun x -> (available sqn x (getHxls a))<4) |> Array.rev
+                                            Array.concat [|b;[|Array.last hxl|]|]
+
                 let rec elm (sqn:Sqn) (hxl:(Hxl*int)[]) (acc: (Hxl*int)[]) = 
                     let hx1 = hxl
                     match (Array.length hx1 = Array.length acc) with
                     | true -> acc
                     | false -> 
                                 let hx1 = acc
-                                let acc = hx1|> Array.filter (fun x -> (available sqn x (getHxls hx1))<5)
+                                let acc = 
+                                            let a = Array.rev hxl |> Array.tail
+                                            let b = a |> Array.filter (fun x -> (available sqn x (getHxls a))<4) |> Array.rev
+                                            Array.concat [|b;[|Array.last hxl|]|]
                                 elm sqn hx1 acc
                 elm sqn hxl acc
     
@@ -543,10 +550,12 @@ module Coxel =
                         
                     let inc = increments sqn Hxl occ
                                 
-                    let ac1 = Array.map2  (fun x y
+                    let ac0 = Array.map2  (fun x y
                                             -> Array.append x y) 
                                 acc
                                 (Array.chunkBySize 1 inc)
+
+                    let ac1 = Array.map (fun x -> hxlElm sqn x occ) ac0 
                     
                     let acc = 
                         let a1 = Array.map (fun x -> Array.map(fun y -> 
