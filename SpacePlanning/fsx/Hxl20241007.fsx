@@ -264,6 +264,11 @@ module Hexel =
                                                 | true -> RV(hxlCrd x)
                                                 | false -> AV(hxlCrd x))
 
+    let hxlCtg
+        (hxl : Hxl[]) =
+        hxl
+
+
     /// <summary> Increment Hexels. </summary>
     /// <param name="sqn"> Sequence to follow. </param>
     /// <param name="hxo"> Array of Tuples containing Base hexel of collection and size. </param> 
