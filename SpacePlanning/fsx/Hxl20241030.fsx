@@ -1,16 +1,18 @@
+/// <summary> Hexel is a location representing an irregular hexagonal module.
+/// Collections of hexels in a hexagonal grid form Coxels.
+/// A hexel can have a maximum of six neighbouring/adjacent hexels.
+/// All neighbouring hexels share at least one common edge </summary>
 module Hexel =
-    /// <summary> Hexel is a location representing an irregular hexagonal module.
-    /// Collections of hexels in a hexagonal grid form Coxels.
-    /// A hexel can have a maximum of six neighbouring/adjacent hexels.
-    /// All neighbouring hexels share at least one common edge </summary>
+///
 
     /// <summary> Hexel types: Categorization based on location availabity. </summary>
-    ///<typeparam name="AV"> Available Hexels. </typeparam>
+    ///<typeparam name="AV"> AvaiIable Hexels. </typeparam>
     ///<typeparam name="RV"> Reserved Hexels. </typeparam>
     type Hxl = 
         | AV of x:int * y:int * z:int
         | RV of x:int * y:int * z:int
         | EX of x:int * y:int * z:int
+    ///
 
     /// <summary> Sequence specifies the orientation of hexels, the direction of flow of 
     /// adjacent hexels and the position of the first of the six adjaent hexels. </summary>
@@ -65,6 +67,7 @@ module Hexel =
     type Sqn =  
         | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE 
         | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
+    ///
 
     /// <summary> Sequence Locations: Location of adjacent/neighbouring hexels relative to the host hexel.
     /// Each array begins with the location of Host hexel followed by the rest in a particular order.
@@ -98,11 +101,13 @@ module Hexel =
         | HRCCSW -> [|0x0,0x0; 0xFFFFFFFE,0xFFFFFFFF; 0x0,0xFFFFFFFE; 0x2,0xFFFFFFFF; 0x2,0x1; 0x0,0x2; 0xFFFFFFFE,0x1|]
         | HRCWNW -> [|0x0,0x0; 0xFFFFFFFE,0x1; 0x0,0x2; 0x2,0x1; 0x2,0xFFFFFFFF; 0x0,0xFFFFFFFE; 0xFFFFFFFE,0xFFFFFFFF|]
         | HRCCNW -> [|0x0,0x0; 0xFFFFFFFE,0x1; 0xFFFFFFFE,0xFFFFFFFF; 0x0,0xFFFFFFFE; 0x2,0xFFFFFFFF; 0x2,0x1; 0x0,0x2|]
+    ///
 
     /// <summary> Identity Hexel. </summary>
     /// <returns> Available (AV) Hexel at global origin. </returns>
     let identity = 
-        AV(0x0,0x0, 0x0)
+        EX(0x0,0x0, 0x0)
+    ///
 
     /// <summary> Extract coordinates from hexel. </summary>
     /// <param name="hexel"> Hexel of type AV/RV. </param>
@@ -113,6 +118,7 @@ module Hexel =
         | AV (a,b,c) -> (a,b,c)
         | RV (a,b,c) -> (a,b,c)
         | EX (a,b,c) -> (a,b,c)
+    ///
 
     /// <summary> Valid Hexels. </summary>
     /// <param name="sqn"> Sequence to follow. </param>
@@ -148,11 +154,7 @@ module Hexel =
             | AV(_) -> AV(vld)
             | RV(_) -> RV(vld)
             | EX(_) -> EX(vld)
-
-    /// <summary> Standardize hexels to type AV </summary>
-    /// <param name="rev"> If true, Standardize to type RV. </param>
-    /// <param name="hxl"> An array of hexels. </param>
-    /// <returns> Converts all hexels to type AV </returns>
+    ///
 
     /// <summary> Change all hexel types to a uniform type.</summary>
     /// <param name="opt"> 1:AV, 2:RV, 3:EX. </param>
@@ -168,28 +170,31 @@ module Hexel =
                                                         | 2 -> RV x
                                                         | 3 -> EX x
                                                         | _ -> AV x)
+    ///
 
     /// <summary> Get Hexel from Tuple. </summary>
-    /// <param name="hxo"> Tuple containing Base hexel of collection and size. </param> 
+    /// <param name="hxo"> Tuple containing Base hexel of collection and size. </param>
     let getHxls 
         (hxo : (Hxl*int)[]) = 
         hxo
         |> Array.map(fun x 
                         -> fst x)
+    ///
 
     /// <summary> Adjacent Hexels. </summary>
     /// <param name="sqn"> Sequence to follow. </param>
     /// <param name="hxo"> Base hexel. </param> 
     /// <returns> An array of six adjacent hexels. </returns>
     let adjacent 
-        (sqn: Sqn)
-        (hxo: Hxl) =
+        (sqn : Sqn)
+        (hxo : Hxl) =
         match hxo with 
         | AV (x,y,z) -> Array.map 
                             (fun (a,b) -> 
                             AV(x+a, y+b,z))(sequence sqn)
         | RV (x,y,z) -> [|RV(x,y,z)|]
         | EX (x,y,z) -> [|EX(x,y,z)|]
+    ///
 
     /// <summary> Increment Hexel. </summary>
     /// <param name="sqn"> Sequence to follow. </param>
@@ -224,8 +229,9 @@ module Hexel =
                             | None -> Array.tryHead inc1
             match inc2 with 
             | Some a -> a, y
-            | None -> (identity,0xFFFFFFFF)
-        | _ -> (identity,0xFFFFFFFF)
+            | None -> (hxlVld sqn identity,0xFFFFFFFF)
+        | _ -> (hxlVld sqn identity,0xFFFFFFFF)
+    ///
 
     /// <summary> Available Adjacent Hexels. </summary>
     /// <param name="sqn"> Sequence to follow. </param>
@@ -237,16 +243,16 @@ module Hexel =
         (hxo : obj)
         (occ : Hxl[]) =  
         let occ = occ |> hxlUni 1
-
         let hx1 = match hxo with 
                     | :? (Hxl*int) as (a,_) -> a
                     | :? Hxl as b ->  b
-                    | _ -> RV(0,0,0)
+                    | _ -> identity
         hx1 
         |> adjacent sqn
         |> Array.except 
             (Array.append occ [|hx1|])
         |> Array.length
+    ///
 
     ///<summary> Assign Hexel type. </summary>
     /// <param name="sqn"> Sequence to follow. </param>
@@ -263,13 +269,13 @@ module Hexel =
                                     | false -> match (available sqn x (Array.append occ hxl)) < 1 with 
                                                 | true -> RV(hxlCrd x)
                                                 | false -> AV(hxlCrd x))
+    ///
 
     let hxlCtg
         (hxl : Hxl[])
         (sqn : Sqn) =
         let hx1 = Array.map (fun x -> available sqn x )
         hxl
-
 
     /// <summary> Increment Hexels. </summary>
     /// <param name="sqn"> Sequence to follow. </param>
@@ -287,6 +293,7 @@ module Hexel =
             increment sqn st (Array.append[|fst ac|] occ )) 
                 hxo[0] hxo
                 |> Array.tail
+        ///
         
         /// <summary> Generate alternate hexel in cases where there are overlapping hexels </summary>
         /// <param name="sqn"> Sequence to follow. </param>
@@ -315,6 +322,7 @@ module Hexel =
                                             | true -> fst(increment sqn c oc1),d) in1
             
         replaceDuplicate sqn hxo inc occ
+    ///
 
     /// <summary> Boundary Hexels Ring. </summary>
     /// <param name="sqn"> Sequence to follow. </param>
@@ -368,7 +376,7 @@ module Hexel =
             | [||] -> [||]
             | _ ->  match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with 
                     | true -> ar1
-                    | false ->hxlUni 2 ar1
+                    | false -> hxlUni 2 ar1
             
         // Arrange clockwise
         let ar3 = Array.windowed 2 ar2
@@ -379,6 +387,7 @@ module Hexel =
         match Array.contains false bln with
         | true -> Array.rev ar2
         | false -> ar2
+    ///
 
     /// <summary> Hexel Ring Segment Sequence. </summary>
     /// <param name="sqn"> Sequence to follow. </param>
@@ -422,8 +431,9 @@ module Hexel =
         | _ ->  match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with 
                 | true -> ar1
                 | false -> hxlUni 2 ar1
+    ///
 
-    /// <summary> Reassign RV after evaluating as allAV </summary>
+
     /// <param name="org"> All constituent hexels. </param>
     /// <param name="hxl"> Subset of hexels. </param>
     /// <returns> Restored Hexel Types </returns>
@@ -434,6 +444,7 @@ module Hexel =
         org |> Array.filter (fun x -> (crd|> Array.contains (hxlCrd x)))
 
 module Coxel =
+
     open Hexel
     ///
 
@@ -503,30 +514,8 @@ module Coxel =
             (hxo: (Hxl*int)[])
             (occ : Hxl[])
             (acc:(Hxl*int)[][])
-            (cnt : int)
-            (sqn : Sqn) = 
-
-            // Avoid single unclustered cell towards the end
-            let hxlElm (sqn:Sqn) (hxl:(Hxl*int)[]) (occ:Hxl[]) =
-                let hxl = Array.map (fun (x,y) -> AV(hxlCrd x),y) hxl
-                let acc = 
-                                            let a = Array.rev hxl |> Array.tail
-                                            let b = a |> Array.filter (fun x -> (available sqn x (getHxls a))<4) |> Array.rev
-                                            Array.concat [|b;[|Array.last hxl|]|]
-
-                let rec elm (sqn:Sqn) (hxl:(Hxl*int)[]) (acc: (Hxl*int)[]) = 
-                    let hx1 = hxl
-                    match (Array.length hx1 = Array.length acc) with
-                    | true -> acc
-                    | false -> 
-                                let hx1 = acc
-                                let acc = 
-                                            let a = Array.rev hxl |> Array.tail
-                                            let b = a |> Array.filter (fun x -> (available sqn x (getHxls a))<4) |> Array.rev
-                                            Array.concat [|b;[|Array.last hxl|]|]
-                                elm sqn hx1 acc
-                elm sqn hxl acc
-    
+            (cnt : int) = 
+                
             match cnt with 
             | c when c < 0x1 -> acc
             | _ -> 
@@ -542,7 +531,7 @@ module Coxel =
 
                     let rpt = Array.Parallel.map (fun x 
                                                     -> (snd x) - 0x1) hxo
-                    let Hxl =  
+                    let hx1 =  
                         acc
                         |> Array.Parallel.map (fun x
                                                 -> Array.filter (fun a -> (available sqn a occ) > 0x0) x)
@@ -555,36 +544,36 @@ module Coxel =
                         |> Array.map2 (fun x y 
                                         -> fst y, x) rpt
                         
-                    let inc = increments sqn Hxl occ
+                    let inc = increments sqn hx1 occ
                                 
-                    let ac0 = Array.map2  (fun x y
+                    let ac1 = Array.map2  (fun x y
                                             -> Array.append x y) 
                                 acc
                                 (Array.chunkBySize 1 inc)
+                    // Avoid bridge in Coxel
+                    let acc = ac1 
+                                |> Array.Parallel.map (fun x -> match Array.length x > 3 with
+                                                                | false -> x
+                                                                | true -> 
+                                                                        let h1 = hxlUni 1 (getHxls x) 
+                                                                        let h2 = h1.[Array.length h1 - 2]
+                                                                        let b1 = available sqn h2 (Array.except [|h2; Array.last h1|] h1) = 5
+                                                                        let b2 = available sqn (Array.last h1) (h1 |> Array.rev |> Array.tail) = 5
+                                                                        match b1 && b2 with 
+                                                                        | false -> x
+                                                                        | true -> Array.removeManyAt (Array.length h1 - 2) 2 x)
 
-                    let ac1 = Array.map (fun x -> hxlElm sqn x occ) ac0 
-                    
-                    let acc = 
-                        let a1 = Array.map (fun x -> Array.map(fun y -> 
-                                                                            match (available sqn y x)<4 with 
-                                                                            | true -> 0
-                                                                            | false -> 1)x) (Array.map (fun x ->getHxls x)ac1)
-                        let a2 = Array.map2 (fun x y -> match (Array.sum x) > 1 with
-                                                                                            | true -> Array.map(fun (a,b )-> a,0x0 )y
-                                                                                            | false ->  y) a1 ac1
-                        a2
-
-                    let occ = Array.concat[| getHxls
+                    let occ = Array.concat[|getHxls 
                         (Array.concat [|
                         Array.concat acc
                         inc
-                        Hxl|]);occ|] 
+                        hx1|]);occ|] 
                             |> hxlUni 1
-                            
-                    (clsts Hxl occ acc (cnt - 0x1) sqn)
+
+                    (clsts hx1 occ acc (cnt - 0x1))
             
         let cls = 
-            clsts bas oc1 acc cnt sqn
+            clsts bas oc1 acc cnt
                 |> Array.Parallel.map(fun x 
                                         -> Array.filter(fun (_,z) -> z >= 0) x)
             
@@ -594,22 +583,26 @@ module Coxel =
 
         // Avoid single unclustered cell towards the end
         let hxlElm (sqn:Sqn) (hxl:Hxl[]) (occ:Hxl[])=
+            let hxo = hxl
+            let avl = 5
             let hxl = hxlUni 1 hxl
-            let acc = hxl |> Array.filter (fun x -> (available sqn x hxl)<5)
+            let acc = hxl |> Array.filter (fun x -> (available sqn x hxl) < avl)
             let rec elm (sqn:Sqn) (hxl:Hxl[]) (acc: Hxl[]) = 
                 let hx1 = hxl
                 match (Array.length hx1 = Array.length acc) with
                 | true -> acc
                 | false -> 
                             let hx1 = acc
-                            let acc = hx1|> Array.filter (fun x -> (available sqn x hx1)<5)
+                            let acc = hx1|> Array.filter (fun x -> (available sqn x hx1) < avl)
                             elm sqn hx1 acc
             let hx1 = elm sqn hxl acc
-            hxlChk sqn occ hx1
+            hxlRst hxo hx1
 
         let cl01 = 
             cl00 |> Array.Parallel.map(fun x -> hxlElm sqn x occ)
-            
+
+        //let cl01 = cl00 |> Array.Parallel.map(fun x -> Array.filter(fun y -> (available sqn y x) < 5)x)
+    
         let cl1 = Array.map2 (fun x y 
                                     -> Array.append [|Array.head x|] y) cl00 cl01
 
@@ -794,11 +787,13 @@ module Coxel =
             Avbl = av01 
         |}  
 
-module Shape = 
+module Shape =
+
     open Hexel
     open Coxel
     open System
-     
+    ///
+
     /// <summary> Module shape in tessalated hexagonal grid. </summary>
     /// <typeparam name="Hxg"> Hexagon. </typeparam>
     /// <typeparam name="Sqr"> Square. </typeparam>
@@ -815,73 +810,76 @@ module Shape =
         let hxCr = 
             match shp with 
             | Hxg 
-             -> match sqn with 
-                |VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE 
-                    -> [|0x0,0x0; 0x1,0x1; 0x2,0x0; 0x2,0xFFFFFFFF; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFF|]
-                | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
-                    -> [|0x0,0x0; 0x1,0x0; 0x2,0xFFFFFFFF; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFE; 0xFFFFFFFF,0xFFFFFFFF|]
+                -> match sqn with 
+                    |VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE 
+                        -> [|0x0,0x0; 0x1,0x1; 0x2,0x0; 0x2,0xFFFFFFFF; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFF|]
+                    | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
+                        -> [|0x0,0x0; 0x1,0x0; 0x2,0xFFFFFFFF; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFE; 0xFFFFFFFF,0xFFFFFFFF|]
             | Sqr 
-             -> match sqn with 
-                |VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE
-                    -> [|0x0,0x0; 0x1,0x0; 0x2,0x0; 0x2,0xFFFFFFFE; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFE|]
-                | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
-                    -> [|0x0,0x0; 0x2,0x0; 0x2,0xFFFFFFFF; 0x2,0xFFFFFFFE; 0x0,0xFFFFFFFE; 0x0,0xFFFFFFFF|]
+                -> match sqn with 
+                    |VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE
+                        -> [|0x0,0x0; 0x1,0x0; 0x2,0x0; 0x2,0xFFFFFFFE; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFE|]
+                    | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
+                        -> [|0x0,0x0; 0x2,0x0; 0x2,0xFFFFFFFF; 0x2,0xFFFFFFFE; 0x0,0xFFFFFFFE; 0x0,0xFFFFFFFF|]
             | Arw 
-             -> match sqn with 
-                |VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE
-                    -> [|0x0,0x0; 0x1,0xFFFFFFFF; 0x2,0x0; 0x2,0xFFFFFFFD; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFD|]
-                | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
-                    -> [|0x0,0x0; 0x3,0x0; 0x2,0xFFFFFFFF; 0x3,0xFFFFFFFE; 0x0,0xFFFFFFFE; 0x1,0xFFFFFFFF|]
+                -> match sqn with 
+                    |VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE
+                        -> [|0x0,0x0; 0x1,0xFFFFFFFF; 0x2,0x0; 0x2,0xFFFFFFFD; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFD|]
+                    | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
+                        -> [|0x0,0x0; 0x3,0x0; 0x2,0xFFFFFFFF; 0x3,0xFFFFFFFE; 0x0,0xFFFFFFFE; 0x1,0xFFFFFFFF|]
             | Prl 
-             -> match sqn with 
-                |VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE
-                    -> [|0x0,0x0; 0x1,0x0; 0x2,0x0; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFE; 0xFFFFFFFF,0xFFFFFFFE|]
-                | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
-                    -> [|0x0,0x0; 0x2,0x1; 0x2,0x0; 0x2,0xFFFFFFFF; 0x0,0xFFFFFFFE; 0x0,0xFFFFFFFF|] 
-                   
+                -> match sqn with 
+                    |VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE
+                        -> [|0x0,0x0; 0x1,0x0; 0x2,0x0; 0x1,0xFFFFFFFE; 0x0,0xFFFFFFFE; 0xFFFFFFFF,0xFFFFFFFE|]
+                    | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
+                        -> [|0x0,0x0; 0x2,0x1; 0x2,0x0; 0x2,0xFFFFFFFF; 0x0,0xFFFFFFFE; 0x0,0xFFFFFFFF|] 
+                    
         let x, y, _ = hxl |> hxlCrd 
         hxCr 
         |> Array.map(fun (a,b)-> a + x, b + y) 
         |> Array.map2 ( fun inx (vrx,vry) 
                             -> string(inx),vrx,vry) 
                             [|0..(Array.length hxCr)-1|]
+    ///
 
     /// <summary> Ortogonal Hexel Sequence </summary>
     /// <param name="sqn"> Sequence to follow. </param>
     /// <param name="org"> Start Hexel. </param> 
     /// <param name="lgt"> Sequence Length. </param> 
-    /// <param name="vrt"> Vertical / Horizontal. </param> 
+    /// <param name="vrt"> Vertical or Horizontal Orientation. </param> 
+    /// <param name="rev"> Positive or Negative Direction. </param> 
     /// <returns> Array of Sequential Reserved Hexels. </returns>
     let hxlOrt
-        (sqn : Sqn)
-        (org : Hxl)
-        (lgt : int)
-        (vrt : bool)
-        (rev : bool) =
-        let hxx,hxy,hxz = org |> hxlVld sqn |> hxlCrd
-        let lgt = lgt + (lgt%2)
-        let sgn = match rev with 
-                    | true -> -1
-                    | false -> 1         
-        match sqn with
-        | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE
-            -> match vrt with 
-                | true -> [|hxy..4*sgn..(hxy+lgt+4)*sgn|]
-                        |> Array.map (fun y -> [|EX(hxx,y,hxz);EX(hxx+1,y+2*sgn,hxz)|])
-                        |> Array.concat
-                        |> Array.take ((lgt/2)+1)
-                | false -> [|hxx..2*sgn..(hxx+lgt+4)*sgn|]
-                        |> Array.map (fun x -> EX (x,hxy,hxz)) 
-                        |> Array.take ((lgt/2)+1)
-        | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
-            -> match vrt with
-                | true -> [|hxy..2*sgn..(hxy+lgt)*sgn|]
-                        |> Array.map (fun y -> EX (hxx,y,hxz)) 
-                        |> Array.take ((lgt/2)+1)
-                | false -> [|hxx..4*sgn..(hxx+lgt)*sgn|] 
-                        |> Array.map (fun x -> [|EX(x,hxy,hxz);EX(x+2*sgn,hxy+1,hxz)|])
-                        |> Array.concat
-                        |> Array.take ((lgt/2)+1)
+            (sqn : Sqn)
+            (org : Hxl)
+            (lgt : int)
+            (vrt : bool)
+            (rev : bool) =
+            let hxx,hxy,hxz = org |> hxlVld sqn |> hxlCrd
+            let lgt = lgt + (lgt%2)
+            let sgn = match rev with 
+                        | true -> -1
+                        | false -> 1         
+            match sqn with
+            | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE
+                -> match vrt with 
+                    | true -> [|hxy..4*sgn..(hxy+lgt+4)*sgn|]
+                            |> Array.map (fun y -> [|EX(hxx,y,hxz);EX(hxx+1,y+2*sgn,hxz)|])
+                            |> Array.concat
+                            |> Array.take ((lgt/2)+1)
+                    | false -> [|hxx..2*sgn..(hxx+lgt+4)*sgn|]
+                            |> Array.map (fun x -> EX (x,hxy,hxz)) 
+                            |> Array.take ((lgt/2)+1)
+            | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
+                -> match vrt with
+                    | true -> [|hxy..2*sgn..(hxy+lgt)*sgn|]
+                            |> Array.map (fun y -> RV (hxx,y,hxz)) 
+                            |> Array.take ((lgt/2)+1)
+                    | false -> [|hxx..4*sgn..(hxx+lgt)*sgn|] 
+                            |> Array.map (fun x -> [|EX(x,hxy,hxz);EX(x+2*sgn,hxy+1,hxz)|])
+                            |> Array.concat
+                            |> Array.take ((lgt/2)+1)
+
     let hxlOff
         (hxl : Hxl[])
         (rev : bool) = 
@@ -990,11 +988,21 @@ module Shape =
                     |> Array.distinct
         vrBrIn1
 
-module Parse = 
+module Parse =
+
     open Hexel
     open Coxel
     open Shape
     open System
+
+    // Sample Space Program Input Format
+    let spaceStr =
+        "(1/15/Foyer),(2/20/Living),(3/20/Dining),
+        (4/20/Staircase),(1.1/10/Study),(3.1/15/Bed-1),
+        (3.2/15/Bed-2),(3.3/15/Bed-3),(3.4/15/Kitchen),
+        (3.1.1/5/Bath-1),(3.2.1/5/Dress-2),(3.3.1/5/Dress-3),
+        (3.3.2/5/Bath-3),(3.4.1/5/Utility),(3.2.1.1/5/Bath-2)"
+    ///
 
     /// <summary> Categorize constituent Hexels within a Coxel. 
     ///</summary>
@@ -1186,8 +1194,7 @@ module Parse =
         
         let bdR1 = match (bdWd=0 || bdHt=0) with 
                     | true -> [||]
-                    | false -> [|hxlRct seq (bdWd) (bdHt) boI1|]
-        
+                    | false -> [|hxlRct seq (bdWd) (bdHt) boI1|]      
         let bdRt = match (bdWd=0 || bdHt=0) with 
                     | true -> [||]
                     | false -> snd(Array.head bdR1)
@@ -1277,5 +1284,5 @@ open Parse
 // Sample Format
 //let spcStr = "(#/W=10/H=10/S=0),(1/7/Foyer),(2/12/Living),(3/8/Dining),(1.1/9/Study),(2.1/12/Staircase),(3.1/14/Kitchen),(3.2/14/Bed-1),(3.3/18/Bed-2),(3.4/18/Bed-3),(3.1.1/6/Utility),(3.2.1/8/Bath-1),(3.3.1/10/Closet-2),(3.4.1/10/Closet-3),(3.4.2/10/Bath-3),(3.3.1.1/10/Bath-2)"
 //let spcStr1 = "(#/W=10/H=10/S=0),(1/25/Dock),(1.1/25/Logistics),(1.2/25/Lab),(1.3/25/Habitation),(1.4/25/Power)"
-let spcStr2 = "(0/Q=2),(1/24/Dock),(1.1/25/Logistics),(1.2/24/Lab),(1.3/25/Habitation),(1.4/25/Power)"
-spaceCxl [||]spcStr2
+let spcStr2 = "(1/19/Start),(2/15/End)"
+let cx1 = spaceCxl [||]"(1/5/.)"
