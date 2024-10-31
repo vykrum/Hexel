@@ -274,8 +274,8 @@ module Hexel =
     let hxlCtg
         (hxl : Hxl[])
         (sqn : Sqn) =
-        let hx1 = Array.map (fun x -> available sqn x )
-        hxl
+        let hx1 = Array.map (fun x -> available sqn x ) hxl
+        hx1
 
     /// <summary> Increment Hexels. </summary>
     /// <param name="sqn"> Sequence to follow. </param>
@@ -1286,3 +1286,7 @@ open Parse
 //let spcStr1 = "(#/W=10/H=10/S=0),(1/25/Dock),(1.1/25/Logistics),(1.2/25/Lab),(1.3/25/Habitation),(1.4/25/Power)"
 let spcStr2 = "(1/19/Start),(2/15/End)"
 let cx1 = spaceCxl [||]"(1/5/.)"
+let hx1 = cx1[0].Hxls
+let sq1 = VRCCEE
+
+hxlCtg hx1 sq1 
