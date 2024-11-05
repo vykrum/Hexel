@@ -1289,4 +1289,4 @@ let cx1 = spaceCxl [||]spcStr2
 let hx1 = cx1[0].Hxls
 let sq1 = HRCWNE
 
-hxlCtg hx1 sq1 
+let ctg = hxlCtg hx1 sq1 
