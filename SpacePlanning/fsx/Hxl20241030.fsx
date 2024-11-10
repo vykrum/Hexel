@@ -275,6 +275,7 @@ module Hexel =
         (hxl : Hxl[])
         (sqn : Sqn) =
         let hx1 = Array.map (fun x -> available sqn x hxl ) hxl
+
         hx1
 
     /// <summary> Increment Hexels. </summary>
@@ -1289,4 +1290,4 @@ let cx1 = spaceCxl [||]spcStr2
 let hx1 = cx1[0].Hxls
 let sq1 = HRCWNE
 
-let ctg = hxlCtg hx1 sq1 
+let ctg1 = hxlCtg hx1 sq1 
