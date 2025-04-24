@@ -1288,11 +1288,11 @@ open Parse
 //let spcStr2 = "(1/5/Start),(2/15/End)"
 //let cx1 = spaceCxl [||]spcStr2
 //let hx1 = cx1[0].Hxls
-let sq1 = VRCWEE
+let sq11 = VRCWEE
 
 //let ctg = hxlCtg hx1 sq1 
 
 //cx1[1].Hxls |> Array.map(fun x -> x.IsAV)
 let hx1 =[|AV(0,0,0); AV(-1,2,0); AV(1,2,0); AV(0,4,0); AV(-1,6,0); AV(1,6,0)|]
-let ctg = hxlCtg hx1 sq1
-available sq1 hx1[0] hx1
+let hx2 = Array.map (fun x -> hxlVld VRCWEE x) hx1
+let ctg = hxlCtg hx2 sq11
