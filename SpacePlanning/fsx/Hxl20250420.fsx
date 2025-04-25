@@ -271,13 +271,40 @@ module Hexel =
                                                 | false -> AV(hxlCrd x))
     ///
 
-    let hxlCtg
-        (hxl : Hxl[])
-        (sqn : Sqn) =
-        let hx1 = Array.map (fun x -> available sqn x hxl ) hxl
-
-        hx1
-
+    ///<summary> Curtail at Narrow Bridge. </summary>
+    /// <param name="hxl"> All constituent hexels. </param>
+    /// <param name="sqn"> Sequence to follow. </param>
+    /// <returns> Curtailed List if Bridged </returns>
+    let hxlCul
+        (sqn : Sqn) 
+        (hxl : Hxl[])=
+        let cul 
+            (ind:int[]) =
+            let in3 = ind |> Array.windowed 2
+            let bl1 = Array.map (fun x ->
+                                                match x with
+                                                |a when Array.head ind = 1 && Array.last ind = 6 -> 1
+                                                | _ -> Array.last x - Array.head x)in3
+            (bl1 |> Array.max) <= 1 
+        let hx1 = hxl |> hxlUni 1 
+                    |> Array.map (fun x -> (adjacent sqn x) )
+        let in1 = Array.map (fun z 
+                                -> Array.map(fun y
+                                                -> Array.tryFindIndex (fun x 
+                                                                        -> x = y)z)hxl)hx1
+        let in2 = in1 |> Array.map (fun x 
+                                        -> x |> Array.choose id) 
+                                        |> Array.map (fun x -> Array.sort x |> Array.except [|0|])
+        let bl1 = Array.map(fun z 
+                                    -> match Array.length z < 4 with
+                                        | true -> true
+                                        | false -> cul z)in2
+        let ct1 = bl1 |> Array.tryFindIndex(fun x -> x = false) 
+                |> Option.defaultValue (Array.length bl1 - 1)
+        let hx2 = hxl |> Array.take (ct1 + 1)
+        hx2
+       
+        
     /// <summary> Increment Hexels. </summary>
     /// <param name="sqn"> Sequence to follow. </param>
     /// <param name="hxo"> Array of Tuples containing Base hexel of collection and size. </param> 
@@ -434,7 +461,6 @@ module Hexel =
                 | false -> hxlUni 2 ar1
     ///
 
-
     /// <param name="org"> All constituent hexels. </param>
     /// <param name="hxl"> Subset of hexels. </param>
     /// <returns> Restored Hexel Types </returns>
@@ -547,22 +573,22 @@ module Coxel =
                         
                     let inc = increments sqn hx1 occ
                                 
-                    let ac1 = Array.map2  (fun x y
+                    let acc = Array.map2  (fun x y
                                             -> Array.append x y) 
                                 acc
                                 (Array.chunkBySize 1 inc)
                     // Avoid bridge in Coxel
-                    let acc = ac1 
-                                |> Array.Parallel.map (fun x -> match Array.length x > 3 with
-                                                                | false -> x
-                                                                | true -> 
-                                                                        let h1 = hxlUni 1 (getHxls x) 
-                                                                        let h2 = h1.[Array.length h1 - 2]
-                                                                        let b1 = available sqn h2 (Array.except [|h2; Array.last h1|] h1) = 5
-                                                                        let b2 = available sqn (Array.last h1) (h1 |> Array.rev |> Array.tail) = 5
-                                                                        match b1 && b2 with 
-                                                                        | false -> x
-                                                                        | true -> Array.removeManyAt (Array.length h1 - 2) 2 x)
+                    //let acc = ac1 
+                    //            |> Array.Parallel.map (fun x -> match Array.length x > 3 with
+                    //                                            | false -> x
+                    //                                            | true -> 
+                    //                                                    let h1 = hxlUni 1 (getHxls x) 
+                    //                                                    let h2 = h1.[Array.length h1 - 2]
+                    //                                                    let b1 = available sqn h2 (Array.except [|h2; Array.last h1|] h1) = 5
+                    //                                                    let b2 = available sqn (Array.last h1) (h1 |> Array.rev |> Array.tail) = 5
+                    //                                                    match b1 && b2 with 
+                    //                                                    | false -> x
+                    //                                                    | true -> Array.removeManyAt (Array.length h1 - 2) 2 x)
 
                     let occ = Array.concat[|getHxls 
                         (Array.concat [|
@@ -578,12 +604,13 @@ module Coxel =
                 |> Array.Parallel.map(fun x 
                                         -> Array.filter(fun (_,z) -> z >= 0) x)
             
-        let cl00 = 
+        let cl1 = 
             cls
             |> Array.Parallel.map(fun x -> getHxls x)
+            //|> Array.map (fun x -> hxlCul x sqn)
 
         // Avoid single unclustered cell towards the end
-        let hxlElm (sqn:Sqn) (hxl:Hxl[]) (occ:Hxl[])=
+        let hxlElm (sqn:Sqn) (hxl:Hxl[])=
             let hxo = hxl
             let avl = 5
             let hxl = hxlUni 1 hxl
@@ -599,13 +626,11 @@ module Coxel =
             let hx1 = elm sqn hxl acc
             hxlRst hxo hx1
 
-        let cl01 = 
-            cl00 |> Array.Parallel.map(fun x -> hxlElm sqn x occ)
+        //let cl01 = cl00 |> Array.Parallel.map(fun x -> hxlElm sqn x)
 
         //let cl01 = cl00 |> Array.Parallel.map(fun x -> Array.filter(fun y -> (available sqn y x) < 5)x)
     
-        let cl1 = Array.map2 (fun x y 
-                                    -> Array.append [|Array.head x|] y) cl00 cl01
+        //let cl1 = Array.map2 (fun x y -> Array.append [|Array.head x|] y) cl00 cl01
 
         let cxl = Array.map3 (fun x y z -> 
                                                 let hx1 = z 
@@ -1293,6 +1318,42 @@ let sq11 = VRCWEE
 //let ctg = hxlCtg hx1 sq1 
 
 //cx1[1].Hxls |> Array.map(fun x -> x.IsAV)
-let hx1 =[|AV(0,0,0); AV(-1,2,0); AV(1,2,0); AV(0,4,0); AV(-1,6,0); AV(1,6,0)|]
-let hx2 = Array.map (fun x -> hxlVld VRCWEE x) hx1
-let ctg = hxlCtg hx2 sq11
+let hx0 =[|AV(0,0,0); AV(-1,2,0); AV(1,2,0); AV(0,4,0); AV(-1,6,0); AV(1,6,0)|]
+let hx11 = [|RV (2, 0, 0); RV (1, -2, 0); RV (-1, -2, 0); RV (-2, 0, 0);
+         RV (-1, 2, 0); RV (1, 2, 0); AV (4, 0, 0); AV (3, 2, 0);
+         AV (3, -2, 0); AV (2, -4, 0); AV (0, -4, 0); AV (-2, -4, 0);
+         AV (-3, -2, 0); AV (-4, 0, 0); AV (-3, 2, 0); AV (-2, 4, 0);
+         AV (0, 4, 0); AV (2, 4, 0); AV (6, 0, 0)|] 
+
+(* let cul 
+    (ind:int[]) =
+        let in3 = ind |> Array.windowed 2
+        let bl1 = Array.map (fun x ->
+                                            match x with
+                                            |a when Array.head ind = 1 && Array.last ind = 6 -> 1
+                                            | _ -> Array.last x - Array.head x)in3
+        (bl1 |> Array.max) <= 1 
+        
+let hx1 = hx11 |> hxlUni 1 
+        |> Array.map (fun x -> (adjacent sq11 x) )
+let in1 = Array.map (fun z 
+                        -> Array.map(fun y
+                                        -> Array.tryFindIndex (fun x 
+                                                                -> x = y)z)hx0)hx1
+let in2 = in1 |> Array.map (fun x 
+                                -> x |> Array.choose id) 
+                                |> Array.map (fun x -> x |> Array.sort)
+                                |> Array.map (fun x -> Array.except [|0|] x)
+let bl1 = Array.map(fun z -> match Array.length z < 3 with
+                                                    | true -> true
+                                                    | false -> cul z)in2 *)
+
+
+
+
+//let hx2 = Array.map (fun x -> hxlVld VRCWEE x) hx1
+let ctg1 = hxlCul VRCWEE hx11 
+
+//coxel VRCWEE [|hxlVld VRCWEE (AV(0,0,0)), Refid "1", Count 19,Label "a"|] [||]
+
+
