@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Interactive Polygon Editor</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+    }
+    #controls {
+      padding: 20px 80px 0;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+    svg {
+      display: block;
+      width: 100vw;
+      background-color: #f0f0f0;
+    }
+    circle.vertex {
+      fill: #ff5722;
+      stroke: black;
+      stroke-width: 1;
+      cursor: grab;
+    }
+    line.edge-hover {
+      stroke: transparent;
+      stroke-width: 10px;
+      cursor: pointer;
+      pointer-events: stroke;
+    }
+    text.coord-label {
+      font-size: 12px;
+      fill: #333;
+      user-select: none;
+    }
+    circle.entry-point {
+      fill: green;
+      stroke: black;
+      stroke-width: 1;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+<div id="controls">
+  <label>Width: <input type="number" id="width" value="400" min="50" max="2000"></label>
+  <label>Height: <input type="number" id="height" value="300" min="50" max="2000"></label>
+</div>
+<svg id="svg"></svg>
+
+<script>
+const svg = document.getElementById("svg");
+const widthInput = document.getElementById("width");
+const heightInput = document.getElementById("height");
+
+let width = parseInt(widthInput.value);
+let height = parseInt(heightInput.value);
+const PADDING = 80;
+
+let points = [];
+let dragIndex = null;
+let isShiftPressed = false;
+
+let entryPoint = null; // { edgeIndex, t: 0..1 }
+
+function logicalToSvg(p) {
+  return { x: p.x + PADDING, y: height - p.y + PADDING };
+}
+function svgToLogical(pt) {
+  return { x: pt.x - PADDING, y: height - (pt.y - PADDING) };
+}
+function applySize() {
+  const oldWidth = width;
+  const oldHeight = height;
+
+  width = parseInt(widthInput.value);
+  height = parseInt(heightInput.value);
+
+  const totalWidth = width + 2 * PADDING;
+  const totalHeight = height + 2 * PADDING;
+  svg.setAttribute("viewBox", `0 0 ${totalWidth} ${totalHeight}`);
+  svg.style.height = `${window.innerWidth * (totalHeight / totalWidth)}px`;
+
+  if (points.length === 0) {
+    points = [
+      { x: 0, y: 0 },
+      { x: width, y: 0 },
+      { x: width, y: height },
+      { x: 0, y: height },
+    ];
+    entryPoint = { edgeIndex: 0, t: 0.5 };
+  } else {
+    points = points.map(p => ({
+      x: (p.x / oldWidth) * width,
+      y: (p.y / oldHeight) * height
+    }));
+  }
+
+  update();
+}
+
+function getEdgePoint(i, t) {
+  const a = points[i];
+  const b = points[(i + 1) % points.length];
+  return {
+    x: a.x + t * (b.x - a.x),
+    y: a.y + t * (b.y - a.y)
+  };
+}
+
+function isSimplePolygon(polygon) {
+  const n = polygon.length;
+  function intersect(p1, p2, p3, p4) {
+    function ccw(a, b, c) {
+      return (c.y - a.y) * (b.x - a.x) > (b.y - a.y) * (c.x - a.x);
+    }
+    return (
+      ccw(p1, p3, p4) !== ccw(p2, p3, p4) &&
+      ccw(p1, p2, p3) !== ccw(p1, p2, p4)
+    );
+  }
+
+  for (let i = 0; i < n; i++) {
+    const a1 = polygon[i];
+    const a2 = polygon[(i + 1) % n];
+    for (let j = i + 1; j < n; j++) {
+      const b1 = polygon[j];
+      const b2 = polygon[(j + 1) % n];
+      if (Math.abs(i - j) <= 1 || (i === 0 && j === n - 1) || (j === 0 && i === n - 1)) continue;
+      if (intersect(a1, a2, b1, b2)) return false;
+    }
+  }
+  return true;
+}
+
+function update() {
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+  // Polygon
+  const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+  polygon.setAttribute("fill", "#e0f7fa");
+  polygon.setAttribute("stroke", "#006064");
+  polygon.setAttribute("stroke-width", "2");
+  polygon.setAttribute("points", points.map(p => {
+    const { x, y } = logicalToSvg(p);
+    return `${x},${y}`;
+  }).join(" "));
+  svg.appendChild(polygon);
+
+  // Edges
+  for (let i = 0; i < points.length; i++) {
+    const a = logicalToSvg(points[i]);
+    const b = logicalToSvg(points[(i + 1) % points.length]);
+    const edge = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    edge.setAttribute("class", "edge-hover");
+    edge.setAttribute("x1", a.x);
+    edge.setAttribute("y1", a.y);
+    edge.setAttribute("x2", b.x);
+    edge.setAttribute("y2", b.y);
+    edge.dataset.index = i;
+    svg.appendChild(edge);
+  }
+
+  // Coordinate labels
+  points.forEach((p) => {
+    const { x, y } = logicalToSvg(p);
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    label.setAttribute("class", "coord-label");
+    label.setAttribute("x", x + 8);
+    label.setAttribute("y", y - 8);
+    label.textContent = `(${Math.round(p.x)}, ${Math.round(p.y)})`;
+    svg.appendChild(label);
+  });
+
+  // Vertices (drawn last for z-order)
+  points.forEach((p, i) => {
+    const { x, y } = logicalToSvg(p);
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circle.setAttribute("class", "vertex");
+    circle.setAttribute("r", 6);
+    circle.setAttribute("cx", x);
+    circle.setAttribute("cy", y);
+    circle.dataset.index = i;
+    svg.appendChild(circle);
+  });
+
+  // Entry point
+  if (entryPoint) {
+    const p = getEdgePoint(entryPoint.edgeIndex, entryPoint.t);
+    const { x, y } = logicalToSvg(p);
+    const entry = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    entry.setAttribute("class", "entry-point");
+    entry.setAttribute("r", 6);
+    entry.setAttribute("cx", x);
+    entry.setAttribute("cy", y);
+    svg.appendChild(entry);
+  }
+}
+
+svg.addEventListener("mousedown", (e) => {
+  if (e.target.classList.contains("vertex")) {
+    dragIndex = +e.target.dataset.index;
+  }
+});
+
+svg.addEventListener("mouseup", () => {
+  dragIndex = null;
+});
+
+svg.addEventListener("mousemove", (e) => {
+  if (dragIndex === null) return;
+
+  const pt = svg.createSVGPoint();
+  pt.x = e.clientX;
+  pt.y = e.clientY;
+  const svgPt = pt.matrixTransform(svg.getScreenCTM().inverse());
+  let { x, y } = svgToLogical(svgPt);
+  x = Math.max(0, Math.min(x, width));
+  y = Math.max(0, Math.min(y, height));
+
+  const newPoints = [...points];
+  newPoints[dragIndex] = { x, y };
+  if (isSimplePolygon(newPoints)) {
+    points = newPoints;
+    update();
+  }
+});
+
+svg.addEventListener("dblclick", (e) => {
+  if (!(e.target instanceof SVGLineElement && e.target.classList.contains("edge-hover"))) return;
+  const i = +e.target.dataset.index;
+  const pt = svg.createSVGPoint();
+  pt.x = e.clientX;
+  pt.y = e.clientY;
+  const svgPt = pt.matrixTransform(svg.getScreenCTM().inverse());
+  const { x, y } = svgToLogical(svgPt);
+  points.splice(i + 1, 0, {
+    x: Math.max(0, Math.min(x, width)),
+    y: Math.max(0, Math.min(y, height))
+  });
+  update();
+});
+
+svg.addEventListener("contextmenu", (e) => {
+  e.preventDefault();
+  if (e.target.classList.contains("vertex") && points.length > 3) {
+    const i = +e.target.dataset.index;
+    points.splice(i, 1);
+
+    if (entryPoint) {
+      if (i === entryPoint.edgeIndex || i === (entryPoint.edgeIndex + 1) % points.length) {
+        entryPoint.edgeIndex = (entryPoint.edgeIndex + 1) % points.length;
+        entryPoint.t = 0.5;
+      }
+    }
+
+    update();
+  } else if (e.target.classList.contains("edge-hover")) {
+    const i = +e.target.dataset.index;
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    const svgPt = pt.matrixTransform(svg.getScreenCTM().inverse());
+    const clickLogical = svgToLogical(svgPt);
+
+    const a = points[i];
+    const b = points[(i + 1) % points.length];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len2 = dx * dx + dy * dy;
+    const t = ((clickLogical.x - a.x) * dx + (clickLogical.y - a.y) * dy) / len2;
+    entryPoint = { edgeIndex: i, t: Math.max(0, Math.min(t, 1)) };
+    update();
+  }
+});
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Shift") isShiftPressed = true;
+});
+document.addEventListener("keyup", e => {
+  if (e.key === "Shift") isShiftPressed = false;
+});
+widthInput.addEventListener("input", applySize);
+heightInput.addEventListener("input", applySize);
+window.addEventListener("resize", applySize);
+
+applySize();
+</script>
+</body>
+</html>

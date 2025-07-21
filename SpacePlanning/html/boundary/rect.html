@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Interactive Polygon Editor with Islands (Context Menu)</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: sans-serif;
+        }
+        #controls {
+            padding: 20px 80px 0;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        svg {
+            display: block;
+            width: 100vw;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc; /* Add a border for clarity */
+            cursor: crosshair; /* Indicate clickability */
+        }
+        circle.vertex {
+            fill: #ff5722;
+            stroke: black;
+            stroke-width: 1;
+            cursor: grab;
+        }
+        circle.vertex.active {
+            fill: #4CAF50; /* Green for active polygon vertices */
+        }
+        line.edge-hover {
+            stroke: transparent;
+            stroke-width: 10px;
+            cursor: pointer;
+            pointer-events: stroke;
+        }
+        text.coord-label {
+            font-size: 12px;
+            fill: #333;
+            user-select: none;
+        }
+        circle.entry-point {
+            fill: green;
+            stroke: black;
+            stroke-width: 1;
+            pointer-events: none;
+        }
+        .polygon-boundary {
+            fill: #e0f7fa; /* Light blue for outer polygon */
+            stroke: #006064;
+            stroke-width: 2;
+        }
+        .polygon-hole {
+            fill: #ffe0b2; /* Light orange for holes */
+            stroke: #ff9800;
+            stroke-width: 2;
+        }
+        #message-box {
+            margin-left: 20px;
+            color: red;
+            font-weight: bold;
+        }
+
+        /* Custom Context Menu Styles */
+        #custom-context-menu {
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ccc;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: none; /* Hidden by default */
+            padding: 5px 0;
+            font-size: 14px;
+            min-width: 150px;
+        }
+        .menu-item {
+            padding: 8px 15px;
+            cursor: pointer;
+            list-style: none; /* Remove default list styling */
+            margin: 0;
+        }
+        .menu-item:hover {
+            background-color: #f0f0f0;
+        }
+        .menu-item.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div id="controls">
+    <label>Width: <input type="number" id="width" value="600" min="50" max="2000"></label>
+    <label>Height: <input type="number" id="height" value="400" min="50" max="2000"></label>
+    <div id="message-box"></div>
+</div>
+<svg id="svg"></svg>
+
+<ul id="custom-context-menu">
+    <li class="menu-item" id="menu-add-vertex">Add Vertex (Double-Click Edge)</li>
+    <li class="menu-item" id="menu-remove-vertex">Remove Vertex</li>
+    <li class="menu-item" id="menu-set-entry-point">Set Entry Point</li>
+    <li class="menu-item" id="menu-create-island">Create New Island</li>
+</ul>
+
+<script>
+    const svg = document.getElementById("svg");
+    const widthInput = document.getElementById("width");
+    const heightInput = document.getElementById("height");
+    const messageBox = document.getElementById("message-box");
+    const customContextMenu = document.getElementById("custom-context-menu");
+
+    const menuItemAddVertex = document.getElementById("menu-add-vertex");
+    const menuItemRemoveVertex = document.getElementById("menu-remove-vertex");
+    const menuItemSetEntryPoint = document.getElementById("menu-set-entry-point");
+    const menuItemCreateIsland = document.getElementById("menu-create-island");
+
+    let width = parseInt(widthInput.value);
+    let height = parseInt(heightInput.value);
+    const PADDING = 80;
+    const VERTEX_RADIUS = 6;
+
+    let polygons = [[]];
+    let currentPolygonIndex = 0; // 0 for outer, 1+ for islands
+
+    let dragInfo = null; // { polygonIndex, vertexIndex }
+    let isShiftPressed = false; // Not currently used, but kept for future expansion
+
+    // Entry point only for the outer polygon
+    // { polygonIndex, edgeIndex, t: 0..1 }
+    let entryPoint = null;
+
+    // Variables to store context of right-click for menu actions
+    let contextClickTarget = null;
+    let contextClickLogicalPoint = null;
+
+    function showMessage(msg, duration = 3000) {
+        messageBox.textContent = msg;
+        clearTimeout(messageBox.timer);
+        messageBox.timer = setTimeout(() => {
+            messageBox.textContent = '';
+        }, duration);
+    }
+
+    function logicalToSvg(p) {
+        return { x: p.x + PADDING, y: height - p.y + PADDING };
+    }
+    function svgToLogical(pt) {
+        return { x: pt.x - PADDING, y: height - (pt.y - PADDING) };
+    }
+
+    function applySize() {
+        const oldWidth = width;
+        const oldHeight = height;
+
+        width = parseInt(widthInput.value);
+        height = parseInt(heightInput.value);
+
+        const totalWidth = width + 2 * PADDING;
+        const totalHeight = height + 2 * PADDING;
+        svg.setAttribute("viewBox", `0 0 ${totalWidth} ${totalHeight}`);
+        svg.style.height = `${window.innerWidth * (totalHeight / totalWidth)}px`;
+
+        if (polygons[0].length === 0) {
+            // Initialize outer polygon if empty
+            polygons[0] = [
+                { x: 0, y: 0 },
+                { x: width, y: 0 },
+                { x: width, y: height },
+                { x: 0, y: height },
+            ];
+            currentPolygonIndex = 0;
+            entryPoint = { polygonIndex: 0, edgeIndex: 0, t: 0.5 };
+        } else {
+            // Scale existing points when resizing
+            polygons = polygons.map(poly => poly.map(p => ({
+                x: (p.x / oldWidth) * width,
+                y: (p.y / oldHeight) * height
+            })));
+        }
+
+        update();
+    }
+
+    function getEdgePoint(polygonIndex, edgeIndex, t) {
+        const poly = polygons[polygonIndex];
+        if (!poly || poly.length === 0) return null;
+        const a = poly[edgeIndex];
+        const b = poly[(edgeIndex + 1) % poly.length];
+        return {
+            x: a.x + t * (b.x - a.x),
+            y: a.y + t * (b.y - a.y)
+        };
+    }
+
+    // --- Geometric Helper Functions ---
+
+    // Function to check if a point is inside a polygon (using ray casting)
+    function isPointInPolygon(point, poly) {
+        if (!poly || poly.length < 3) return false;
+        let inside = false;
+        for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+            const xi = poly[i].x, yi = poly[i].y;
+            const xj = poly[j].x, yj = poly[j].y;
+
+            const intersect = ((yi > point.y) != (yj > point.y)) &&
+                              (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
+            if (intersect) inside = !inside;
+        }
+        return inside;
+    }
+
+    // Check if two line segments intersect
+    function doSegmentsIntersect(p1, p2, p3, p4) {
+        function orientation(p, q, r) {
+            let val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
+            if (val === 0) return 0; // Collinear
+            return (val > 0) ? 1 : 2; // Clockwise or Counterclockwise
+        }
+
+        function onSegment(p, q, r) {
+            return q.x <= Math.max(p.x, r.x) && q.x >= Math.min(p.x, r.x) &&
+                   q.y <= Math.max(p.y, r.y) && q.y >= Math.min(p.y, r.y);
+        }
+
+        let o1 = orientation(p1, p2, p3);
+        let o2 = orientation(p1, p2, p4);
+        let o3 = orientation(p3, p4, p1);
+        let o4 = orientation(p3, p4, p2);
+
+        // General case
+        if (o1 !== o2 && o3 !== o4) return true;
+
+        // Special Cases
+        // p1, q1 and p2 are collinear and p2 lies on segment p1q1
+        if (o1 === 0 && onSegment(p1, p3, p2)) return true;
+        // p1, q1 and q2 are collinear and q2 lies on segment p1q1
+        if (o2 === 0 && onSegment(p1, p4, p2)) return true;
+        // p2, q2 and p1 are collinear and p1 lies on segment p2q2
+        if (o3 === 0 && onSegment(p3, p1, p4)) return true;
+        // p2, q2 and q1 are collinear and q1 lies on segment p2q2
+        if (o4 === 0 && onSegment(p3, p2, p4)) return true;
+
+        return false; // Doesn't fall in any of the above cases
+    }
+
+
+    // Checks if a polygon is simple (no self-intersections)
+    function isSimplePolygon(polygon) {
+        const n = polygon.length;
+        if (n < 3) return true;
+
+        for (let i = 0; i < n; i++) {
+            const p1 = polygon[i];
+            const p2 = polygon[(i + 1) % n];
+            for (let j = i + 1; j < n; j++) {
+                const p3 = polygon[j];
+                const p4 = polygon[(j + 1) % n];
+
+                // Skip adjacent segments and common endpoints
+                if (Math.abs(i - j) <= 1 || (i === 0 && j === n - 1) || (j === 0 && i === n - 1)) continue;
+                if (doSegmentsIntersect(p1, p2, p3, p4)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    // Check if one polygon contains another (used for islands within outer)
+    function isPolygonContained(innerPoly, outerPoly) {
+        if (!innerPoly || innerPoly.length < 3) return true;
+        if (!outerPoly || outerPoly.length < 3) return false;
+
+        // Check if all points of innerPoly are inside outerPoly
+        for (const p of innerPoly) {
+            if (!isPointInPolygon(p, outerPoly)) {
+                return false;
+            }
+        }
+
+        // Check for edge intersections (inner poly edges should not intersect outer poly edges)
+        for (let i = 0; i < innerPoly.length; i++) {
+            const innerP1 = innerPoly[i];
+            const innerP2 = innerPoly[(i + 1) % innerPoly.length];
+            for (let j = 0; j < outerPoly.length; j++) {
+                const outerP1 = outerPoly[j];
+                const outerP2 = outerPoly[(j + 1) % outerPoly.length];
+                if (doSegmentsIntersect(innerP1, innerP2, outerP1, outerP2)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    // Check if two polygons intersect or overlap (used for islands among themselves)
+    function doPolygonsIntersect(polyA, polyB) {
+        if (!polyA || polyA.length < 3 || !polyB || polyB.length < 3) return false;
+
+        // Check if any segment of A intersects any segment of B
+        for (let i = 0; i < polyA.length; i++) {
+            const a1 = polyA[i];
+            const a2 = polyA[(i + 1) % polyA.length];
+            for (let j = 0; j < polyB.length; j++) {
+                const b1 = polyB[j];
+                const b2 = polyB[(j + 1) % polyB.length];
+                if (doSegmentsIntersect(a1, a2, b1, b2)) {
+                    return true;
+                }
+            }
+        }
+        // Check if polygon A contains any point of B, or B contains any point of A
+        if (isPointInPolygon(polyA[0], polyB) || isPointInPolygon(polyB[0], polyA)) {
+            return true;
+        }
+
+        return false;
+    }
+
+
+    // --- Update Function ---
+
+    function update() {
+        while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+        polygons.forEach((poly, polyIdx) => {
+            if (poly.length < 2) return;
+
+            const polygonElement = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+            polygonElement.setAttribute("class", polyIdx === 0 ? "polygon-boundary" : "polygon-hole");
+            polygonElement.setAttribute("points", poly.map(p => {
+                const { x, y } = logicalToSvg(p);
+                return `${x},${y}`;
+            }).join(" "));
+            // Set data attributes for later identification
+            polygonElement.dataset.polygonIndex = polyIdx;
+            svg.appendChild(polygonElement);
+
+            // Edges
+            for (let i = 0; i < poly.length; i++) {
+                const a = logicalToSvg(poly[i]);
+                const b = logicalToSvg(poly[(i + 1) % poly.length]);
+                const edge = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                edge.setAttribute("class", "edge-hover");
+                edge.setAttribute("x1", a.x);
+                edge.setAttribute("y1", a.y);
+                edge.setAttribute("x2", b.x);
+                edge.setAttribute("y2", b.y);
+                edge.dataset.polygonIndex = polyIdx;
+                edge.dataset.index = i;
+                svg.appendChild(edge);
+            }
+
+            // Coordinate labels
+            poly.forEach((p) => {
+                const { x, y } = logicalToSvg(p);
+                const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                label.setAttribute("class", "coord-label");
+                label.setAttribute("x", x + 8);
+                label.setAttribute("y", y - 8);
+                label.textContent = `(${Math.round(p.x)}, ${Math.round(p.y)})`;
+                svg.appendChild(label);
+            });
+
+            // Vertices (drawn last for z-order)
+            poly.forEach((p, i) => {
+                const { x, y } = logicalToSvg(p);
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("class", `vertex ${polyIdx === currentPolygonIndex ? 'active' : ''}`);
+                circle.setAttribute("r", VERTEX_RADIUS);
+                circle.setAttribute("cx", x);
+                circle.setAttribute("cy", y);
+                circle.dataset.polygonIndex = polyIdx;
+                circle.dataset.index = i;
+                svg.appendChild(circle);
+            });
+        });
+
+        // Entry point (only for the outer polygon)
+        if (entryPoint && entryPoint.polygonIndex === 0 && polygons[0] && polygons[0].length > 1) {
+            const p = getEdgePoint(0, entryPoint.edgeIndex, entryPoint.t);
+            if (p) {
+                const { x, y } = logicalToSvg(p);
+                const entry = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                entry.setAttribute("class", "entry-point");
+                entry.setAttribute("r", VERTEX_RADIUS);
+                entry.setAttribute("cx", x);
+                entry.setAttribute("cy", y);
+                svg.appendChild(entry);
+            }
+        }
+    }
+
+    // --- Core Logic Functions for Menu Actions ---
+
+    function addVertexToEdge(targetElement, clickLogicalPt) {
+        const polyIdx = +targetElement.dataset.polygonIndex;
+        const edgeIdx = +targetElement.dataset.index;
+
+        const newPoint = { x: Math.max(0, Math.min(clickLogicalPt.x, width)), y: Math.max(0, Math.min(clickLogicalPt.y, height)) };
+
+        const tempPoints = [...polygons[polyIdx]];
+        tempPoints.splice(edgeIdx + 1, 0, newPoint);
+
+        let isValidAdd = true;
+
+        if (!isSimplePolygon(tempPoints)) {
+            isValidAdd = false;
+        }
+        if (isValidAdd && polyIdx === 0) {
+            for (let i = 1; i < polygons.length; i++) {
+                if (!isPolygonContained(polygons[i], tempPoints)) {
+                    isValidAdd = false;
+                    break;
+                }
+            }
+        } else if (isValidAdd && polyIdx > 0) {
+            if (!isPolygonContained(tempPoints, polygons[0])) {
+                isValidAdd = false;
+            }
+            if (isValidAdd) {
+                for (let i = 1; i < polygons.length; i++) {
+                    if (i !== polyIdx && doPolygonsIntersect(tempPoints, polygons[i])) {
+                        isValidAdd = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (isValidAdd) {
+            polygons[polyIdx].splice(edgeIdx + 1, 0, newPoint);
+            currentPolygonIndex = polyIdx;
+            update();
+            showMessage('Vertex added.');
+        } else {
+            showMessage("Invalid add: New point would cause self-intersection or invalid polygon arrangement.");
+        }
+    }
+
+    function removeVertex(targetElement) {
+        const polyIdx = +targetElement.dataset.polygonIndex;
+        const vertexIdx = +targetElement.dataset.index;
+
+        if (polygons[polyIdx].length > 3) { // Minimum 3 vertices for a polygon
+            const tempPoints = [...polygons[polyIdx]];
+            tempPoints.splice(vertexIdx, 1);
+
+            let isValidRemove = true;
+
+            if (!isSimplePolygon(tempPoints)) {
+                isValidRemove = false;
+            }
+            if (isValidRemove && polyIdx === 0) { // Outer polygon
+                for (let i = 1; i < polygons.length; i++) {
+                    if (!isPolygonContained(polygons[i], tempPoints)) {
+                        isValidRemove = false;
+                        break;
+                    }
+                }
+            } else if (isValidRemove && polyIdx > 0) { // Island
+                if (!isPolygonContained(tempPoints, polygons[0])) {
+                    isValidRemove = false;
+                }
+            }
+
+            if (isValidRemove) {
+                polygons[polyIdx].splice(vertexIdx, 1);
+
+                // Adjust entry point if affected by vertex removal (only for outer polygon)
+                if (entryPoint && entryPoint.polygonIndex === 0) {
+                    const numVertices = polygons[0].length;
+                    if (numVertices < 2) {
+                        entryPoint = null;
+                    } else {
+                        if (vertexIdx === entryPoint.edgeIndex) {
+                            entryPoint.edgeIndex = (entryPoint.edgeIndex) % numVertices;
+                            entryPoint.t = 0.5;
+                        } else if (vertexIdx === (entryPoint.edgeIndex + 1) % (numVertices + 1)) {
+                            entryPoint.edgeIndex = (entryPoint.edgeIndex + numVertices - 1 + 1) % numVertices;
+                            entryPoint.t = 0.5;
+                        } else if (vertexIdx < entryPoint.edgeIndex) {
+                            entryPoint.edgeIndex--;
+                        }
+                        if (entryPoint.edgeIndex >= numVertices) {
+                            entryPoint.edgeIndex = Math.max(0, numVertices - 1);
+                        }
+                    }
+                }
+
+                if (polygons[polyIdx].length < 3) {
+                    if (polyIdx === 0) { // Outer polygon becomes degenerate
+                        polygons[0] = [
+                            { x: 0, y: 0 },
+                            { x: width, y: 0 },
+                            { x: width, y: height },
+                            { x: 0, y: height },
+                        ];
+                        entryPoint = { polygonIndex: 0, edgeIndex: 0, t: 0.5 };
+                        showMessage("Outer polygon reset due to degeneration.");
+                    } else { // Island becomes degenerate, remove it
+                        polygons.splice(polyIdx, 1);
+                        if (currentPolygonIndex === polyIdx) {
+                            currentPolygonIndex = 0;
+                        } else if (currentPolygonIndex > polyIdx) {
+                            currentPolygonIndex--;
+                        }
+                    }
+                }
+                update();
+                showMessage('Vertex removed.');
+            } else {
+                showMessage("Invalid remove: This would make the polygon self-intersect or invalidate island arrangement.");
+            }
+        } else if (polyIdx === 0) {
+             showMessage("Outer polygon must have at least 3 vertices.");
+        } else {
+             showMessage("Islands must have at least 3 vertices.");
+        }
+    }
+
+    function setEntryPoint(targetElement, clickLogicalPt) {
+        const polyIdx = +targetElement.dataset.polygonIndex;
+
+        if (polyIdx === 0) { // Only allow setting entry point on the outer polygon
+            const edgeIdx = +targetElement.dataset.index;
+
+            const a = polygons[polyIdx][edgeIdx];
+            const b = polygons[polyIdx][(edgeIdx + 1) % polygons[polyIdx].length];
+
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            const len2 = dx * dx + dy * dy;
+
+            let t = 0.5;
+            if (len2 > 0) {
+                t = ((clickLogicalPt.x - a.x) * dx + (clickLogicalPt.y - a.y) * dy) / len2;
+                t = Math.max(0, Math.min(t, 1));
+            }
+
+            entryPoint = { polygonIndex: polyIdx, edgeIndex: edgeIdx, t: t };
+            update();
+            showMessage(`Entry point set on outer polygon edge ${edgeIdx}.`);
+        } else {
+            showMessage("Entry point can only be set on the outer polygon.");
+        }
+    }
+
+    function createNewIsland(clickLogicalPt) {
+        // Ensure the click is within the outer polygon
+        if (!isPointInPolygon(clickLogicalPt, polygons[0])) {
+            showMessage("New islands must be created within the outer polygon.");
+            return;
+        }
+
+        const initialIslandWidth = Math.min(width / 5, 80);
+        const initialIslandHeight = Math.min(height / 5, 60);
+
+        const newIsland = [
+            { x: clickLogicalPt.x - initialIslandWidth / 2, y: clickLogicalPt.y - initialIslandHeight / 2 },
+            { x: clickLogicalPt.x + initialIslandWidth / 2, y: clickLogicalPt.y - initialIslandHeight / 2 },
+            { x: clickLogicalPt.x + initialIslandWidth / 2, y: clickLogicalPt.y + initialIslandHeight / 2 },
+            { x: clickLogicalPt.x - initialIslandWidth / 2, y: clickLogicalPt.y + initialIslandHeight / 2 },
+        ];
+
+        let isValidNewIsland = true;
+        if (!isSimplePolygon(newIsland)) {
+            isValidNewIsland = false;
+        }
+        if (isValidNewIsland && !isPolygonContained(newIsland, polygons[0])) {
+            isValidNewIsland = false;
+        }
+        if (isValidNewIsland) {
+            for (let i = 1; i < polygons.length; i++) {
+                if (doPolygonsIntersect(newIsland, polygons[i])) {
+                    isValidNewIsland = false;
+                    break;
+                }
+            }
+        }
+
+        if (isValidNewIsland) {
+            polygons.push(newIsland);
+            currentPolygonIndex = polygons.length - 1;
+            update();
+            showMessage(`New island added. Now editing Island ${currentPolygonIndex}.`);
+        } else {
+            showMessage("Could not add new island at this location. It would be invalid or overlap existing polygons.");
+        }
+    }
+
+
+    // --- Event Handlers ---
+
+    svg.addEventListener("mousedown", (e) => {
+        // Hide context menu if clicking anywhere
+        customContextMenu.style.display = 'none';
+
+        if (e.target.classList.contains("vertex")) {
+            dragInfo = {
+                polygonIndex: +e.target.dataset.polygonIndex,
+                vertexIndex: +e.target.dataset.index
+            };
+            currentPolygonIndex = dragInfo.polygonIndex;
+            update();
+        } else {
+             const svgPt = getSvgMousePoint(e);
+             const logicalPt = svgToLogical(svgPt);
+             let clickedOnAnyPolygon = false;
+             for(let i = 0; i < polygons.length; i++) {
+                 if (isPointInPolygon(logicalPt, polygons[i])) {
+                     currentPolygonIndex = i;
+                     clickedOnAnyPolygon = true;
+                     update();
+                     break;
+                 }
+             }
+             if (!clickedOnAnyPolygon) {
+                  if (currentPolygonIndex !== 0) {
+                      currentPolygonIndex = 0;
+                      update();
+                  }
+             }
+        }
+    });
+
+    svg.addEventListener("mouseup", () => {
+        dragInfo = null;
+    });
+
+    svg.addEventListener("mousemove", (e) => {
+        if (!dragInfo || dragInfo.vertexIndex === undefined) return;
+
+        const polyIdx = dragInfo.polygonIndex;
+        const vertexIdx = dragInfo.vertexIndex;
+
+        const { x: svgX, y: svgY } = getSvgMousePoint(e);
+        let { x, y } = svgToLogical({ x: svgX, y: svgY });
+
+        x = Math.max(0, Math.min(x, width));
+        y = Math.max(0, Math.min(y, height));
+
+        const originalPoint = polygons[polyIdx][vertexIdx]; // Keep original point for rollback
+        const tempPoints = [...polygons[polyIdx]];
+        tempPoints[vertexIdx] = { x, y };
+
+        let isValidMove = true;
+
+        if (!isSimplePolygon(tempPoints)) {
+            isValidMove = false;
+        }
+
+        if (polyIdx === 0) { // Outer polygon
+            for (let i = 1; i < polygons.length; i++) {
+                if (!isPolygonContained(polygons[i], tempPoints)) {
+                    isValidMove = false;
+                    break;
+                }
+            }
+        } else { // Island
+            if (!isPolygonContained(tempPoints, polygons[0])) {
+                isValidMove = false;
+            }
+            if (isValidMove) {
+                for (let i = 1; i < polygons.length; i++) {
+                    if (i !== polyIdx && doPolygonsIntersect(tempPoints, polygons[i])) {
+                        isValidMove = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (isValidMove) {
+            polygons[polyIdx][vertexIdx] = { x, y };
+            update();
+            showMessage('');
+        } else {
+            showMessage("Invalid move: Polygons cannot self-intersect or overlap, and islands must stay within the outer boundary.");
+        }
+    });
+
+    // Double-click to add vertex on edge
+    svg.addEventListener("dblclick", (e) => {
+        if (e.target.classList.contains("edge-hover")) {
+            e.stopPropagation(); // Stop dblclick from bubbling to prevent conflicts if any other dblclick existed
+            const svgPt = getSvgMousePoint(e);
+            const logicalClickPt = svgToLogical(svgPt);
+            addVertexToEdge(e.target, logicalClickPt);
+        }
+    });
+
+    // Main contextmenu (right-click) handler
+    svg.addEventListener("contextmenu", (e) => {
+        e.preventDefault(); // Prevent the browser's default context menu
+
+        // Store the target and click point for menu actions
+        contextClickTarget = e.target;
+        contextClickLogicalPoint = svgToLogical(getSvgMousePoint(e));
+
+        // Hide all menu items first
+        menuItemAddVertex.classList.add('hidden'); // This is always shown, but just in case
+        menuItemRemoveVertex.classList.add('hidden');
+        menuItemSetEntryPoint.classList.add('hidden');
+        menuItemCreateIsland.classList.add('hidden');
+
+        // Show/hide menu items based on what was right-clicked
+        if (e.target.classList.contains("vertex")) {
+            menuItemRemoveVertex.classList.remove('hidden');
+        } else if (e.target.classList.contains("edge-hover")) {
+            const polyIdx = +e.target.dataset.polygonIndex;
+            if (polyIdx === 0) { // Only allow setting entry point on outer polygon
+                menuItemSetEntryPoint.classList.remove('hidden');
+            }
+            // Add Vertex is also a DBLCLICK, so we'll just indicate it in the menu
+            menuItemAddVertex.classList.remove('hidden');
+        } else { // Clicked on SVG background or polygon body
+            // Check if click is inside the outer polygon boundary
+            if (isPointInPolygon(contextClickLogicalPoint, polygons[0])) {
+                menuItemCreateIsland.classList.remove('hidden');
+            }
+        }
+
+        // Position and display the custom context menu
+        customContextMenu.style.left = `${e.clientX}px`;
+        customContextMenu.style.top = `${e.clientY}px`;
+        customContextMenu.style.display = 'block';
+    });
+
+    // --- Context Menu Item Click Handlers ---
+    menuItemRemoveVertex.addEventListener('click', () => {
+        if (contextClickTarget && contextClickTarget.classList.contains("vertex")) {
+            removeVertex(contextClickTarget);
+        }
+        customContextMenu.style.display = 'none';
+    });
+
+    menuItemSetEntryPoint.addEventListener('click', () => {
+        if (contextClickTarget && contextClickTarget.classList.contains("edge-hover")) {
+            setEntryPoint(contextClickTarget, contextClickLogicalPoint);
+        }
+        customContextMenu.style.display = 'none';
+    });
+
+    menuItemCreateIsland.addEventListener('click', () => {
+        createNewIsland(contextClickLogicalPoint);
+        customContextMenu.style.display = 'none';
+    });
+
+    // Add a click listener to the entire document to hide the menu when clicking elsewhere
+    document.addEventListener('click', (e) => {
+        // If the click was not inside the context menu itself, hide it
+        if (!customContextMenu.contains(e.target)) {
+            customContextMenu.style.display = 'none';
+        }
+    });
+
+
+    // Helper to get mouse coordinates relative to SVG
+    function getSvgMousePoint(e) {
+        const pt = svg.createSVGPoint();
+        pt.x = e.clientX;
+        pt.y = e.clientY;
+        return pt.matrixTransform(svg.getScreenCTM().inverse());
+    }
+
+    // Keyboard events (Shift key not currently used for specific functionality, but good to keep)
+    document.addEventListener("keydown", e => {
+        if (e.key === "Shift") isShiftPressed = true;
+    });
+    document.addEventListener("keyup", e => {
+        if (e.key === "Shift") isShiftPressed = false;
+    });
+
+    // Input and resize listeners
+    widthInput.addEventListener("input", applySize);
+    heightInput.addEventListener("input", applySize);
+    window.addEventListener("resize", applySize);
+
+    // Initial setup
+    applySize();
+
+</script>
+</body>
+</html>
