@@ -589,6 +589,22 @@ module Coxel =
             Avbl = av01 
         |}
 
+    /// <summary> Count open/exposed Hexels. </summary>
+    /// <param name="cxl"> A coxel. </param>
+    /// <param name="sqn"> Sequence to follow. </param>
+    /// <returns> Hexels categorized as Base, Hxls, Core, Prph, Brdr, Avbl. </returns>
+    let cxlExp 
+        (cxl : Cxl[])
+        (sqn: Sqn) = 
+        let occ = cxl |> Array.map (fun x -> x.Hxls) |> Array.concat |> allAV false 
+        let cxlAvl 
+            (cx:Cxl)
+            (sq:Sqn)
+            (oc:Hxl[]) =
+            let hx = cx.Hxls |> allAV false 
+            hx |> Array.filter(fun x -> (available sq x oc)>0) |> Array.length
+        cxl |> Array.map (fun a -> cxlAvl a sqn occ)
+
 module Shape = 
     open Hexel
     open Coxel
@@ -790,7 +806,10 @@ module Parse =
             |> Array.sortBy (fun x -> Array.head x)
         
         let spcKy06 = 
-            spcKy05 
+            let a = match (Array.isEmpty spcKy05) with 
+                    |  true -> [|[|"1"|]|]
+                    | false -> spcKy05
+            a
             |> Array.map(fun x 
                             -> (Array.map (fun y 
                                             -> y, spaceMap 
@@ -909,7 +928,9 @@ module Parse =
                         | None -> acc
             a
 
-        cxCxCx seq tree01 oc1 ac1
+        match (Array.length (Array.concat tree01) < 2) with 
+        | true -> ac1
+        | false -> cxCxCx seq tree01 oc1 ac1
 
 // Test Zone
 open Hexel
@@ -919,50 +940,26 @@ open Parse
 
 // Sample Format
 let spaceStr =
-     "(1/27/Foyer),(2/12/Living),(3/15/Dining),
-    (1.1/11/Study),(2.1/7/Staircase),(3.1/12/Kitchen),
-    (3.2/13/Bed-1),(3.3/13/Bed-2),(3.4/11/Bed-3),
-    (3.1.1/7/Utility),(3.2.1/6/Bath-1),(3.3.1/5/Dress-2),
-    (3.4.1/7/Dress-3),(3.4.2/6/Bath-3),(3.3.1.1/4/Bath-2)"
-//let treeStr = spaceSeq spaceStr
+     "(1/7/Foyer),(2/12/Living),(3/8/Dining),(1.1/9/Study),(2.1/12/Staircase),(3.1/14/Kitchen),(3.2/14/Bed-1),(3.3/18/Bed-2),(3.4/18/Bed-3),(3.1.1/6/Utility),(3.2.1/8/Bath-1),(3.3.1/10/Closet-2),(3.4.1/10/Closet-3),(3.4.2/10/Bath-3),(3.3.1.1/10/Bath-2)"
+let spcStr1 = "(1/25/Dock),(1.1/25/Logistics),(1.2/25/Lab),(1.3/25/Habitation),(1.4/25/Power)"
+let treeStr = spaceSeq spcStr1
 
-let sqn = HRCWNW
-let spaceStr1 =
-     "(1/27/Foyer)"
-let spaceMap = 
-            ((spaceStr1.Replace ("\n",""))
-                .Replace("\t","")
-                .Replace(" ",""))
-                .Split ","
-                |> Array.map(fun x -> x.Remove(0,1)) 
-                |> Array.map(fun x -> x.Remove(x.Length-1,1))
-                |> Array.map (fun x -> x.Split "/") 
-                |> Array.map (fun x -> (x[0],(int x[1],x[2]))) 
-                |> Array.sortBy (fun (x,y) -> x)
-                |> Map.ofArray
+let sqn = HRCCNN
 
-let spcKy01 = 
-    spaceMap 
-    |> Map.keys 
-    |> Array.ofSeq 
-    |> Array.groupBy(fun x 
-                        -> match (x.Length < 1) with 
-                            |true -> "0"
-                            |false -> x.Substring (0, x.LastIndexOf(".")))
-(* let bs = (AV(1,2,0))
-let bs1 = hxlVld sqn bs
+let bsNs = hxlVld sqn (AV(1,4,0))
 let bsOc = 
     match sqn with 
     | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE 
-        -> let a,b,c = hxlCrd (hxlVld sqn bs)
-           hxlOrt sqn (AV(a-51,b-2,c)) 100 false
-           |> allAV true
+        -> 
+            let a,b,c = hxlCrd bsNs
+            Array.append (hxlOrt sqn (hxlVld sqn (AV(a-100,b-2,c))) 200 false) (adjacent sqn (hxlVld sqn (AV(0,0,0))))
+            |> allAV true
     | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW 
-        -> let a,b,c = hxlCrd (hxlVld sqn bs)
-           hxlOrt sqn (AV(a-54,b-2,c)) 100 false
-           |> allAV true
-let cx1 = ((coxel sqn [|(AV(0,0,0), Refid "B", Count 27, Label "A")|] [||])|> Array.head)
-Array.map (fun x -> cxlPrm x) a
-(cxlHxl a[1]).Prph *)
+        -> 
+            let a,b,c = hxlCrd bsNs
+            Array.append (hxlOrt sqn (hxlVld sqn (AV(a-104,b-2,c))) 200 false) (adjacent sqn (hxlVld sqn (AV(0,0,0))))
+            |> allAV true
+let cxCxl1 = spaceCxl sqn bsNs bsOc spcStr1
 
-
+cxlExp cxCxl1 sqn
+//let cx1 = ((coxel sqn [|(AV(0,0,0), Refid "B", Count 27, Label "A")|] [||])|> Array.head)

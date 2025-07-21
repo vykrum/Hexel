@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive 3D Cube</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            width: 200px;
+            height: 200px;
+            perspective: 1000px;
+        }
+
+        .cube {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(-30deg) rotateY(-45deg);
+            transition: transform 0.5s;
+        }
+
+        .face {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ccc;
+            line-height: 200px;
+            font-size: 40px;
+            text-align: center;
+        }
+
+        .front  { transform: translateZ(100px); }
+        .back   { transform: rotateY(180deg) translateZ(100px); }
+        .left   { transform: rotateY(-90deg) translateZ(100px); }
+        .right  { transform: rotateY(90deg) translateZ(100px); }
+        .top    { transform: rotateX(90deg) translateZ(100px); }
+        .bottom { transform: rotateX(-90deg) translateZ(100px); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="cube" id="cube">
+            <div class="face front">Front</div>
+            <div class="face back">Back</div>
+            <div class="face left">Left</div>
+            <div class="face right">Right</div>
+            <div class="face top">Top</div>
+            <div class="face bottom">Bottom</div>
+        </div>
+    </div>
+
+    <script>
+        let cube = document.getElementById('cube');
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let rotation = { x: -30, y: -45 };
+
+        document.addEventListener('mousedown', function(e) {
+            isDragging = true;
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (isDragging) {
+                let deltaX = e.clientX - previousMousePosition.x;
+                let deltaY = e.clientY - previousMousePosition.y;
+                rotation.y += deltaX * 0.5;
+                rotation.x -= deltaY * 0.5;
+                cube.style.transform = `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`;
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            }
+        });
+
+        document.addEventListener('mouseup', function() {
+            isDragging = false;
+        });
+
+        document.addEventListener('touchstart', function(e) {
+            isDragging = true;
+            previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        });
+
+        document.addEventListener('touchmove', function(e) {
+            if (isDragging) {
+                let deltaX = e.touches[0].clientX - previousMousePosition.x;
+                let deltaY = e.touches[0].clientY - previousMousePosition.y;
+                rotation.y += deltaX * 0.5;
+                rotation.x -= deltaY * 0.5;
+                cube.style.transform = `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`;
+                previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+        });
+
+        document.addEventListener('touchend', function() {
+            isDragging = false;
+        });
+    </script>
+</body>
+</html>
