@@ -1,0 +1,1207 @@
+#!meta
+
+{"kernelInfo":{"defaultKernelName":"csharp","items":[{"name":"csharp"},{"name":"fsharp","languageName":"F#","aliases":["f#","fs"]},{"name":"html","languageName":"HTML"},{"name":"http","languageName":"HTTP"},{"name":"javascript","languageName":"JavaScript","aliases":["js"]},{"name":"mermaid","languageName":"Mermaid"},{"name":"pwsh","languageName":"PowerShell","aliases":["powershell"]},{"name":"value"}]}}
+
+#!fsharp
+
+// Working Version that works with the Main.fs below
+
+module PolygonEditor
+
+open System.Text.Json
+open Microsoft.AspNetCore.Components
+open Microsoft.JSInterop
+open Bolero
+open Bolero.Html
+open System
+open Microsoft.AspNetCore.Components.Web
+
+type Point = { X: float; Y: float }
+
+type DragInfo = { PolyIndex: int; VertexIndex: int }
+
+type PolygonEditorModel =
+    {
+        Outer: Point list
+        Islands: Point list list
+        Dragging: DragInfo option
+        VertexRadius: int
+    }
+
+type PolygonEditorMessage =
+    | PointerDown of MouseEventArgs
+    | PointerUp
+    | PointerMove of MouseEventArgs
+    | DoubleClick of MouseEventArgs
+    | ContextMenu of MouseEventArgs
+    | RemoveVertex of int * int
+
+let distance a b =
+    let dx = a.X - b.X
+    let dy = a.Y - b.Y
+    Math.Sqrt(dx * dx + dy * dy)
+
+let isInsidePolygon (poly: Point list) (pt: Point) =
+    let rec loop i j c =
+        if i < List.length poly then
+            let vi = List.item i poly
+            let vj = List.item j poly
+            let intersect =
+                ((vi.Y > pt.Y) <> (vj.Y > pt.Y)) &&
+                (pt.X < (vj.X - vi.X) * (pt.Y - vi.Y) / (vj.Y - vi.Y + 0.000001) + vi.X)
+            loop (i + 1) i (if intersect then not c else c)
+        else c
+    loop 0 (List.length poly - 1) false
+
+let isPolygonInside (outer: Point list) (inner: Point list) =
+    inner |> List.forall (fun p -> isInsidePolygon outer p)
+
+let insertAt i x lst =
+    let before, after = List.splitAt i lst
+    before @ [x] @ after
+
+let initModel =
+    {
+        Outer =
+            [
+                { X = 200.0; Y = 200.0 }
+                { X = 400.0; Y = 200.0 }
+                { X = 400.0; Y = 400.0 }
+                { X = 200.0; Y = 400.0 }
+            ]
+        Islands = []
+        Dragging = None
+        VertexRadius = 6
+    }
+
+let toSvgCoords (js: IJSRuntime) (ev: MouseEventArgs) : Async<Point> =
+    async {
+        let! result =
+            js.InvokeAsync<JsonElement>("getSvgCoords", [| box "main-svg"; box ev.ClientX; box ev.ClientY |]).AsTask()
+            |> Async.AwaitTask
+
+        let x = result.GetProperty("x").GetDouble()
+        let y = result.GetProperty("y").GetDouble()
+        return { X = x; Y = y }
+    }
+
+let update (js: IJSRuntime) (msg: PolygonEditorMessage) (model: PolygonEditorModel) : Async<PolygonEditorModel> =
+    match msg with
+    | PointerDown ev ->
+        async {
+            let! p = toSvgCoords js ev
+            let allPolys = model.Outer :: model.Islands
+            let found =
+                allPolys
+                |> List.mapi (fun pi poly ->
+                    poly
+                    |> List.mapi (fun vi v ->
+                        if distance v p < float model.VertexRadius + 2.0 then Some (pi, vi) else None
+                    )
+                    |> List.choose id
+                    |> List.tryHead
+                )
+                |> List.choose id
+                |> List.tryHead
+
+            match found with
+            | Some (pi, vi) ->
+                return { model with Dragging = Some { PolyIndex = pi; VertexIndex = vi } }
+            | None ->
+                let poly = model.Outer
+                let (insertIndex, minDist, _) =
+                    poly
+                    |> List.mapi (fun i ptA ->
+                        let ptB = List.item ((i + 1) % List.length poly) poly
+                        let mid = { X = (ptA.X + ptB.X) / 2.0; Y = (ptA.Y + ptB.Y) / 2.0 }
+                        (i, distance p mid, mid)
+                    )
+                    |> List.minBy (fun (_, d, _) -> d)
+
+                if minDist < 20.0 then
+                    let updated = insertAt (insertIndex + 1) p poly
+                    return { model with Outer = updated }
+                else
+                    return model
+        }
+
+    | PointerUp ->
+        async { return { model with Dragging = None } }
+
+    | PointerMove ev ->
+        async {
+            match model.Dragging with
+            | Some drag ->
+                let! newPt = toSvgCoords js ev
+                if drag.PolyIndex = 0 then
+                    let updated = model.Outer |> List.mapi (fun i pt -> if i = drag.VertexIndex then newPt else pt)
+                    return { model with Outer = updated }
+                else
+                    let updatedIslands =
+                        model.Islands
+                        |> List.mapi (fun pi poly ->
+                            if pi = drag.PolyIndex - 1 then
+                                poly |> List.mapi (fun vi pt -> if vi = drag.VertexIndex then newPt else pt)
+                            else poly
+                        )
+
+                    let filtered = updatedIslands |> List.filter (fun isl -> isPolygonInside model.Outer isl)
+                    return { model with Islands = filtered }
+            | None -> return model
+        }
+
+    | DoubleClick ev ->
+        async {
+            let! p = toSvgCoords js ev
+            if isInsidePolygon model.Outer p then
+                let size = 40.0
+                let half = size / 2.0
+                let island =
+                    [
+                        { X = p.X - half; Y = p.Y - half }
+                        { X = p.X + half; Y = p.Y - half }
+                        { X = p.X + half; Y = p.Y + half }
+                        { X = p.X - half; Y = p.Y + half }
+                    ]
+                if isPolygonInside model.Outer island then
+                    return { model with Islands = island :: model.Islands }
+                else return model
+            else return model
+        }
+
+    | ContextMenu ev ->
+        async {
+            let! p = toSvgCoords js ev
+            let allPolys = model.Outer :: model.Islands
+            let mutable updated = model
+            let mutable found = false
+
+            for pi, poly in List.indexed allPolys do
+                for vi, vtx in List.indexed poly do
+                    if not found && distance vtx p < float model.VertexRadius + 2.0 then
+                        let newPoly =
+                            poly
+                            |> List.mapi (fun i v -> i, v)
+                            |> List.filter (fun (i, _) -> i <> vi)
+                            |> List.map snd
+
+                        if List.length newPoly >= 3 then
+                            if pi = 0 then
+                                updated <- { updated with Outer = newPoly }
+                            else
+                                let newIslands = updated.Islands |> List.mapi (fun i isl -> if i = pi - 1 then newPoly else isl)
+                                updated <- { updated with Islands = newIslands }
+                        elif pi > 0 then
+                            let newIslands =
+                                updated.Islands
+                                |> List.mapi (fun i isl -> i, isl)
+                                |> List.filter (fun (i, _) -> i <> pi - 1)
+                                |> List.map snd
+                            updated <- { updated with Islands = newIslands }
+                        found <- true
+            return updated
+        }
+
+    | RemoveVertex _ ->
+        async { return model }
+
+// ---------------------- View ----------------------
+
+type bdrPgn = Template<"""<polygon points="${pt}" fill="${cl}" stroke="${st}" />""">
+type bdrCrl = Template<"""<circle cx="${cx}" cy="${cy}" r="${cr}" fill="${cl}" />""">
+type bdrTxt = Template<"""<text x="${tx}" y="${ty}" font-size="10px" font-family="Verdana" text-anchor="middle" dominant-baseline="middle" fill="#808080" opacity="1">${nm}</text>""">
+
+let view model dispatch (js: IJSRuntime) =
+    svg {
+        attr.id "main-svg"
+        attr.width "100%"
+        attr.height "800px"
+        attr.style "background:#f0f0f0; touch-action:none; user-select:none;"
+
+        on.mousedown (fun ev -> dispatch (PointerDown ev))
+        on.mouseup (fun ev -> dispatch PointerUp)
+        on.mousemove (fun ev -> dispatch (PointerMove ev))
+        on.dblclick (fun ev -> dispatch (DoubleClick ev))
+        on.contextmenu (fun ev ->
+            //ev.preventDefault()
+            dispatch (ContextMenu ev)
+        )
+
+        // Outer polygon
+        bdrPgn()
+            .pt(model.Outer |> List.map (fun p -> $"{p.X},{p.Y}") |> String.concat " ")
+            .cl("#cccccc")
+            .st("#333")
+            .Elt()
+
+        // Islands
+        for island in model.Islands do
+            bdrPgn()
+                .pt(island |> List.map (fun p -> $"{p.X},{p.Y}") |> String.concat " ")
+                .cl("#ffffff")
+                .st("#333")
+                .Elt()
+
+        // Vertices
+        for pt in model.Outer do
+            bdrCrl()
+                .cx(string pt.X)
+                .cy(string pt.Y)
+                .cr(string model.VertexRadius)
+                .cl("#333")
+                .Elt()
+
+        for island in model.Islands do
+            for pt in island do
+                bdrCrl()
+                    .cx(string pt.X)
+                    .cy(string pt.Y)
+                    .cr(string model.VertexRadius)
+                    .cl("#444")
+                    .Elt()
+    }
+
+#!fsharp
+
+// Main.fs that works for the above
+module Hywe.Client.Main
+
+open Microsoft.AspNetCore.Components
+open Microsoft.JSInterop
+open Elmish
+open Bolero
+open Bolero.Html
+open Coxel
+open Bridge
+open Parse
+open Page
+open Tree
+open TreeSvg
+//open Boundary
+open PolygonEditor
+
+type DerivedData = {
+    cxCxl1: Cxl[]
+    cxlAvl: int[]
+    cxClr1: string[]
+}
+
+let deriveData (stx: string) : DerivedData =
+    let bsOc = [||]
+    let cxCxl1 = spaceCxl bsOc stx
+    let cxlAvl = cxlExp cxCxl1 (Array.head cxCxl1).Seqn
+    let cxClr1 = pastels (Array.length cxCxl1)
+    {
+        cxCxl1 = cxCxl1
+        cxlAvl = cxlAvl
+        cxClr1 = cxClr1
+    }
+
+type Model =
+    {
+        scp1 : int
+        opt1 : Beeset option
+        stx1 : string
+        stx2 : string
+        Tree : SubModel
+        Derived : DerivedData
+        IsHyweaving: bool
+        PolygonEditor: PolygonEditorModel
+        //boundary: BoundaryModel
+    }
+
+type Message =
+    | SetScp1 of int
+    | ScpInc
+    | ScpDec
+    | SetOpt1 of Beeset
+    | SetStx1 of string
+    | TreeMsg of SubMsg
+    | StartHyweave
+    | RunHyweave
+    | FinishHyweave
+    | PolygonEditorMsg of PolygonEditorMessage
+    | PolygonEditorUpdated of PolygonEditorModel
+    //| BoundaryMsg of BoundaryMsg
+
+// Default Input
+let initModel =
+    {
+        scp1 = 8
+        opt1 = None
+        stx1 = stxInstr 
+        stx2 = stx2Ini
+        Tree = Tree.initModel ()
+        Derived = deriveData stx2Ini
+        IsHyweaving = false
+        PolygonEditor = PolygonEditor.initModel
+        //boundary = Boundary.initModel
+    }
+
+let update (js: IJSRuntime) (message: Message) (model: Model) : Model * Cmd<Message> =
+    match message with
+
+    | SetScp1 value -> 
+        { model with scp1 = value }, Cmd.none
+
+    | ScpInc -> 
+        { model with scp1 = model.scp1 + 1 }, Cmd.none
+
+    | ScpDec -> 
+        { model with scp1 = model.scp1 - 1 }, Cmd.none
+
+    | SetOpt1 value -> 
+        let newStx =
+            match value with
+            | Beewhich -> stxInstr
+            | Beegin -> Tree.getOutput model.Tree
+            | Beespoke -> beedroom
+
+        let newModel = {
+            model with
+                opt1 = Some value
+                stx1 = newStx
+                stx2 = newStx
+        }
+
+        // Reset Hyweave if Bee-which is selected
+        let finalModel =
+            match value with
+            | Beewhich -> { newModel with IsHyweaving = false }
+            | _ -> newModel
+
+        finalModel, Cmd.none
+
+    | SetStx1 value -> 
+        { model with stx1 = value }, Cmd.none
+
+    | StartHyweave ->
+        { model with IsHyweaving = true },
+        Cmd.OfAsync.perform
+            (fun () -> async {
+                do! Async.Sleep 50
+                return ()
+            }) () (fun _ -> RunHyweave)
+
+    | RunHyweave ->
+        let updatedStx1 =
+            match model.opt1 with
+            | Some Beegin -> Tree.getOutput model.Tree
+            | _ -> model.stx1
+
+        let newModel = {
+            model with
+                stx1 = updatedStx1
+                stx2 = updatedStx1
+                Derived = deriveData updatedStx1
+        }
+
+        newModel,
+        Cmd.OfAsync.perform
+            (fun () -> async {
+                do! Async.Sleep 100
+                return ()
+            }) () (fun _ -> FinishHyweave)
+
+    | FinishHyweave ->
+        { model with IsHyweaving = false }, Cmd.none
+
+    | TreeMsg subMsg ->
+        let updatedTree = updateSub subMsg model.Tree
+        match model.opt1 with
+        | Some Beegin ->
+            let newOutput = Tree.getOutput updatedTree
+            {
+                model with 
+                    Tree = updatedTree
+                    stx1 = newOutput
+                    stx2 = newOutput 
+            }, Cmd.none
+        | _ ->
+            { model with Tree = updatedTree }, Cmd.none
+
+    | PolygonEditorMsg subMsg ->
+        model, Cmd.OfAsync.perform (fun () -> PolygonEditor.update js subMsg model.PolygonEditor) () PolygonEditorUpdated
+
+    | PolygonEditorUpdated newPEModel ->
+        { model with PolygonEditor = newPEModel }, Cmd.none
+
+
+(*    | BoundaryMsg subMsg ->
+        let updatedBoundary = Boundary.update subMsg model.boundary
+        { model with boundary = updatedBoundary }, Cmd.none*)
+// Interface
+let view model dispatch (js: IJSRuntime) =      
+    concat {
+        // Nested Coxels Data
+        let cxCxl1 = model.Derived.cxCxl1
+        let cxlAvl = model.Derived.cxlAvl
+        let cxClr1 = model.Derived.cxClr1
+        //div{pageTitle}
+        //div{pageIntro}
+        // Hywe
+        div{
+            attr.``style`` "flex-wrap: wrap;justify-content: center;display: flex;flex-direction: row;"
+            // Dropdown
+            label{
+                attr.``for`` "options"   
+            }
+            select{
+                attr.name "options"
+                attr.``class`` "dropdown1"
+                attr.id "options"
+                on.change (fun e -> 
+                                    let value = (e.Value :?> string)
+                                    let beeset = 
+                                        match value with
+                                        | "Bee-gin" -> Beegin
+                                        | "Bee-spoke" -> Beespoke
+                                        | _ -> Beewhich
+
+                                    dispatch (SetOpt1 beeset))
+                option {
+                        attr.selected "true"
+                        attr.value "Bee-which"
+                        "To  Bee or To Bee . . ."
+                }
+                option {
+                        attr.value "Bee-gin"
+                        "Bee-gin : Space Flow Chart"
+                        }
+                option {
+                        attr.value "Bee-spoke"
+                        "Bee-spoke : Space Flow Script"
+                        }
+            }
+
+            // Formatting Instructions
+            a {
+                attr.style "padding: 17px 5px;"
+                attr.``class`` "button3"
+                attr.href "https://github.com/vykrum/Hywe/wiki/Hywe-Syntax"
+                attr.target "blank"
+                "?"
+            }
+
+            // Space Flow Chart
+            div {
+                attr.style "width: 100%; flex-basis: 100%; margin-top: 10px;"
+
+                match model.opt1 with
+                | Some Beegin ->
+                    div {
+                        attr.``style`` "width: 95%; margin: auto; padding: 10px;"
+                        viewTreeEditor model.Tree (TreeMsg >> dispatch)
+                    }
+                | _ -> empty()
+            }
+
+            // Font size setting
+            let fntSz = match model.opt1 with 
+                        | Some Beegin -> 12
+                        | Some Beespoke -> 12
+                        | _ -> 12
+            
+            // Hywe Syntax Input
+            textarea {
+                attr.id "syntax"
+                attr.``class`` "textarea"
+                attr.``style`` $"width : 95%%;
+                                margin-left: 20px;
+                                margin-right: 20px;
+                                height:50px;
+                                font-size: {fntSz}px;
+                                color: #808080;"
+
+                match model.opt1 with
+                | Some Beegin ->
+                    attr.readonly true
+                    text (Tree.getOutput model.Tree)
+                | _ ->
+                    bind.change.string model.stx1 (fun a -> dispatch (SetStx1 a))
+                    text model.stx1
+            }
+
+            // Zoom Out
+            button {
+                attr.``class`` "button3"
+                attr.``style`` "width: 5%;"
+                on.click (fun _ -> dispatch (ScpDec))
+                "--"
+            }
+
+            // Hyweave
+            button {
+                let hyweaveDisabled =
+                    model.IsHyweaving || model.opt1 = None || model.opt1 = Some Beewhich
+                attr.``class`` "button1"
+                attr.disabled hyweaveDisabled
+                attr.``style`` "
+                    width: 88%;
+                    margin-left: 1%;
+                    margin-right: 1%;
+                    margin-top: 5px;"
+                on.click (fun _ -> dispatch StartHyweave)
+
+                match model.IsHyweaving with
+                | true ->
+                    span { attr.``class`` "spinner" }
+                    text " h y W E A V E i n g . . ."
+                | false ->
+                    text "h y W E A V E"
+            }
+
+            // Zoom In
+            button {
+                attr.``class`` "button3"
+                attr.``style`` "width: 5%;"
+                on.click (fun _ -> dispatch (ScpInc))
+                "+"
+            }
+
+            // Hywe SVG
+            div {
+                attr.id "hywe-svg-container"
+                attr.``class`` "flex-container"
+                attr.``style`` "flex-wrap: wrap; justify-content: center;"
+
+                // SVG content
+                nstdCxlsWrp cxCxl1 cxClr1 model.scp1
+            }
+
+            // Hywe Table — full width
+            div {
+                attr.id "hywe-table"
+                attr.``style`` "width: 100%; margin-top: 20px;"
+
+                viewHyweTable cxCxl1 cxClr1 cxlAvl
+            }
+
+            div{
+                attr.``style`` "width: 100%;"
+                PolygonEditor.view model.PolygonEditor (PolygonEditorMsg >> dispatch) js
+
+                //Boundary.view model.boundary (BoundaryMsg >> dispatch)
+            }
+            (*// Download Button — placed *after* table and centered
+            div {
+                attr.``style`` "width: 800px;"
+                div {
+                    attr.``style`` "width: 800px; flex-basis: 100%; margin-top: 10px;"
+
+                    match model.opt1 with
+                    | Some Beegin ->
+                        div {
+                            attr.``style`` "width: 95%; margin: auto; padding: 10px;"
+                            viewTreeEditor model.Tree (TreeMsg >> dispatch)
+                        }
+                    | _ -> empty()
+                }
+                div {
+                    attr.id "hywe-svg-container"
+                    attr.``class`` "flex-container"
+                    attr.``style`` "flex-wrap: wrap; justify-content: center;"
+
+                    // SVG content
+                    nstdCxlsWrp cxCxl1 cxClr1 model.scp1
+                }
+                div {
+                    viewHyweTable cxCxl1 cxClr1 cxlAvl
+                }
+                button {
+                    attr.``class`` "button3"
+                    attr.``style`` "margin-top: 10px;"
+                    on.click (fun _ -> js.InvokeVoidAsync("downloadCombinedSvg") |> ignore)
+                    "Download Tree SVG"
+                }
+
+            }*)
+
+(*            div {
+                 attr.style "width: 100%; max-height:100%; overflow:auto; border:1px dashed #999;"
+                 viewTreeSvgFromString model.stx2
+                 }
+*)
+               
+        }
+    } 
+    
+// Bolero component handling state updates and rendering the user interface
+
+type MyApp() =
+    inherit ProgramComponent<Model, Message>()
+
+    [<Inject>]
+    member val JSRuntime: IJSRuntime = Unchecked.defaultof<_> with get, set
+
+    override this.Program =
+        Program.mkProgram
+            (fun _ -> initModel, Cmd.none)
+            (fun msg model -> update this.JSRuntime msg model)
+            (fun model dispatch -> view model dispatch this.JSRuntime)
+
+#!html
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HYWE</title>
+    <base href="/">
+    <link rel="stylesheet" href="css/index.css">
+    <link rel="icon" type="image/png" href="/images/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/images/favicon.svg" />
+    <link rel="shortcut icon" href="/images/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Hywe" />
+    <link rel="manifest" href="/images/site.webmanifest" />
+</head>
+
+<body>
+    <iframe id="loading-frame"
+            src="images/loading.html"
+            style="position: fixed; z-index: 9999; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+            title="HYWE Loading Animation">
+    </iframe>
+
+    <div id="page-content" class="fade-container">
+        <!--Logo and Title-->
+        <div style="display: flex;flex-direction: row;font-family: 'Optima', Candara, Calibri;width: 100%;height: 37px;opacity: 1;background: #363636;padding-left: 5px;padding-top: 5px;">
+            <div>
+                <img src="https://hywe.in/images/icon-32x32.png" width="30" height="30" />
+            </div>
+            <div style="color: white; font-family: 'Optima', Candara, Calibri; font-size: 20px;font-weight: normal;padding-left: 10px;padding-right: 10px;padding-bottom: 7px;"> H Y W E </div>
+            <div style="opacity: 1;">
+                <img src="https://vykrum.github.io/Hywe/images/hyweLogoAcronym.png" width="200" height="45" />
+            </div>
+        </div>
+
+        <!--Introduction-->
+        <div style="margin: 0px;background: #d3d3d1; color: #363636;flex-direction: column; font-family: 'Optima', Candara, Calibri; font-size: 18px;padding-left: 12px;padding-right: 10px;padding-bottom: 15px;padding-top: 15px;">
+            Weave spatial layouts at a high level of abstraction using properly formatted syntax in Hywe, an endogenous space planning concept currently undergoing its formative stages of development as an early stage design interface.
+        </div>
+
+        <div id="main">
+            <div style="text-align: center; padding: 20px;">
+                <img src="images/hyweFading.svg" alt="H Y W E" style="max-width: 100%; height: auto; opacity: 0.25" />
+            </div>
+        </div>
+
+        <!--Social Media Links-->
+        <div style="flex-wrap: wrap; justify-content: center; display: flex; flex-direction: row;">
+            <a href="https://forms.gle/TnH8ghGYz3ugEfWg9" target="_blank" style="padding: 25px;">
+                <img width="20" height="20" src="https://vykrum.github.io/Hywe/images/EM.png" />
+            </a>
+            <a href="https://www.linkedin.com/company/hywein/" target="_blank" style="padding: 25px;">
+                <img width="20" height="20" src="https://vykrum.github.io/Hywe/images/LI.png" />
+            </a>
+            <a href="https://x.com/_hywe_" target="_blank" style="padding: 25px;">
+                <img width="20" height="20" src="https://vykrum.github.io/Hywe/images/X.png" />
+            </a>
+            <a href="https://github.com/vykrum/Hywe" target="_blank" style="padding: 25px;">
+                <img width="20" height="20" src="https://vykrum.github.io/Hywe/images/GH.png" />
+            </a>
+        </div>
+    </div>
+
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script>
+        navigator.serviceWorker.register('service-worker.js');
+
+        window.addEventListener('load', function () {
+            const loader = document.getElementById('loading-frame');
+            const content = document.getElementById('page-content');
+
+            // Add 1s delay, then fade in
+            setTimeout(() => {
+                if (loader) loader.remove();
+                if (content) {
+                    // Trigger fade-in by adding class
+                    content.classList.add('visible');
+                }
+            }, 1000);
+        });
+
+        window.getSvgCoords = function(svgId, clientX, clientY) {
+            const svg = document.getElementById(svgId);
+            if (!svg) return { x: 0, y: 0 };
+            const pt = svg.createSVGPoint();
+            pt.x = clientX;
+            pt.y = clientY;
+            const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+            return { x: svgP.x, y: svgP.y };
+        };
+
+    </script>
+
+
+</body>
+</html>
+
+#!fsharp
+
+module Geometry
+
+open System
+
+type Point = { X: float; Y: float }
+
+type EntryPoint = { PolygonIndex: int; EdgeIndex: int; T: float }
+
+type Polygon = Point list
+
+/// Convert logical coordinates to SVG coordinates
+let logicalToSvg (width: float) (height: float) (padding: float) (p: Point) : Point =
+    { X = p.X + padding; Y = height - p.Y + padding }
+
+/// Convert SVG coordinates to logical coordinates
+let svgToLogical (width: float) (height: float) (padding: float) (p: Point) : Point =
+    { X = p.X - padding; Y = height - (p.Y - padding) }
+
+/// Cross product of vectors OA and OB
+let inline crossProduct (o: Point) (a: Point) (b: Point) : float =
+    (a.X - o.X) * (b.Y - o.Y) - (a.Y - o.Y) * (b.X - o.X)
+
+/// Check if point q lies on segment pr
+let onSegment (p: Point) (q: Point) (r: Point) : bool =
+    q.X <= max p.X r.X && q.X >= min p.X r.X &&
+    q.Y <= max p.Y r.Y && q.Y >= min p.Y r.Y
+
+/// Check if two segments intersect
+let doSegmentsIntersect (p1: Point) (q1: Point) (p2: Point) (q2: Point) : bool =
+    let o1 = crossProduct p1 q1 p2
+    let o2 = crossProduct p1 q1 q2
+    let o3 = crossProduct p2 q2 p1
+    let o4 = crossProduct p2 q2 q1
+
+    if (o1 > 0.0) <> (o2 > 0.0) && (o3 > 0.0) <> (o4 > 0.0) then true
+    elif o1 = 0.0 && onSegment p1 p2 q1 then true
+    elif o2 = 0.0 && onSegment p1 q2 q1 then true
+    elif o3 = 0.0 && onSegment p2 p1 q2 then true
+    elif o4 = 0.0 && onSegment p2 q1 q2 then true
+    else false
+
+/// Check if polygon is simple (no self-intersections)
+let isSimplePolygon (poly: Polygon) : bool =
+    let n = List.length poly
+    if n < 3 then true
+    else
+        let pointsArray = List.toArray poly
+
+        let segmentsOverlap i j =
+            let p1 = pointsArray.[i]
+            let p2 = pointsArray.[(i + 1) % n]
+            let p3 = pointsArray.[j]
+            let p4 = pointsArray.[(j + 1) % n]
+            let isAdjacent = abs (i - j) = 1 || abs (i - j) = n - 1
+            not isAdjacent && doSegmentsIntersect p1 p2 p3 p4
+
+        let hasSelfIntersection =
+            [0 .. n - 1]
+            |> List.exists (fun i ->
+                [i + 2 .. n - 1]
+                |> List.filter (fun j -> not ((j = n - 1 && i = 0) || (j = 0 && i = n - 1)))
+                |> List.exists (fun j -> segmentsOverlap i j)
+            )
+
+        not hasSelfIntersection
+
+/// Winding number algorithm to test point inclusion in polygon
+let isPointInPolygon (pt: Point) (poly: Polygon) : bool =
+    let n = List.length poly
+    if n < 3 then false
+    else
+        let pointsArray = List.toArray poly
+        let mutable windingNumber = 0
+
+        for i in 0 .. n - 1 do
+            let p1 = pointsArray.[i]
+            let p2 = pointsArray.[(i + 1) % n]
+
+            match p1.Y <= pt.Y, p2.Y > pt.Y, p2.Y <= pt.Y with
+            | true, true, _ when crossProduct p1 p2 pt > 0.0 ->
+                windingNumber <- windingNumber + 1
+            | false, _, true when crossProduct p1 p2 pt < 0.0 ->
+                windingNumber <- windingNumber - 1
+            | _ -> ()
+
+        windingNumber <> 0
+
+/// Check if inner polygon is fully contained within outer polygon (no crossing edges)
+let isPolygonContained (polyInner: Polygon) (polyOuter: Polygon) : bool =
+    let innerArr = List.toArray polyInner
+    let outerArr = List.toArray polyOuter
+
+    (innerArr |> Array.forall (fun p -> isPointInPolygon p polyOuter)) &&
+    (innerArr |> Array.mapi (fun i p1 ->
+        let p2 = innerArr.[(i + 1) % innerArr.Length]
+        outerArr |> Array.forall (fun q1 ->
+            let j = Array.findIndex ((=) q1) outerArr
+            let q2 = outerArr.[(j + 1) % outerArr.Length]
+            not (doSegmentsIntersect p1 p2 q1 q2)
+        )
+    ) |> Array.forall id)
+
+/// Check if two polygons intersect
+let doPolygonsIntersect (poly1: Polygon) (poly2: Polygon) : bool =
+    (poly1 |> List.exists (fun p -> isPointInPolygon p poly2)) ||
+    (poly2 |> List.exists (fun p -> isPointInPolygon p poly1)) ||
+    (poly1
+     |> List.mapi (fun i p1 ->
+         let p2 = poly1.[(i + 1) % List.length poly1]
+         poly2
+         |> List.mapi (fun j q1 ->
+             let q2 = poly2.[(j + 1) % List.length poly2]
+             doSegmentsIntersect p1 p2 q1 q2
+         )
+         |> List.exists id)
+     |> List.exists id)
+
+/// Get point at fractional position `t` along edge `edgeIndex` of polygon
+let getEdgePoint (poly: Polygon) (edgeIndex: int) (t: float) : Point option =
+    match poly with
+    | [] -> None
+    | _ when edgeIndex >= 0 && edgeIndex < List.length poly ->
+        let n = List.length poly
+        let p1 = poly.[edgeIndex]
+        let p2 = poly.[(edgeIndex + 1) % n]
+        Some { X = p1.X + t * (p2.X - p1.X); Y = p1.Y + t * (p2.Y - p1.Y) }
+    | _ -> None
+
+#!fsharp
+
+module PolygonEditor
+
+open Geometry
+
+type Vertex =
+    {
+        Position: Point
+        IsHovered: bool
+        IsDragging: bool
+    }
+
+type Model =
+    {
+        OuterPolygon: Point list
+        Islands: list<Point list>
+        OuterVertices: list<Vertex>
+        IslandVertices: list<list<Vertex>>
+    }
+
+type Msg =
+    | HoverVertex of Point
+    | UnhoverVertex of Point
+    | StartDrag of Point
+    | StopDrag
+    | DragTo of Point
+
+let initModel : Model =
+    let initialOuter =
+        [
+            { X = 100.0; Y = 100.0 }
+            { X = 300.0; Y = 100.0 }
+            { X = 300.0; Y = 300.0 }
+            { X = 100.0; Y = 300.0 }
+        ]
+
+    let makeVertices points =
+        points
+        |> List.map (fun p -> { Position = p; IsHovered = false; IsDragging = false })
+
+    {
+        OuterPolygon = initialOuter
+        Islands = []
+        OuterVertices = makeVertices initialOuter
+        IslandVertices = []
+    }
+
+let update (msg: Msg) (model: Model) : Model =
+    let updateVertex f (v: Vertex) =
+        if f v then { v with IsHovered = true } else { v with IsHovered = false }
+
+    let tryUpdateVertexList predicate vertices =
+        vertices |> List.map (updateVertex predicate)
+
+    let updateDrag pos v =
+        if v.IsDragging then { v with Position = pos } else v
+
+    match msg with
+    | HoverVertex pt ->
+        {
+            model with
+                OuterVertices = tryUpdateVertexList (fun v -> v.Position = pt) model.OuterVertices
+                IslandVertices = model.IslandVertices |> List.map (tryUpdateVertexList (fun v -> v.Position = pt))
+        }
+
+    | UnhoverVertex pt ->
+        let clearHover v =
+            if v.Position = pt then { v with IsHovered = false } else v
+
+        {
+            model with
+                OuterVertices = model.OuterVertices |> List.map clearHover
+                IslandVertices = model.IslandVertices |> List.map (List.map clearHover)
+        }
+
+    | StartDrag pt ->
+        let start v =
+            if v.Position = pt then { v with IsDragging = true } else v
+
+        {
+            model with
+                OuterVertices = model.OuterVertices |> List.map start
+                IslandVertices = model.IslandVertices |> List.map (List.map start)
+        }
+
+    | StopDrag ->
+        let stop v =
+            if v.IsDragging then { v with IsDragging = false } else v
+
+        {
+            model with
+                OuterVertices = model.OuterVertices |> List.map stop
+                IslandVertices = model.IslandVertices |> List.map (List.map stop)
+        }
+
+    | DragTo pos ->
+        {
+            model with
+                OuterVertices = model.OuterVertices |> List.map (updateDrag pos)
+                IslandVertices = model.IslandVertices |> List.map (List.map (updateDrag pos))
+        }
+
+#!fsharp
+
+module PolygonEditorState
+
+open Geometry
+
+// Minimal custom Cmd implementation for async side effects
+type Cmd<'msg> = Cmd of (unit -> Async<list<'msg>>)
+
+module Cmd =
+    let none = Cmd (fun () -> async { return [] })
+    let ofMsg msg = Cmd (fun () -> async { return [msg] })
+    let ofMsgList msgs = Cmd (fun () -> async { return msgs })
+    let ofFunc f = Cmd f
+
+// Editor state types
+type DragInfo = { PolygonIndex: int; VertexIndex: int }
+
+type ContextMenuState =
+    | Hidden
+    | Visible of int * int  // screenX, screenY
+
+type Model =
+    {
+        Width: float
+        Height: float
+        Padding: float
+        VertexRadius: float
+        Polygons: Polygon list
+        CurrentPolygonIndex: int
+        DragInfo: DragInfo option
+        EntryPoint: EntryPoint option
+        Message: string option
+        ContextMenu: ContextMenuState
+        MenuActionContext: (string * Point) option
+    }
+
+type Msg =
+    | SetWidth of float
+    | SetHeight of float
+    | ApplySize
+    | MouseDown of Point
+    | MouseUp
+    | MouseMove of Point
+    | DblClick of int * int * Point
+    | ContextMenu of int * int * string * Point
+    | HideContextMenu
+    | ClickMenuItemRemoveVertex of int * int
+    | ClickMenuItemSetEntryPoint of int * int * Point
+    | ClickMenuItemCreateIsland of Point
+    | ShowMessage of string
+    | ClearMessage
+
+let rec update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
+    match msg with
+    | SetWidth newWidth ->
+        update ApplySize { model with Width = newWidth }
+
+    | SetHeight newHeight ->
+        update ApplySize { model with Height = newHeight }
+
+    | ApplySize ->
+        let hasPolygons =
+            match model.Polygons with
+            | [] -> false
+            | [[]] -> false
+            | _ -> true
+
+        let scaledPolygons =
+            if not hasPolygons then
+                [
+                    [
+                        { X = 0.0; Y = 0.0 }
+                        { X = model.Width; Y = 0.0 }
+                        { X = model.Width; Y = model.Height }
+                        { X = 0.0; Y = model.Height }
+                    ]
+                ]
+            else
+                model.Polygons
+                |> List.map (List.map (fun p ->
+                    {
+                        X = (p.X / model.Width) * model.Width
+                        Y = (p.Y / model.Height) * model.Height
+                    }))
+
+        let newEntryPoint =
+            if hasPolygons then
+                Some { PolygonIndex = 0; EdgeIndex = 0; T = 0.5 }
+            else
+                None
+
+        { model with
+            Polygons = scaledPolygons
+            EntryPoint = newEntryPoint
+            CurrentPolygonIndex = 0
+        }, Cmd.none
+
+    | MouseDown _
+    | MouseUp
+    | MouseMove _
+    | DblClick _
+    | ContextMenu _
+    | HideContextMenu
+    | ClickMenuItemRemoveVertex _
+    | ClickMenuItemSetEntryPoint _
+    | ClickMenuItemCreateIsland _ ->
+        model, Cmd.none
+
+    | ShowMessage msg ->
+        let cmd =
+            Cmd.ofFunc (fun () -> async {
+                do! Async.Sleep 3000
+                return [ClearMessage]
+            })
+        { model with Message = Some msg }, cmd
+
+    | ClearMessage ->
+        { model with Message = None }, Cmd.none
+
+let init () : Model * Cmd<Msg> =
+    let initial =
+        {
+            Width = 600.0
+            Height = 400.0
+            Padding = 80.0
+            VertexRadius = 6.0
+            Polygons = [ [] ]
+            CurrentPolygonIndex = 0
+            DragInfo = None
+            EntryPoint = None
+            Message = None
+            ContextMenu = Hidden
+            MenuActionContext = None
+        }
+
+    update ApplySize initial
+
+#!fsharp
+
+module PolygonEditorView
+
+open Bolero
+open Bolero.Html
+open Microsoft.AspNetCore.Components.Web
+open PolygonEditor
+open Geometry
+open PolygonEditorState
+
+// SVG polygon rendering template
+type plgn = Template<
+    """<polygon 
+        points="${pt}" 
+        fill="${fl}"
+        stroke="${cl}"
+        opacity="0.75" />""">
+
+// SVG vertex (circle) rendering template
+type vrtx = Template<
+    """<circle
+        cx="${vx}" 
+        cy="${vy}" 
+        r="${vr}" 
+        fill="${cl}" />""">
+
+// Top-level SVG container
+type PolygonEditorTemplate = Template<
+    """<svg width="100%" height="800px" style="background:#f0f0f0; touch-action: none;" 
+            @onpointerdown="${PointerDown}" 
+            @onpointerup="${PointerUp}" 
+            @onpointermove="${PointerMove}" 
+            @oncontextmenu="${ContextMenu}"
+            @ondblclick="${DoubleClick}">
+            ${Polygons}
+            ${Vertices}
+    </svg>""">
+
+let view (model: PolygonEditorState.Model) dispatch =
+
+    let vertexRadius = 6
+
+    let viewPolygon (points: Point list) (fill: string) =
+        let pointsStr = points |> List.map (fun p -> $"{p.X},{p.Y}") |> String.concat " "
+        plgn()
+            .pt(pointsStr)
+            .fl(fill)
+            .cl("#222") // consistent stroke
+            .Elt()
+
+    let viewVertex (v: Vertex) =
+        let color =
+            if v.IsDragging then "#ee7733"
+            elif v.IsHovered then "#4488ff"
+            else "#333333"
+
+        vrtx()
+            .vx(v.Position.X)
+            .vy(v.Position.Y)
+            .vr(string vertexRadius)
+            .cl(color)
+            .Elt()
+
+    svg {
+        attr.width (string model.Width)
+        attr.height (string model.Height)
+        attr.style "border:1px solid black; background: white; touch-action: none;"
+
+
+        on.pointerDown (fun ev -> dispatch (PointerDown ev))
+        on.pointerMove (fun ev -> dispatch (PointerMove ev))
+        on.pointerUp (fun ev -> dispatch (PointerUp ev))
+        on.doubleClick (fun ev -> dispatch (DoubleClick ev))
+        on.contextMenu (fun ev ->
+            ev.PreventDefault()
+            dispatch (ContextMenu ev)
+        )
+
+        // Outer polygon
+        yield viewPolygon model.OuterPolygon "#cccccc"
+
+        // Islands
+        for island in model.Islands do
+            yield viewPolygon island "#ffffff"
+
+        // Outer vertices
+        for v in model.OuterVertices do
+            yield viewVertex v
+
+        // Island vertices
+        for islandVerts in model.IslandVertices do
+            for v in islandVerts do
+                yield viewVertex v
+    }
