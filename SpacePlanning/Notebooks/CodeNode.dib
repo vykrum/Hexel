@@ -11,8 +11,65 @@ open Bolero
 open Bolero.Html
 open NodeCode
 
+open System
+open System.Collections.Generic
+
+let preprocessCode (code: string) : string =
+    // Split into parts and trim
+    let lines =
+        code.Split([|','|], StringSplitOptions.RemoveEmptyEntries)
+        |> Array.map (fun item -> item.Trim('(', ')', ' '))
+
+    // Step 1: Extract all top-level integers > 1
+    let topLevelInts =
+        lines
+        |> Array.choose (fun line ->
+            let parts = line.Split('/')
+            if parts.Length = 3 then
+                let path = parts.[0]
+                let firstSeg = path.Split('.').[0]
+                match Int32.TryParse firstSeg with
+                | true, n when n > 1 -> Some n
+                | _ -> None
+            else None
+        )
+        |> Set.ofArray
+
+    // Step 2: Create mapping dictionary: 2 -> 1.0, 3 -> 1.0.0, etc.
+    let intMap =
+        topLevelInts
+        |> Seq.map (fun n -> 
+            let mapped = String.Join(".", Array.create (n - 1) "0")
+            (n.ToString(), if mapped = "" then "1" else "1." + mapped))
+        |> dict
+
+    // Step 3: Replace path prefixes based on mapping
+    let updatedLines =
+        lines
+        |> Array.map (fun line ->
+            let parts = line.Split('/')
+            if parts.Length = 3 then
+                let path = parts.[0]
+                let segments = path.Split('.')
+                let first = segments.[0]
+                if intMap.ContainsKey(first) then
+                    let newPath = 
+                        if segments.Length > 1 then
+                            String.Join(".", Array.append [| intMap.[first] |] segments.[1..])
+                        else
+                            intMap.[first]
+                    $"({newPath}/{parts.[1]}/{parts.[2]})"
+                else
+                    $"({line})"
+            else
+                $"({line})"
+        )
+
+    // Return reconstructed string
+    String.Join(",", updatedLines)
+
+/// Parses the processed input into a tree structure
 let parseOutput (code: string) : TreeNode =
-    // Step 1: Parse raw entries and ignore paths that start with "0"
     let entries =
         code.Split([|','|], StringSplitOptions.RemoveEmptyEntries)
         |> Array.choose (fun item ->
@@ -21,20 +78,18 @@ let parseOutput (code: string) : TreeNode =
             if parts.Length = 3 then
                 let path = parts.[0]
                 if path.StartsWith("0") then
-                    None // Ignore this entry
+                    None
                 else
                     let weight = parts.[1]
                     let name = parts.[2]
                     Some (path, weight, name)
             else
-                // Don't fail — just skip invalid entries
                 None
         )
 
     if not (entries |> Array.exists (fun (path, _, _) -> path = "1")) then
         failwith "Invalid Hywe Syntax"
 
-    // Step 2: Build path → node map
     let nodeMap =
         entries
         |> Seq.map (fun (path, weight, name) ->
@@ -50,13 +105,11 @@ let parseOutput (code: string) : TreeNode =
         |> dict
         |> System.Collections.Generic.Dictionary
 
-    // Step 3: Group by depth (deepest first)
     let byDepth =
         entries
         |> Array.groupBy (fun (path, _, _) -> path.Split('.').Length)
         |> Array.sortByDescending fst
 
-    // Step 4: Attach children to parents
     for (_, group) in byDepth do
         for (path, _, _) in group do
             if path.Contains '.' then
@@ -66,9 +119,7 @@ let parseOutput (code: string) : TreeNode =
                     let child = nodeMap.[path]
                     nodeMap.[parentPath] <- { parent with Children = parent.Children @ [child] }
 
-    // Step 5: Return the root
     nodeMap.["1"]
-
 
 
 let computeCanvasBounds (nodes: TreeNode list) : float * float =
@@ -105,12 +156,10 @@ type svLin = Template<""" <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stro
 type svRct = Template<""" <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" ry="${ry}" fill="${fl}" stroke="${st}" />""">
 type svTxt = Template<""" <text x="${x}" y="${y}" font-size="${sz}" text-anchor="${ta}" fill="${fl}">${nm}</text>""">
 
-
 let viewTreeSvg (root: TreeNode) : Node =
     let root = layoutTree root 0 (ref 100.0)
     let nodes = flattenTree root
 
-    // Compute canvas bounds
     let margin = 50.0
     let minX = nodes |> List.map (fun n -> n.X) |> List.min
     let maxX = nodes |> List.map (fun n -> n.X) |> List.max
@@ -123,7 +172,6 @@ let viewTreeSvg (root: TreeNode) : Node =
     let vbH = maxY - minY + 2.0 * margin
     let viewBoxStr = sprintf "%f %f %f %f" vbX vbY vbW vbH
 
-    // Connections
     let rec renderConnections (parent: TreeNode) : Node list =
         parent.Children
         |> List.collect (fun child ->
@@ -138,7 +186,6 @@ let viewTreeSvg (root: TreeNode) : Node =
             ] @ renderConnections child
         )
 
-    // Render all node visuals
     let renderNode (node: TreeNode) : Node list =
         [
             svRct()
@@ -151,7 +198,6 @@ let viewTreeSvg (root: TreeNode) : Node =
                 .fl("white")
                 .st("#aaaaaa")
                 .Elt()
-
 
             svTxt()
                 .x(string node.X)
@@ -172,7 +218,6 @@ let viewTreeSvg (root: TreeNode) : Node =
                 .Elt()
         ]
 
-
     svg {
         yield attr.width "100%"
         yield attr.height "100%"
@@ -187,11 +232,16 @@ let viewTreeSvg (root: TreeNode) : Node =
                 yield el
     }
 
-
 let viewCodeGraphFromString (code: string) : Node =
     try
-        let root = parseOutput code
-        viewTreeSvg root
+        let processed = preprocessCode code
+        let root = parseOutput processed
+        
+        div {
+            attr.style "margin-top: 20px; font-family: monospace; font-size: 14px; color: #444;"
+            viewTreeSvg root
+            $"Processed code: {processed}"
+        }
     with ex ->
         div {
             attr.style "color:red"
