@@ -912,19 +912,19 @@ module Shape =
                     | true -> [|hxy..4*sgn..(hxy+lgt+4)*sgn|]
                             |> Array.map (fun y -> [|EX(hxx,y,hxz);EX(hxx+1,y+2*sgn,hxz)|])
                             |> Array.concat
-                            |> Array.take ((lgt/2)+1)
+                            |> Array.truncate ((lgt/2)+1)
                     | false -> [|hxx..2*sgn..(hxx+lgt+4)*sgn|]
                             |> Array.map (fun x -> EX (x,hxy,hxz)) 
-                            |> Array.take ((lgt/2)+1)
+                            |> Array.truncate ((lgt/2)+1)
             | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
                 -> match vrt with
                     | true -> [|hxy..2*sgn..(hxy+lgt)*sgn|]
                             |> Array.map (fun y -> RV (hxx,y,hxz)) 
-                            |> Array.take ((lgt/2)+1)
+                            |> Array.truncate ((lgt/2)+1)
                     | false -> [|hxx..4*sgn..(hxx+lgt)*sgn|] 
                             |> Array.map (fun x -> [|EX(x,hxy,hxz);EX(x+2*sgn,hxy+1,hxz)|])
                             |> Array.concat
-                            |> Array.take ((lgt/2)+1)
+                            |> Array.truncate ((lgt/2)+1)
 
     let hxlOff
         (hxl : Hxl[])
@@ -1355,20 +1355,49 @@ let cxx1 = coxel sq11 ([|
 // Line
 let sq = VRCCEE
 let st = AV(0,0,0)
-let en = AV(9,-16,0)
+let en = AV(6,-6,0)
 let hxLn 
     (sqn : Sqn) 
     (stl : Hxl) 
     (enl : Hxl) = 
-    let x1,y1,_ = stl |> hxlVld sqn |> hxlCrd 
-    let x2,y2,_ = enl |> hxlVld sqn |> hxlCrd
+    let x1,y1,z1 = stl |> hxlVld sqn |> hxlCrd 
+    let x2,y2,z2 = enl |> hxlVld sqn |> hxlCrd
     let vrt = Math.Abs (x2-x1) < Math.Abs (y2-y1)
     let rev = match vrt with
-                | true -> y2 > y1
-                | false -> x2 > x1
-    let hc = hxlOrt sqn (AV(x1,y1,0)) (Math.Abs (x2-x1)) false false |> Array.length
-    let vc = hxlOrt sqn (AV(x1,y1,0)) (Math.Abs (y2-y1)) true false |> Array.length
-    hc,vc
+                | true -> y1 < y2
+                | false -> x2 < x1
+    let ct = match vrt with
+                | true -> match y2-y1 = 0 with
+                            | false -> (Math.Abs (y2-y1)/2)
+                            | true -> 1
+                | false -> match x2-x1 = 0 with
+                            | false -> (Math.Abs (x2-x1)/2)
+                            | true -> 1
+    // vrt false
+    let lg = [|x1 .. Math.Abs (y2-y1)/ct .. x2|] 
+            |> Array.rev |> Array.tail 
+            |> Array.append [|x2|] 
+            |> Array.rev 
+            |> Array.windowed 2 
+            |> Array.map (fun x -> abs (x.[1] - x.[0]))
+    
+    let lnSg (sqn : Sqn) (lgt: int) (str:Hxl) (rev:bool) (vrt:bool) = 
+        let or1 = hxlOrt sqn str lgt vrt rev
+        let or2 = hxlOrt sqn (Array.last or1) 2 (not vrt) (not rev)
+        Array.append or1 or2
+
+(*     let path =
+        lg |> Array.fold (fun acc len ->
+            let basePt = acc |> Array.last
+            let seg = lnSg sqn len basePt
+            Array.append acc seg
+        ) [|AV(x1,y1,z1)|] *)
+
+    let a11 = lnSg sqn lg.[0] (AV(x1,y1,z1)) rev vrt
+    let a21 = lnSg sqn lg.[1] (Array.last a11) rev vrt
+    //let a31 = lnSg sqn lg.[2] (Array.last a21) rev vrt
+
+    [|a11;a21|]
 
 hxLn sq st en
-hxlOrt sq st 1 true false
+//hxlOrt sq st 1 true false

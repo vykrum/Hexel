@@ -1,3 +1,93 @@
 #!meta
 
 {"kernelInfo":{"defaultKernelName":"fsharp","items":[{"name":"csharp","languageName":"C#","aliases":["c#","cs"]},{"name":"fsharp","languageName":"fsharp"},{"name":"html","languageName":"HTML"},{"name":"http","languageName":"HTTP"},{"name":"javascript","languageName":"JavaScript","aliases":["js"]},{"name":"mermaid","languageName":"Mermaid"},{"name":"pwsh","languageName":"PowerShell","aliases":["powershell"]},{"name":"value"}]}}
+
+#!fsharp
+
+open System
+open System.Collections.Generic
+open System.Text.RegularExpressions
+
+type TreeNode =
+    { Name: string
+      mutable Weight: int
+      mutable Children: TreeNode list }
+
+let formatTreeFromInput (input: string) : string =
+    let nodeDict = Dictionary<string, TreeNode>()
+
+    let parseNode (s: string) : option<string * int> =
+        let m = Regex.Match(s.Trim(), @"^(\w+)(?:\((\d+)\))?$")
+        if m.Success then
+            let name = m.Groups.[1].Value
+            let weight =
+                if m.Groups.[2].Success then int m.Groups.[2].Value else 10
+            Some (name, weight)
+        else None
+
+    let getNode (name: string) (weight: int) : TreeNode =
+        match nodeDict.TryGetValue name with
+        | true, node -> node
+        | false, _ ->
+            let node = { Name = name; Weight = weight; Children = [] }
+            nodeDict.[name] <- node
+            node
+
+    let rec addPathToTree (parent: TreeNode) (path: (string * int) list) : unit =
+        match path with
+        | [] -> ()
+        | (name, weight) :: tail ->
+            let child = getNode name weight
+            match parent.Children |> List.tryFind (fun c -> c.Name = name) with
+            | Some _ -> ()
+            | None -> parent.Children <- parent.Children @ [ child ]
+            addPathToTree child tail
+
+    let parseInput (input: string) : (string * int) list list =
+        input.Split([|','; ';'|], StringSplitOptions.RemoveEmptyEntries)
+        |> Array.toList
+        |> List.map (fun (path: string) ->
+            path.Split('-')
+            |> Array.toList
+            |> List.map (fun nodeStr -> nodeStr.Trim())
+            |> List.filter (fun s -> s <> "")
+            |> List.choose parseNode
+        )
+
+    let buildTree (paths: (string * int) list list) : TreeNode =
+        let root = getNode "ROOT" 0
+        for path in paths do
+            match path with
+            | [] -> ()
+            | (headName, headWeight) :: tail ->
+                let top = getNode headName headWeight
+                match root.Children |> List.tryFind (fun c -> c.Name = headName) with
+                | Some _ -> ()
+                | None -> root.Children <- root.Children @ [ top ]
+                addPathToTree top tail
+        root
+
+    let rec traverse (node: TreeNode) (prefix: string) (index: int) : string list =
+        let currentPrefix =
+            match prefix with
+            | "" -> string index
+            | _  -> prefix + "." + string index
+        let current = sprintf "(%s/%s/%d)" currentPrefix node.Name node.Weight
+        let children =
+            node.Children
+            |> List.mapi (fun i child -> traverse child currentPrefix (i + 1))
+            |> List.concat
+        current :: children
+
+    let paths = parseInput input
+    let root = buildTree paths
+
+    root.Children
+    |> List.mapi (fun i child -> traverse child "" (i + 1))
+    |> List.concat
+    |> String.concat ", "
+
+
+let input = "A(9) - B(30) - C, A - D(12) - E, A - F, C - G - H; H - I"
+let output = formatTreeFromInput input
+printfn "%s" output
