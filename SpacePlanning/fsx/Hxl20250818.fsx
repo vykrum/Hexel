@@ -1353,51 +1353,55 @@ let cxx1 = coxel sq11 ([|
             |]) hx11
 
 // Line
-let sq = VRCCEE
-let st = AV(0,0,0)
-let en = AV(6,-6,0)
-let hxLn 
-    (sqn : Sqn) 
-    (stl : Hxl) 
-    (enl : Hxl) = 
-    let x1,y1,z1 = stl |> hxlVld sqn |> hxlCrd 
-    let x2,y2,z2 = enl |> hxlVld sqn |> hxlCrd
-    let vrt = Math.Abs (x2-x1) < Math.Abs (y2-y1)
-    let rev = match vrt with
-                | true -> y1 < y2
-                | false -> x2 < x1
-    let ct = match vrt with
-                | true -> match y2-y1 = 0 with
-                            | false -> (Math.Abs (y2-y1)/2)
-                            | true -> 1
-                | false -> match x2-x1 = 0 with
-                            | false -> (Math.Abs (x2-x1)/2)
-                            | true -> 1
-    // vrt false
-    let lg = [|x1 .. Math.Abs (y2-y1)/ct .. x2|] 
-            |> Array.rev |> Array.tail 
-            |> Array.append [|x2|] 
-            |> Array.rev 
-            |> Array.windowed 2 
-            |> Array.map (fun x -> abs (x.[1] - x.[0]))
-    
-    let lnSg (sqn : Sqn) (lgt: int) (str:Hxl) (rev:bool) (vrt:bool) = 
-        let or1 = hxlOrt sqn str lgt vrt rev
-        let or2 = hxlOrt sqn (Array.last or1) 2 (not vrt) (not rev)
-        Array.append or1 or2
+let hxlNea
+    (sqn : Sqn)
+    (hxl : Hxl)
+    (stt : Hxl)
+    (enn : Hxl) = 
+    let ex,ey,_ = hxlCrd enn
+    let sx,sy,_ = hxlCrd stt
+    let distAttr =
+        let adj = adjacent sqn hxl |> Array.tail
+        let edd = Array.contains enn adj 
+        match edd with
+        | true -> [|enn,0,0,0|]
+        | false ->  adj |> Array.map (fun h ->
+                        let x,y,_ = hxlCrd h
+                        let d1 = abs (ex - x) + abs (ey - y)
+                        let d2 = abs (sx - x) + abs (sy - y)
+                        let d3 = abs (abs(ex - x) - abs(x-sx) + abs(ey - y) - abs(y-sy))
+                        let d = match abs d1 <= d2 with
+                                    | true -> -d1
+                                    | false -> d2                             
+                        h, d1, x, y)
 
-(*     let path =
-        lg |> Array.fold (fun acc len ->
-            let basePt = acc |> Array.last
-            let seg = lnSg sqn len basePt
-            Array.append acc seg
-        ) [|AV(x1,y1,z1)|] *)
+    let (hx,_,_,_)=
+        distAttr |> Array.minBy (fun (_,d,_,_) -> d)
+    hx
 
-    let a11 = lnSg sqn lg.[0] (AV(x1,y1,z1)) rev vrt
-    let a21 = lnSg sqn lg.[1] (Array.last a11) rev vrt
-    //let a31 = lnSg sqn lg.[2] (Array.last a21) rev vrt
 
-    [|a11;a21|]
 
-hxLn sq st en
-//hxlOrt sq st 1 true false
+let hxlLin 
+    (sqn: Sqn) 
+    (stt: Hxl) 
+    (enn: Hxl) =
+    let st = stt
+    let rec loop path curr =
+        match curr with
+        | c when c = enn ->
+            List.rev (c :: path)
+        | c ->
+            let nxt = hxlNea sqn c st enn
+            match nxt with
+            | n when n = c ->
+                List.rev (c :: path)
+            | n ->
+                loop (c :: path) n
+    loop [] stt |> List.toArray
+
+let sq = VRCCNE
+let st = hxlVld sq (AV(-5,-5,0))
+let en = hxlVld sq (AV(2,13,0))                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+
+hxlLin sq st en
+
