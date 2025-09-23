@@ -1400,69 +1400,100 @@ let hxlLin
     loop [] stt |> List.toArray
 
 
+
 let hxlLin1 
     (sqn: Sqn) 
     (stt: Hxl) 
     (enn: Hxl) =
     let sx,sy,_ = hxlCrd stt
-    let ex,ey,_ = hxlCrd enn
+    let ex,ey,_ = hxlCrd enn  
+
+    let splitOddChunks (n: int) (arr: 'T[]) : 'T[][] =
+        let len = arr.Length
+
+        let rec loop i start acc =
+            match i with
+            | i when i >= n -> acc |> List.rev |> Array.ofList
+            | _ ->
+                let remaining = len - start
+                let remainingChunks = n - i
+
+                // ideal fair size
+                let fairSize = remaining / remainingChunks
+
+                // adjust to odd (unless it's the last chunk)
+                let size =
+                    match i = n - 1 with
+                    | true -> remaining
+                    | false ->
+                        match fairSize % 2 with
+                        | 0 when remaining > remainingChunks -> fairSize + 1
+                        | _ -> fairSize
+
+                let chunk = arr.[start .. start + size - 1]
+                loop (i + 1) (start + size) (chunk :: acc)
+
+        loop 0 0 []
 
     let dropAlternate (arr) =
         arr
         |> Array.mapi (fun i x -> i, x)
         |> Array.choose (fun (i, x) -> if i % 2 = 0 then Some x else None)
-    
-    let bumpEveryOther (arrs: (int * int)[][]) =
-        arrs
-        |> Array.mapFold (fun flip subArr ->
-            let bumped =
-                subArr
-                |> Array.mapi (fun i (x, y) ->
-                    match (i % 2, flip) with
-                    | 0, false -> (x, y + 1)   // normal: bump evens
-                    | 0, true  -> (x, y)   // flipped: bump evens
-                    | _, false -> (x, y)       // normal: keep odds
-                    | _, true  -> (x, y-1)   // flipped: bump odds
-                )
-            let nextFlip = (subArr.Length % 2 = 0)
-            bumped, nextFlip
-        ) false
-        |> fst   // take only transformed arrays
 
+    let bumpEveryOther (arr: (int * int)[]) =
+        arr
+        |> Array.mapi (fun i (x, y) ->
+            match i % 2 with
+            | 0 -> (x, y)   // even index → bump y
+            | _ -> (x, y+1)       // odd index → keep as is
+        )
 
-    let pty = match sx <= ex with
+    let seqH = 
+        match sqn with
+        | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE -> false
+        | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW -> true
+
+    (* let pty = match sx <= ex with
                 | true -> [|sx .. 2 .. ex|] 
                 | false -> [|sx .. -2 .. ex|]
     let flt = match sy <= ey with
                 | true -> [|sy .. 1 .. ey|]
-                | false -> [|sy .. -1 .. ey|]
-                
-    let dropAlternate (arr) =
-        arr
-        |> Array.mapi (fun i x -> i, x)
-        |> Array.choose (fun (i, x) -> if i % 2 = 0 then Some x else None)
+                | false -> [|sy .. -1 .. ey|] *)
 
-    let div = match Array.length pty > Array.length flt with  
+    
+    let pty,flt =  
+        let pth = match sx <= ex with
+                    | true -> [|sx .. 2 .. ex|] 
+                    | false -> [|sx .. -2 .. ex|]
+        let flh = match sy <= ey with
+                    | true -> [|sy .. 1 .. ey|]
+                    | false -> [|sy .. -1 .. ey|]
+        let ptv = match sy <= ey with
+                    | true -> [|sy .. 2 .. ey|] 
+                    | false -> [|sy .. -2 .. ey|]
+        let flv = match sx <= ex with
+                    | true -> [|sx .. 1 .. ex|]
+                    | false -> [|sx .. -1 .. ex|]     
+        match seqH with
+        |false -> flv,ptv
+        |true -> pth,flh
+    
+    let div = match Array.length pty >= Array.length flt with  
                 | true -> 
-                            let cnk1 = Array.chunkBySize (Array.length pty / Array.length flt) pty
-                            let cnk2 = match Array.length cnk1 > Array.length flt with
-                                        | true -> Array.append (Array.take (Array.length flt - 1) cnk1) [|Array.concat (Array.skip (Array.length flt - 1) cnk1)|]
-                                        | false -> cnk1
-                            let a = Array.mapi (fun i x -> cnk2.[i] |> Array.map (fun y -> (y, x))) flt
-                            a |> bumpEveryOther
-                            //a
+                            let cnk1 = splitOddChunks (Array.length flt)  pty
+                            let a = Array.mapi (fun i a -> cnk1.[i] |> Array.map (fun b -> (b, a))) flt
+                            //a |>  Array.map bumpEveryOther
+                            a
                 | false -> 
-                            let cnk1 = Array.chunkBySize (Array.length flt / Array.length pty) flt
-                            let cnk2 = match Array.length cnk1 > Array.length pty with
-                                        | true -> Array.append (Array.take (Array.length pty - 1) cnk1) [|Array.concat (Array.skip (Array.length pty - 1) cnk1)|]
-                                        | false -> cnk1
-                            let a = Array.mapi (fun i x -> cnk2.[i] |> Array.map (fun y -> (x, y))) pty
-                            a |> Array.map dropAlternate
-                            // a       
-    div |> Array.concat
+                            let size = Array.length flt / Array.length pty
+                            let cnk1 = splitOddChunks (Array.length pty)  flt
+                            let a = Array.mapi (fun i a -> cnk1.[i] |> Array.map (fun b -> (a, b))) pty
+                            //a |> Array.map dropAlternate
+                            a
+    div
 
 let sq = HRCCNE
-let st = hxlVld sq (AV(-2,7,0))
-let en = hxlVld sq (AV(12,7,0))                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+let st = hxlVld sq (AV(0,0,0))
+let en = hxlVld sq (AV(0,20,0))                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
 
 hxlLin1 sq st en
