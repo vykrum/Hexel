@@ -1034,6 +1034,137 @@ module Shape =
                     |> Array.distinct
         vrBrIn1
 
+    // Line
+    let hxlLin 
+        (sqn: Sqn) 
+        (stt: Hxl) 
+        (enn: Hxl) =
+        let sx,sy,sz = hxlCrd stt
+        let ex,ey,_ = hxlCrd enn  
+
+        let splitOddChunks (n: int) (arr: 'T[]) : 'T[][] =
+            let len = arr.Length
+
+            let rec loop i start acc =
+                match i with
+                | i when i >= n -> acc |> List.rev |> Array.ofList
+                | _ ->
+                    let remaining = len - start
+                    let remainingChunks = n - i
+
+                    // ideal fair size
+                    let fairSize = remaining / remainingChunks
+
+                    // adjust to odd (unless it's the last chunk)
+                    let size =
+                        match i = n - 1 with
+                        | true -> remaining
+                        | false ->
+                            match fairSize % 2 with
+                            | 0 when remaining > remainingChunks -> fairSize + 1
+                            | _ -> fairSize
+
+                    let chunk = arr.[start .. start + size - 1]
+                    loop (i + 1) (start + size) (chunk :: acc)
+
+            loop 0 0 []
+
+        let dropAlternate (arr) =
+            arr
+            |> Array.mapi (fun i x -> i, x)
+            |> Array.choose (fun (i, x) -> if i % 2 = 0 then Some x else None)
+
+        let bumpEveryOther (hr:bool) (arr: (int * int)[]) =
+            arr
+            |> Array.mapi (fun i (x, y) ->
+                match i % 2 with
+                | 0 -> (x, y)
+                | _ -> match hr with
+                        | true -> (x, y + 1)
+                        | false -> (x + 1 , y)  
+            )
+
+        let seqH = 
+            match sqn with
+            | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE -> false
+            | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW -> true
+
+        let pty,flt =  
+            let pth = match sx <= ex with
+                        | true -> [|sx .. 2 .. ex|] 
+                        | false -> [|sx .. -2 .. ex|]
+            let flh = match sy <= ey with
+                        | true -> [|sy .. 1 .. ey|]
+                        | false -> [|sy .. -1 .. ey|]
+            let ptv = match sy <= ey with
+                        | true -> [|sy .. 2 .. ey|]
+                        | false -> [|sy .. -2 .. ey|]
+            let flv = match sx <= ex with
+                        | true -> [|sx .. 1 .. ex|]
+                        | false -> [|sx .. -1 .. ex|]  
+                            
+            match seqH with
+            |false -> ptv,flv
+            |true -> pth,flh
+            
+        let div = 
+            match Array.length pty >= Array.length flt with  
+            | true -> 
+                let cnk1 = splitOddChunks (Array.length flt) pty
+                let a =
+                    match seqH with
+                    | true -> // horizontal: (b, a)
+                        Array.mapi (fun i a -> cnk1.[i] |> Array.map (fun b -> (b, a))) flt
+                    | false -> // vertical: (a, b)
+                        Array.mapi (fun i a -> cnk1.[i] |> Array.map (fun b -> (a, b))) flt
+                a |> Array.map (bumpEveryOther seqH) |> Array.concat
+            | false -> 
+                let cnk1 = splitOddChunks (Array.length pty) flt
+                let a =
+                    match seqH with
+                    | true -> // horizontal: (a, b)
+                        Array.mapi (fun i a -> cnk1.[i] |> Array.map (fun b -> (a, b))) pty
+                    | false -> // vertical: (b, a)
+                        Array.mapi (fun i a -> cnk1.[i] |> Array.map (fun b -> (b, a))) pty
+                a |> Array.map dropAlternate  |> Array.concat
+
+        div |> Array.map (fun (a,b) -> EX(a,b,sz))
+
+
+    let hxlPgn 
+        (sqn: Sqn) 
+        (verts: (int * int)[]) 
+            : Hxl[] =
+            // ensure polygon closes by repeating first vertex
+            let closedVerts =
+                match verts with
+                | [||] -> [||]
+                | vs -> Array.append vs [|vs.[0]|]
+
+            let toHxl (x, y) = hxlVld sqn (EX(x, y, 0))
+            
+            let rec build acc start remaining =
+                match remaining with
+                | [] | [_] -> acc |> List.rev |> List.toArray
+                | (nx, ny) :: tail ->
+                    let endPoint = toHxl (nx, ny)
+                    let edgePoints = hxlLin sqn start endPoint |> Array.toList
+                    let newAcc = (List.rev edgePoints) @ acc
+                    build newAcc endPoint tail
+
+            match closedVerts |> Array.toList with
+            | [] -> [||]
+            | (vx, vy) :: rest ->
+                // compute helper line from origin → first vertex
+                let helperLine = hxlLin sqn (toHxl (0, 0)) (toHxl (vx, vy)) |> Array.toList
+                let firstStart =
+                    match List.rev helperLine with
+                    | [] -> toHxl (vx, vy)
+                    | h :: _ -> h
+                // start polygon build from corrected start, exclude helper line
+                build [] firstStart rest |> Array.distinct
+
+
 module Parse =
 
     open Hexel
@@ -1352,146 +1483,9 @@ let cxx1 = coxel sq11 ([|
             AV (3, -2, 0), Refid "3", Count 10, Label "C";
             |]) hx11
 
-// Line
-let hxlNea
-    (sqn : Sqn)
-    (hxl : Hxl)
-    (stt : Hxl)
-    (enn : Hxl) = 
-    let ex,ey,_ = hxlCrd enn
-    let sx,sy,_ = hxlCrd stt
-    let distAttr =
-        let adj = adjacent sqn hxl |> Array.tail
-        let edd = Array.contains enn adj 
-        match edd with
-        | true -> [|enn,0.0,0,0|]
-        | false ->  adj |> Array.map (fun h ->
-                        let x,y,_ = hxlCrd h          
-                        let d1 = abs (ex - x) + abs (ey - y)
-                        let d2 = abs (sx - x) + abs (sy - y)
-                        let d3 = double (d1+d2)/2.0
-                        let d = match abs d1 <= d2 with
-                                    | true -> -d1
-                                    | false -> d2                             
-                        h, d3, x, y)
 
-    let (hx,_,_,_)=
-        distAttr |> Array.minBy (fun (_,d,_,_) -> d)
-    hx
-
-
-
-let hxlLin 
-    (sqn: Sqn) 
-    (stt: Hxl) 
-    (enn: Hxl) =
-    let st = stt
-    let rec loop path curr =
-        match curr with
-        | c when c = enn ->
-            List.rev (c :: path)
-        | c ->
-            let nxt = hxlNea sqn c st enn
-            match nxt with
-            | n when n = c ->
-                List.rev (c :: path)
-            | n ->
-                loop (c :: path) n
-    loop [] stt |> List.toArray
-
-
-
-let hxlLin1 
-    (sqn: Sqn) 
-    (stt: Hxl) 
-    (enn: Hxl) =
-    let sx,sy,_ = hxlCrd stt
-    let ex,ey,_ = hxlCrd enn  
-
-    let splitOddChunks (n: int) (arr: 'T[]) : 'T[][] =
-        let len = arr.Length
-
-        let rec loop i start acc =
-            match i with
-            | i when i >= n -> acc |> List.rev |> Array.ofList
-            | _ ->
-                let remaining = len - start
-                let remainingChunks = n - i
-
-                // ideal fair size
-                let fairSize = remaining / remainingChunks
-
-                // adjust to odd (unless it's the last chunk)
-                let size =
-                    match i = n - 1 with
-                    | true -> remaining
-                    | false ->
-                        match fairSize % 2 with
-                        | 0 when remaining > remainingChunks -> fairSize + 1
-                        | _ -> fairSize
-
-                let chunk = arr.[start .. start + size - 1]
-                loop (i + 1) (start + size) (chunk :: acc)
-
-        loop 0 0 []
-
-    let dropAlternate (arr) =
-        arr
-        |> Array.mapi (fun i x -> i, x)
-        |> Array.choose (fun (i, x) -> if i % 2 = 0 then Some x else None)
-
-    let bumpEveryOther (arr: (int * int)[]) =
-        arr
-        |> Array.mapi (fun i (x, y) ->
-            match i % 2 with
-            | 0 -> (x, y)   // even index → bump y
-            | _ -> (x, y+1)       // odd index → keep as is
-        )
-
-    let seqH = 
-        match sqn with
-        | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE -> false
-        | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW -> true
-
-    (* let pty = match sx <= ex with
-                | true -> [|sx .. 2 .. ex|] 
-                | false -> [|sx .. -2 .. ex|]
-    let flt = match sy <= ey with
-                | true -> [|sy .. 1 .. ey|]
-                | false -> [|sy .. -1 .. ey|] *)
-
-    
-    let pty,flt =  
-        let pth = match sx <= ex with
-                    | true -> [|sx .. 2 .. ex|] 
-                    | false -> [|sx .. -2 .. ex|]
-        let flh = match sy <= ey with
-                    | true -> [|sy .. 1 .. ey|]
-                    | false -> [|sy .. -1 .. ey|]
-        let ptv = match sy <= ey with
-                    | true -> [|sy .. 2 .. ey|] 
-                    | false -> [|sy .. -2 .. ey|]
-        let flv = match sx <= ex with
-                    | true -> [|sx .. 1 .. ex|]
-                    | false -> [|sx .. -1 .. ex|]     
-        match seqH with
-        |false -> flv,ptv
-        |true -> pth,flh
-    
-    let div = match Array.length pty >= Array.length flt with  
-                | true -> 
-                            let cnk1 = splitOddChunks (Array.length flt)  pty
-                            let a = Array.mapi (fun i a -> cnk1.[i] |> Array.map (fun b -> (b, a))) flt
-                            a |>  Array.map bumpEveryOther
-                | false -> 
-                            let size = Array.length flt / Array.length pty
-                            let cnk1 = splitOddChunks (Array.length pty)  flt
-                            let a = Array.mapi (fun i a -> cnk1.[i] |> Array.map (fun b -> (a, b))) pty
-                            a |> Array.map dropAlternate
-    div
-
-let sq = HRCCNE
+let sq = VRCCEE
 let st = hxlVld sq (AV(0,0,0))
 let en = hxlVld sq (AV(20,0,0))                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
 
-hxlLin1 sq st en
+hxlPgn sq [|0,0;0,20;20,20;20,0|]
