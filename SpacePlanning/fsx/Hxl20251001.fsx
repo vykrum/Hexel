@@ -1535,8 +1535,3 @@ let bdryVtx (input: string) : (int*int)[][] =
 let s = "1,10,3,65,23,21,90,56-12,34,12,90,45,34-23,45,89,12,23"
 let result = bdryVtx s
 
-let pgnBbx 
-    (vtx: Hxl[][]) = 
-    let crd1 = vtx |> Array.head |> Array.map(fun x -> hxlCrd x)
-    let crdX = crd1 |> Array.map (fun (a,_,_) -> a)
-    let crdY = crd1 |> Array.map (fun (_,a,_) -> a)
