@@ -3,7 +3,9 @@
 /// A hexel can have a maximum of six neighbouring/adjacent hexels.
 /// All neighbouring hexels share at least one common edge </summary>
 module Hexel =
-///
+    /// <summary> Hexel is a location representing an irregular hexagonal module.
+    /// Collections of hexels in a hexagonal grid form Coxels.
+    ///
 
     /// <summary> Hexel types: Categorization based on location availabity. </summary>
     ///<typeparam name="AV"> AvaiIable Hexels. </typeparam>
@@ -105,8 +107,9 @@ module Hexel =
 
     /// <summary> Identity Hexel. </summary>
     /// <returns> Available (AV) Hexel at global origin. </returns>
-    let identity = 
-        EX(0x0,0x0, 0x0)
+    let identity 
+        (elv:int) = 
+        AV(0x0,0x0, elv)
     ///
 
     /// <summary> Extract coordinates from hexel. </summary>
@@ -203,13 +206,14 @@ module Hexel =
     /// <returns> Tuple containing the next hexel and size. </returns>
     let increment 
         (sqn : Sqn)
+        (elv : int)
         (hxo : Hxl * int) 
         (occ : Hxl[]) = 
         let occ = Array.concat 
                     [|
                         occ
                         [|(fst hxo)|]
-                        [|identity|]
+                        [|identity elv|]
                     |] |> hxlUni 1
         match hxo with 
         | x,y when y >= 0x0 -> 
@@ -229,8 +233,8 @@ module Hexel =
                             | None -> Array.tryHead inc1
             match inc2 with 
             | Some a -> a, y
-            | None -> (hxlVld sqn identity,0xFFFFFFFF)
-        | _ -> (hxlVld sqn identity,0xFFFFFFFF)
+            | None -> (hxlVld sqn (identity elv),0xFFFFFFFF)
+        | _ -> (hxlVld sqn (identity elv),0xFFFFFFFF)
     ///
 
     /// <summary> Available Adjacent Hexels. </summary>
@@ -240,13 +244,14 @@ module Hexel =
     /// <returns> The count of unoccupied surrounding hexels. </returns>
     let available 
         (sqn : Sqn)
+        (elv : int)
         (hxo : obj)
         (occ : Hxl[]) =  
         let occ = occ |> hxlUni 1
         let hx1 = match hxo with 
                     | :? (Hxl*int) as (a,_) -> a
                     | :? Hxl as b ->  b
-                    | _ -> identity
+                    | _ -> identity elv
         hx1 
         |> adjacent sqn
         |> Array.except 
@@ -261,52 +266,91 @@ module Hexel =
     /// <returns> Reassigned Hexel Types </returns>
     let hxlChk
         (sqn : Sqn)
+        (elv : int)
         (occ : Hxl[])
         (hxl : Hxl[]) = 
         hxl |> Array.map (fun x -> 
                                     match (x = EX(hxlCrd x)) with 
                                     | true -> x
-                                    | false -> match (available sqn x (Array.append occ hxl)) < 1 with 
+                                    | false -> match (available sqn elv x (Array.append occ hxl)) < 1 with 
                                                 | true -> RV(hxlCrd x)
                                                 | false -> AV(hxlCrd x))
     ///
-    
+
     ///<summary> Add Hexel at Narrow Bridge. </summary>
     /// <param name="hxl"> All constituent hexels. </param>
     /// <param name="sqn"> Sequence to follow. </param>
     /// <returns> Thickened List if Bridged </returns>
     let hxlFil
         (sqn : Sqn)
+        (elv : int)
         (hxl : Hxl[]) = 
+
         let hxx = hxl |> hxlUni 1     
         let hx1 = hxx |> Array.map (fun x -> adjacent sqn x)
-        let in1 = Array.map (fun z 
-                                -> Array.map(fun y
-                                                -> Array.tryFindIndex (fun x 
-                                                                        -> x = y)z)hxx)hx1
-        let in2 = in1 |> Array.map (fun x 
-                                        -> x |> Array.choose id) 
-                                        |> Array.map (fun x -> x |> Array.sort)
-                                        |> Array.map (fun x -> Array.except [|0|] x)
+
+        let in1 =
+            Array.map (fun z ->
+                Array.map (fun y ->
+                    Array.tryFindIndex (fun x -> x = y) z
+                ) hxx
+            ) hx1
+
+        let in2 =
+            in1
+            |> Array.map (fun x -> x |> Array.choose id)
+            |> Array.map Array.sort
+            |> Array.map (fun x -> Array.except [|0|] x)
+
+        // safe in3
         let in3 =
             in2
             |> Array.map (fun x ->
-                match x with
-                | [||] -> [||]
-                | _ -> [| Array.head x .. Array.last x |])
-        let in4 = Array.map2 (fun x y -> Array.except x y) in2 in3
-        let in5 = in4 |> Array.map(fun x 
-                                    -> match Array.length x > 1 with
-                                        | true -> Array.except x [|Array.head x .. Array.last x|]
-                                        | false -> x)
-        let hx2 = Array.map2 (fun x y 
-                                -> match Array.tryHead y with 
-                                    | None -> [||]
-                                    | Some y -> [|Array.get x y|]) 
-                                    hx1 in5 |>Array.concat
-        Array.append hxx hx2 |> hxlChk sqn [||]
+                match x |> Array.toList with
+                | [] -> [||]
+                | [a] -> [| a |]
+                | a :: _ ->
+                    let lastVal = Array.last x
+                    [| a .. lastVal |])
+
+        // safe in4
+        let in4 =
+            match in2, in3 with
+            | a, b when a.Length = b.Length ->
+                Array.map2 (fun x y -> Array.except x y) a b
+            | _ -> [||]
+
+        // safe in5
+        let in5 =
+            in4
+            |> Array.map (fun x ->
+                match x |> Array.toList with
+                | [] -> [||]
+                | [_] -> x
+                | _ ->
+                    let first = Array.head x
+                    let last  = Array.last x
+                    Array.except x [| first .. last |])
+
+        // safe hx2
+        let hx2 =
+            match hx1, in5 with
+            | a, b when a.Length = b.Length ->
+                Array.map2 (fun x y ->
+                    match Array.toList x, Array.tryHead y with
+                    | [], _ -> [||]
+                    | _, None -> [||]
+                    | _, Some yi when yi >= 0 && yi < x.Length ->
+                        [| Array.get x yi |]
+                    | _ -> [||]
+                ) a b
+                |> Array.concat
+            | _ -> [||]
+
+        Array.append hxx hx2 |> hxlChk sqn elv [||]
+
     ///
-       
+
     /// <summary> Increment Hexels. </summary>
     /// <param name="sqn"> Sequence to follow. </param>
     /// <param name="hxo"> Array of Tuples containing Base hexel of collection and size. </param> 
@@ -314,13 +358,14 @@ module Hexel =
     /// <returns> Array of Tuples containing Base hexel of collection and reduced size. </returns>
     let increments 
         (sqn : Sqn)
+        (elv : int)
         (hxo : (Hxl*int)[]) 
         (occ : Hxl[]) = 
         let occ = (Array.append occ (getHxls hxo)) |> hxlUni 1
         let inc = 
             Array.scan (fun ac st -> 
-            let occ = (Array.concat [|occ;[|fst st|];[|fst ac|];[|identity|]|]) |> hxlUni 1
-            increment sqn st (Array.append[|fst ac|] occ )) 
+            let occ = (Array.concat [|occ;[|fst st|];[|fst ac|];[|identity elv|]|]) |> hxlUni 1
+            increment sqn elv st (Array.append[|fst ac|] occ )) 
                 hxo[0] hxo
                 |> Array.tail
         ///
@@ -347,9 +392,9 @@ module Hexel =
                                 -> match a with 
                                     | true -> b,d
                                     | false -> 
-                                            match ((available sqn c oc1) > 0x0) with 
+                                            match ((available sqn elv c oc1) > 0x0) with 
                                             | false -> (fst c),0xFFFFFFFF
-                                            | true -> fst(increment sqn c oc1),d) in1
+                                            | true -> fst(increment sqn elv c oc1),d) in1
             
         replaceDuplicate sqn hxo inc occ
     ///
@@ -359,7 +404,8 @@ module Hexel =
     /// <param name="hxl"> All constituent hexels. </param>
     /// <returns> Boundary/Peripheral hexels. </returns>
     let bndSqn
-        (sqn : Sqn) 
+        (sqn : Sqn)
+        (elv : int)
         (hxo : Hxl[]) = 
         /// <summary> Arrange/sort hexels in continuous sequence. </summary>
         /// <param name="sqn"> Sequence to follow. </param>
@@ -368,7 +414,8 @@ module Hexel =
         /// <param name="cnt"> Counter. </param>
         /// <returns> Array of sorted hexels </returns>
         let rec arr 
-            (sqn : Sqn) 
+            (sqn : Sqn)
+            (elv : int)
             (hxl : Hxl[]) 
             (acc : Hxl[]) 
             (cnt : int)
@@ -386,21 +433,21 @@ module Hexel =
                                 | Some a -> [|a|]
                                 | None -> [||]
                 let acc = Array.append acc  hx3
-                arr sqn hxl acc (cnt-1) opt
+                arr sqn elv hxl acc (cnt-1) opt
 
         let hxl = hxo
                 |> Array.sortByDescending 
-                    (fun x -> available sqn x hxo)
+                    (fun x -> available sqn elv x hxo)
         let a1 = 
             match hxl with 
             | [||] -> [||]
-            | _ -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) true
+            | _ -> arr sqn elv hxl [|Array.last hxl|] (Array.length hxl) true
 
         let b1 = (Array.length a1) = Array.length hxl
             
         let ar1 = match b1 with 
                     | true -> a1
-                    | false -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) false
+                    | false -> arr sqn elv hxl [|Array.last hxl|] (Array.length hxl) false
         let ar2 = 
             match hxo with 
             | [||] -> [||]
@@ -424,6 +471,7 @@ module Hexel =
     /// <param name="hxl"> All constituent hexels. </param>
     let cntSqn
         (sqn : Sqn)
+        (elv : int)
         (hxo : Hxl[]) =      
         let hxl = hxlUni 1 hxo
         let rec ctSq 
@@ -447,7 +495,7 @@ module Hexel =
                     ctSq sqn hxl acc (cnt-1)
 
         let hxl = hxl |> Array.sortByDescending 
-                    (fun x -> available sqn x hxl)
+                    (fun x -> available sqn elv x hxl)
         let cnt = Array.length(hxl)
         let arr =  match hxl with 
                         | [||] -> [||]
@@ -469,6 +517,7 @@ module Hexel =
     /// <returns> Offset Boundary/Peripheral hexels. </returns>
     let hxlOfs
         (sqn : Sqn)
+        (elv : int)
         (hxl : Hxl[]) = 
         hxl 
         |> hxlUni 1 
@@ -476,9 +525,9 @@ module Hexel =
         |> Array.concat 
         |> Array.distinct 
         |> Array.except (hxlUni 1 hxl)
-        |> cntSqn sqn
+        |> cntSqn sqn elv
     ///
-    
+
     /// <param name="org"> All constituent hexels. </param>
     /// <param name="hxl"> Subset of hexels. </param>
     /// <returns> Restored Hexel Types </returns>
@@ -487,9 +536,7 @@ module Hexel =
         (hxl : Hxl[]) =
         let crd = Array.map (fun x -> hxlCrd x) hxl
         org |> Array.filter (fun x -> (crd|> Array.contains (hxlCrd x)))
-
 module Coxel =
-
     open Hexel
     ///
 
@@ -541,6 +588,7 @@ module Coxel =
     /// <returns> An array of coxels. </returns>
     let coxel
         (sqn : Sqn)
+        (elv : int)
         (ini : (Hxl*Prp*Prp*Prp)[])
         (occ : Hxl[]) = 
             
@@ -557,9 +605,10 @@ module Coxel =
             
         let rec clsts 
             (hxo: (Hxl*int)[])
+            (elv : int)
             (occ : Hxl[])
             (acc:(Hxl*int)[][])
-            (cnt : int) = 
+            (cnt : int)= 
                 
             match cnt with 
             | c when c < 0x1 -> acc
@@ -570,7 +619,6 @@ module Coxel =
                         |> getHxls
                         |> Array.append occ
                         |> Array.append (getHxls hxo)
-                        |> Array.append [|identity|]
                         |> Array.distinct
                         |> hxlUni 1
 
@@ -579,22 +627,34 @@ module Coxel =
                     let hx1 =  
                         acc
                         |> Array.Parallel.map (fun x
-                                                -> Array.filter (fun a -> (available sqn a occ) > 0x0) x)
+                                                -> Array.filter (fun a -> (available sqn elv a occ) > 0x0) x)
                         |> Array.Parallel.map (fun x 
                                                 -> Array.tryHead x)
                         |> Array.Parallel.map (fun x 
                                                 -> match x with
                                                     | Some a -> a 
-                                                    | None ->  (hxlVld sqn identity,0xFFFFFFFF))                
+                                                    | None ->  (hxlVld sqn (RV(0,0,elv)),0xFFFFFFFF))                
                         |> Array.map2 (fun x y 
                                         -> fst y, x) rpt
                         
-                    let inc = increments sqn hx1 occ
+                    let inc = increments sqn elv hx1 occ
                                 
                     let acc = Array.map2  (fun x y
                                             -> Array.append x y) 
                                 acc
                                 (Array.chunkBySize 1 inc)
+                    // Avoid bridge in Coxel
+                    //let acc = ac1 
+                    //            |> Array.Parallel.map (fun x -> match Array.length x > 3 with
+                    //                                            | false -> x
+                    //                                            | true -> 
+                    //                                                    let h1 = hxlUni 1 (getHxls x) 
+                    //                                                    let h2 = h1.[Array.length h1 - 2]
+                    //                                                    let b1 = available sqn h2 (Array.except [|h2; Array.last h1|] h1) = 5
+                    //                                                    let b2 = available sqn (Array.last h1) (h1 |> Array.rev |> Array.tail) = 5
+                    //                                                    match b1 && b2 with 
+                    //                                                    | false -> x
+                    //                                                    | true -> Array.removeManyAt (Array.length h1 - 2) 2 x)
 
                     let occ = Array.concat[|getHxls 
                         (Array.concat [|
@@ -603,26 +663,18 @@ module Coxel =
                         hx1|]);occ|] 
                             |> hxlUni 1
 
-                    (clsts hx1 occ acc (cnt - 0x1))
+                    (clsts hx1 elv occ acc (cnt - 0x1))
             
         let cls = 
-            clsts bas oc1 acc cnt
+            clsts bas elv oc1 acc cnt
                 |> Array.Parallel.map(fun x 
                                         -> Array.filter(fun (_,z) -> z >= 0) x)
             
-        let cl01 = 
+        let cl1 = 
             cls
             |> Array.Parallel.map(fun x -> getHxls x)
-            |> Array.map (fun x -> hxlFil sqn x)
 
-        let cl02 = [|1..Array.length cl01-1|]
-                |> Array.map(fun x -> Array.take x cl01) 
-                |> Array.map (fun x -> Array.concat x)
-                |> Array.append [|[||]|]
-
-        let cl1 = Array.map2 (fun x y -> Array.except x y) cl02 cl01
-        
-        // Avoid single unclustered cell towards the end
+    (*  // Avoid single unclustered cell towards the end
         let hxlElm (sqn:Sqn) (hxl:Hxl[])=
             let hxo = hxl
             let avl = 5
@@ -639,26 +691,50 @@ module Coxel =
             let hx1 = elm sqn hxl acc
             hxlRst hxo hx1
 
-        //let cl01 = cl00 |> Array.Parallel.map(fun x -> hxlElm sqn x)
+    let cl01 = 
+            cl00 |> Array.Parallel.map(fun x -> hxlElm sqn x)
+            //|> Array.Parallel.map(fun x -> x |> hxlFil sqn)
 
         //let cl01 = cl00 |> Array.Parallel.map(fun x -> Array.filter(fun y -> (available sqn y x) < 5)x)
     
-        //let cl1 = Array.map2 (fun x y -> Array.append [|Array.head x|] y) cl00 cl01
+        let cl1 = Array.map2 (fun x y 
+                                    -> Array.append [|Array.head x|] y) cl00 cl01*)
 
-        let cxl = Array.map3 (fun x y z -> 
-                                                let hx1 = z 
-                                                        |> hxlChk sqn (Array.append occ z)
-                                                    
-                                                {
-                                                    Name = snd x
-                                                    Rfid = snd y
-                                                    Size = fst x
-                                                    Seqn = sqn
-                                                    Base = Array.head hx1
-                                                    Hxls = match Array.length hx1 > 0 with 
-                                                            | true -> Array.except  ([|Array.head hx1;identity|]) hx1
-                                                            | false -> [||]
-                                                })szn idn cl1
+        let cxl =
+            Array.map3 (fun x y z ->
+                // z -> candidate hexel cluster (Hxl[])
+                // Ensure we get a safe hx1 from hxlChk
+                let hx1 = z |> hxlChk sqn elv (Array.append occ z)
+
+                // pattern-match hx1 so we never call Array.head on empty array
+                match Array.toList hx1 with
+                | [] ->
+                    // fallback when hx1 is empty: choose defaults
+                    {
+                        Name = snd x
+                        Rfid = snd y
+                        Size = fst x
+                        Seqn = sqn
+                        Base = identity elv           // fallback base
+                        Hxls = [||]               // no hexels available
+                    }
+                | head :: _ ->
+                    // hx1 is non-empty, safe to use head and build Hxls
+                    let rest =
+                        match Array.length hx1 > 0 with
+                        | true -> Array.except ([| head; identity elv |]) hx1
+                        | false -> [||] // unreachable because of match, but kept for clarity
+
+                    {
+                        Name = snd x
+                        Rfid = snd y
+                        Size = fst x
+                        Seqn = sqn
+                        Base = head
+                        Hxls = rest
+                    }
+            ) szn idn cl1
+
         cxl
     ///
 
@@ -668,14 +744,15 @@ module Coxel =
     /// <returns> Hexels categorized as Base, Hxls, Core, Prph, Brdr, Avbl. </returns>
     let cxlExp 
         (cxl : Cxl[])
-        (sqn: Sqn) = 
+        (sqn : Sqn)
+        (elv : int)= 
         let occ = cxl |> Array.map (fun x -> x.Hxls) |> Array.concat |> hxlUni 1 
         let cxlAvl 
             (cx:Cxl)
             (sq:Sqn)
             (oc:Hxl[]) =
             let hx = cx.Hxls |> hxlUni 1 
-            hx |> Array.filter(fun x -> (available sq x oc)>0) |> Array.length
+            hx |> Array.filter(fun x -> (available sq elv x oc)>0) |> Array.length
         cxl |> Array.map (fun a -> cxlAvl a sqn occ)
     ///
 
@@ -683,13 +760,15 @@ module Coxel =
     /// <param name="cxl"> A coxel. </param>
     /// <returns> Hexels categorized as Base, Hxls, Core, Prph, Brdr, Avbl. </returns>
     let cxlHxl
-        (cxl : Cxl)  = 
+        (cxl : Cxl)
+        (elv : int) = 
         /// <summary> Hexel Ring Boundary Sequence. </summary>
         /// <param name="sqn"> Sequence to follow. </param>
         /// <param name="hxl"> All constituent hexels. </param>
         /// <returns> Boundary/Peripheral hexels. </returns>
         let bndSqn
-            (sqn : Sqn) 
+            (sqn : Sqn)
+            (elv : int)
             (hxo : Hxl[]) = 
             /// <summary> Arrange/sort hexels in continuous sequence. </summary>
             /// <param name="sqn"> Sequence to follow. </param>
@@ -698,7 +777,8 @@ module Coxel =
             /// <param name="cnt"> Counter. </param>
             /// <returns> Array of sorted hexels </returns>
             let rec arr 
-                (sqn : Sqn) 
+                (sqn : Sqn)
+                (elv : int)
                 (hxl : Hxl[]) 
                 (acc : Hxl[]) 
                 (cnt : int)
@@ -716,20 +796,20 @@ module Coxel =
                                     | Some a -> [|a|]
                                     | None -> [||]
                     let acc = Array.append acc  hx3
-                    arr sqn hxl acc (cnt-1) opt
+                    arr sqn elv hxl acc (cnt-1) opt
 
             let hxl = hxo|> Array.sortByDescending 
-                        (fun x -> available sqn x hxo)
+                        (fun x -> available sqn elv x hxo)
             let a1 = 
                 match hxl with 
                 | [||] -> [||]
-                | _ -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) true
+                | _ -> arr sqn elv hxl [|Array.last hxl|] (Array.length hxl) true
 
             let b1 = Array.length a1 = Array.length hxl
                 
             let ar1 = match b1 with 
                         | true -> a1
-                        | false -> arr sqn hxl [|Array.last hxl|] (Array.length hxl) false
+                        | false -> arr sqn elv hxl [|Array.last hxl|] (Array.length hxl) false
             match hxo with 
             | [||] -> [||]
             | _ ->  match (Array.head hxo) = (AV(hxlCrd (Array.head hxo))) with 
@@ -739,6 +819,7 @@ module Coxel =
         /// <summary> Hexel Ring Segment Sequence. </summary>
         let cntSqn
             (sqn : Sqn)
+            (elv : int)
             (hxo : Hxl[]) =      
             let hxl = hxlUni 1 hxo
             let rec ctSq 
@@ -762,7 +843,7 @@ module Coxel =
                         ctSq sqn hxl acc (cnt-1)
 
             let hxl = hxl |> Array.sortByDescending 
-                        (fun x -> available sqn x hxl)
+                        (fun x -> available sqn elv x hxl)
             let cnt = Array.length(hxl)
             let arr =  match hxl with 
                             | [||] -> [||]
@@ -783,15 +864,16 @@ module Coxel =
         let rv01 = (snd avrv) 
                 |> Array.Parallel.partition
                     (fun x-> (available 
-                        cxl.Seqn 
+                        cxl.Seqn
+                        elv
                         (AV(hxlCrd x)) 
                         (hxlUni 1 (cxl.Hxls))) < 1)
         let av01 = match (snd rv01) with 
-                    | [||] -> avrv |> fst |> bndSqn cxl.Seqn
-                    | _ -> avrv |> fst |> cntSqn cxl.Seqn
+                    | [||] -> avrv |> fst |> bndSqn cxl.Seqn elv
+                    | _ -> avrv |> fst |> cntSqn cxl.Seqn elv
         let br01 = match (fst rv01) with 
-                    | [||] -> rv01 |> snd |> bndSqn cxl.Seqn
-                    | _ -> rv01 |> snd |> cntSqn cxl.Seqn
+                    | [||] -> rv01 |> snd |> bndSqn cxl.Seqn elv
+                    | _ -> rv01 |> snd |> cntSqn cxl.Seqn elv
             
         let pr01 = match av01 with 
                         | [||] -> br01
@@ -827,7 +909,6 @@ module Coxel =
         |}  
 
 module Geometry =
-
     open Hexel
     open Coxel
     open System
@@ -905,19 +986,19 @@ module Geometry =
                     | true -> [|hxy..4*sgn..(hxy+lgt+4)*sgn|]
                             |> Array.map (fun y -> [|EX(hxx,y,hxz);EX(hxx+1,y+2*sgn,hxz)|])
                             |> Array.concat
-                            |> Array.truncate ((lgt/2)+1)
+                            |> Array.take ((lgt/2)+1)
                     | false -> [|hxx..2*sgn..(hxx+lgt+4)*sgn|]
                             |> Array.map (fun x -> EX (x,hxy,hxz)) 
-                            |> Array.truncate ((lgt/2)+1)
+                            |> Array.take ((lgt/2)+1)
             | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW
                 -> match vrt with
                     | true -> [|hxy..2*sgn..(hxy+lgt)*sgn|]
                             |> Array.map (fun y -> RV (hxx,y,hxz)) 
-                            |> Array.truncate ((lgt/2)+1)
+                            |> Array.take ((lgt/2)+1)
                     | false -> [|hxx..4*sgn..(hxx+lgt)*sgn|] 
                             |> Array.map (fun x -> [|EX(x,hxy,hxz);EX(x+2*sgn,hxy+1,hxz)|])
                             |> Array.concat
-                            |> Array.truncate ((lgt/2)+1)
+                            |> Array.take ((lgt/2)+1)
 
     let hxlOff
         (hxl : Hxl[])
@@ -969,72 +1050,23 @@ module Geometry =
         let bas = AV(hxlCrd bs1) |> adjacent sqn |> hxlUni 3 |> Array.except rct |> Array.head
         AV(hxlCrd bas),rct
 
-    let cxlPrm
-        (cxl : Cxl) = 
-        let sqn = cxl.Seqn
-        let hx1 = cxl.Hxls |> hxlUni 1 
-        // Boundary Hexels
-        let hxBd = (cxlHxl cxl).Prph
-                |> hxlUni 1 
-        // All hexel vertices
-        let vrHx = Array.map(fun x -> vertex sqn Hxg x) hx1
-        // Vertices shared Hexel Count 
-        let vrHxCt = vrHx   
-                    |> Array.concat 
-                    |> Array.groupBy (fun (_,x,y) -> x,y)
-                    |> Array.map (fun (x,y) -> x,Array.length y)
-                    |> Map.ofArray
-        // Boundary Hexel Vertices
-        let vrBd = hxBd 
-                |> Array.map(fun x -> vertex sqn Hxg x) 
-        // Vertex Cell Count 
-        let vrBdCt = 
-                    let vrBd1 = Array.map(fun x -> Array.map(fun (a,b,c)->b,c)x)vrBd
-                    vrBd1
-                    |> Array.map(fun x 
-                                    -> Array.map(fun y 
-                                                    -> Map.find 
-                                                        y 
-                                                        vrHxCt)x)
-        let vrBdCdCt = Array.map2 (fun x y ->Array.map2(fun a b -> a,b)x y) vrBd vrBdCt
-        // Break Index in vertex sequence
-        let vrBrIn = 
-            let a = vrBdCdCt
-                    |> Array.map(fun x 
-                                    -> Array.tryFindIndexBack (fun y -> (snd y)<3)x)
-                    |> Array.map (fun x 
-                                    -> Option.defaultWith (fun () -> 0)x)
-                    |> Array.map2 (fun x y 
-                                    -> match y<5 with
-                                        | false -> x
-                                        | true ->   let a,b = Array.splitAt (y+1) x
-                                                    Array.append b a  )vrBdCdCt 
-            let b = a
-                    |> Array.map(fun x 
-                                    -> Array.tryFindIndexBack (fun y -> (snd y)>2)x)
-                    |> Array.map (fun x 
-                                    -> Option.defaultWith (fun () -> 0)x)
-                    |> Array.map2 (fun x y 
-                                    -> match y<5 with
-                                        | false -> x
-                                        | true ->   let a,b = Array.splitAt (y+1) x
-                                                    Array.append b a  )a      
-            b     
-        let vrBrIn1 = vrBrIn
-                    |> Array.map (fun x -> Array.filter(fun (_,y) -> y < 3)x)
-                    |> Array.concat
-                    |> Array.map (fun ((_,x,y),_) -> x,y)
-                    |> Array.distinct
-        vrBrIn1
+    ///
+
+    /// <summary> Hexel Line </summary>
+    /// <param name="sqn"> Sequence to follow. </param>
+    /// <param name="stt"> Start Hexel. </param> 
+    /// <param name="enn"> End Hexel. </param> 
+    /// <returns> Array of Sequential Reserved Hexels. </returns>
 
     let hxlLin 
-        (sqn: Sqn) 
+        (sqn: Sqn)
+        (elv : int) 
         (stt: Hxl) 
         (enn: Hxl) =
         let safeHxlCrd (hOpt: Hxl option) =
             match hOpt with
             | Some h -> hxlCrd h   // valid input
-            | None -> (0, 0, 0)    // fallback for empty/invalid input
+            | None -> 0, 0, elv    // fallback for empty/invalid input
         let sx, sy, sz = safeHxlCrd (Some stt)
         let ex, ey, _ = safeHxlCrd (Some enn)
 
@@ -1098,11 +1130,11 @@ module Geometry =
             let flv = match sx <= ex with
                         | true -> [|sx .. 1 .. ex|]
                         | false -> [|sx .. -1 .. ex|]  
-                            
+                                
             match seqH with
             |false -> ptv,flv
             |true -> pth,flh
-            
+                
         let div = 
             match Array.length pty >= Array.length flt with  
             | true -> 
@@ -1124,7 +1156,12 @@ module Geometry =
                         Array.mapi (fun i a -> cnk1.[i] |> Array.map (fun b -> (b, a))) pty
                 a |> Array.map dropAlternate  |> Array.concat
 
-        div |> Array.map (fun (a,b) -> RV(a,b,sz))
+        let result =
+            div |> Array.map (fun (a,b) -> RV(a,b,sz))
+
+        match result.Length = 0 with
+        | true -> [| stt; enn |] |> Array.distinct 
+        | false -> result
 
     ///
 
@@ -1136,67 +1173,71 @@ module Geometry =
 
     let hxlPgn 
         (sqn: Sqn) 
-        (vtx: (int * int)[])
-        (elv: int): Hxl[] =
-        
+        (elv: int)
+        (vtx: (int * int)[]): Hxl[] =
+            
         let toHxl (x, y) = hxlVld sqn (RV(x, y, elv))
 
-        // Ensure minimum vertices
         match vtx with
-        | [||] | [| _ |] -> [| toHxl (0,0) |]   // fallback placeholder
+        | [||] | [| _ |] -> [||]
         | _ ->
-            // Ensure closure
             let verts =
                 if vtx.[0] = vtx.[vtx.Length - 1] then vtx
                 else Array.append vtx [|vtx.[0]|]
 
-            // Build polygon edges
             let edges =
                 verts
                 |> Array.pairwise
                 |> Array.collect (fun ((x1, y1), (x2, y2)) ->
                     let stt, enn = toHxl (x1, y1), toHxl (x2, y2)
-                    let line = hxlLin sqn stt enn
-                    if line.Length = 0 then [| stt |] else line
+                    let seg = hxlLin sqn elv stt enn
+                    if seg.Length = 0 then [|stt; enn|] else seg
                 )
 
-            if edges.Length = 0 then [| toHxl (0,0) |]
-            else edges |> Array.distinct
+            edges |> Array.distinct
+        
+    // Polygon Area
+    /// Signed area of a polygon using pattern matching (shoelace formula)
+    let polygonArea (poly: (int * int)[]) =
+        match poly with
+        | [||] | [| _ |] | [| _; _ |] ->
+            // Too few points to form a polygon
+            0.0
+        | pts ->
+            let rec loop acc i =
+                match i with
+                | n when n = pts.Length ->
+                    // Close the loop (last to first)
+                    let (x1, y1) = pts.[n - 1]
+                    let (x2, y2) = pts.[0]
+                    acc + (x1 * y2 - x2 * y1)
+                | _ ->
+                    let (x1, y1) = pts.[i]
+                    let (x2, y2) = pts.[(i + 1) % pts.Length]
+                    loop (acc + (x1 * y2 - x2 * y1)) (i + 1)
+            float (abs (loop 0 0)) / 2.0
+
+
+    // Polygon Area with Holes
+    let polygonWithHolesArea (outer: (int * int)[]) (holes: (int * int)[][]) =
+        match outer, holes with
+        | [||], _ -> 0.0
+        | _, [||] -> polygonArea outer
+        | outerPts, holePolys ->
+            let outerArea = polygonArea outerPts
+            let holesArea =
+                holePolys
+                |> Array.sumBy (fun hole ->
+                    match hole with
+                    | [||] | [| _ |] | [| _; _ |] -> 0.0
+                    | _ -> polygonArea hole)
+            outerArea - holesArea
 
 module Parse =
-
     open Hexel
     open Coxel
     open Geometry
     open System
-
-    let parsePolygonString (s: string) : (int * int)[][] =
-        let parseSegment (segment: string) =
-            segment.Split(',', StringSplitOptions.RemoveEmptyEntries)
-            |> Array.map (fun x -> x.Trim())
-            |> Array.choose (fun x ->
-                match System.Int32.TryParse(x) with
-                | true, v -> Some v
-                | false, _ -> None
-            )
-            |> fun numbers ->
-                match numbers with
-                | [||] -> [||]
-                | ns when ns.Length % 2 <> 0 -> [||]
-                | ns ->
-                    ns
-                    |> Array.chunkBySize 2
-                    |> Array.map (function
-                        | [|a; b|] -> a, b
-                        | _ -> failwith "Unexpected chunk length"
-                    )
-
-        match String.IsNullOrWhiteSpace(s) with
-        | true -> [||]
-        | false ->
-            s.Split('-', StringSplitOptions.RemoveEmptyEntries)
-            |> Array.map parseSegment
-
 
     // Sample Space Program Input Format
     let spaceStr =
@@ -1211,6 +1252,9 @@ module Parse =
     ///</summary>
     /// <param name="spaceStr"> Properly formatted string (RefId,Count,Lablel) </param>
     /// <returns> Array of string arrays (RefId as string * Count as int * Label as string)  </returns>
+    /// <summary>
+    /// Categorize constituent Hexels within a Coxel (safe + pattern matching version)
+    /// </summary>
     let spaceSeq 
         (spaceStr:string) = 
         let splitTopLevel (s: string) : string[] =
@@ -1225,9 +1269,9 @@ module Parse =
                     | _ -> loop acc (curr + string c) depth cs
             loop [] "" 0 (Seq.toList s) |> List.toArray
 
-        let spcMp1 = (spaceStr.Replace ("\n",""))
+        let spcMp1 = ((spaceStr.Replace ("\n",""))
                         .Replace("\t","")
-                        .Replace(" ","")
+                        .Replace(" ",""))
                         |> splitTopLevel
                         |> Array.Parallel.map(fun x -> x.Remove(0,1)) 
                         |> Array.Parallel.map(fun x -> x.Remove(x.Length-1,1))
@@ -1242,29 +1286,9 @@ module Parse =
                     |> Array.Parallel.map (fun x -> x[0],x[1])
                     |> Map.ofArray
 
-        // Reproportion count based on Boundary Extent
-        let bdPr = match spcAt1 |> Map.tryFind "X" with 
-                    | Some a -> (a |> double) 
-                    | None -> 1.0
-        let bdWd = match spcAt1 |> Map.tryFind "W" with 
-                    | Some a -> (a |> int)
-                    | None -> 0
-        let bdHt = match spcAt1 |> Map.tryFind "H" with 
-                    | Some a -> (a |> int)
-                    | None -> 0
-
-
-        let spcCt1 = spcMp2 |> Array.tail |> Array.map(fun x -> x[1] |> int)
-        let spcPr1 = match (bdWd=0 || bdHt=0) with 
-                        | true -> match (bdPr=0.0) with 
-                                    | true -> 1.0
-                                    | false -> bdPr
-                        | false -> match (bdPr=0.0) with
-                                    | true -> 1.0
-                                    | false -> 0.5//float (totalArea) / (float (Array.sum spcCt1)) * bdPr
-        let spcCt2 = Array.Parallel.map (fun a -> (Math.Ceiling((a|>double)*spcPr1)|>string)) spcCt1
+        let spcCt1 = spcMp2 |> Array.tail |> Array.map(fun x -> x[1])
         let spcMp3 = spcMp2 |> Array.tail
-        let spcMp4 = Array.map2 (fun x y -> Array.set x 1 y) spcMp3 spcCt2
+        let spcMp4 = Array.map2 (fun x y -> Array.set x 1 y) spcMp3 spcCt1
         let spcMp5 = Array.append [|spcMp2 |> Array.head|] spcMp3
         let spcMp6 = spcMp5 
                     |> Array.tail
@@ -1320,8 +1344,7 @@ module Parse =
             |> Array.Parallel.map (fun z 
                                     -> (Array.Parallel.map (fun (x,y) 
                                                                 -> x, fst y, snd y))z)
-        spcAt1,spcKey
-    ///    
+        spcAt1,spcKey  
 
     /// <summary> Generate coxels based on string data. </summary>
     /// <param name="seq"> Sequence. </param>
@@ -1331,13 +1354,6 @@ module Parse =
     let spaceCxl
         (occ : Hxl[])
         (str : string) = 
-
-        let tree01 = 
-            spaceSeq str
-                |> snd
-                |> Array.Parallel.map (fun x -> 
-                    Array.Parallel.map(fun (a,b,c) 
-                                        -> Refid a, Count (b), Label c)x)
         
         // Attributes
         let spcAt1 = fst (spaceSeq str)
@@ -1370,21 +1386,53 @@ module Parse =
                                 | "HRCCNW" -> HRCCNW
                                 | _        -> VRCWEE
                     | None -> VRCWEE
-        
-        // Attribute E for Elevation
+
+        // Attribute L for Elevation
         let elv = match spcAt1 |> Map.tryFind "L" with 
                     | Some a -> a |> int
                     | None -> 0
 
-        // Rectangular Boundary
         // Attribute W for Width
         let bdWd = match spcAt1 |> Map.tryFind "W" with 
-                    | Some a -> a |> int
+                    | Some a -> match a |> int > 0 with
+                                | true -> a |> int
+                                | false -> 0
                     | None -> 0
+
         // Attribute H for Height
         let bdHt = match spcAt1 |> Map.tryFind "H" with 
-                    | Some a -> a |> int
-                    | None -> 0
+                    | Some a -> match bdWd > 0 with 
+                                | true -> a |> int
+                                | false -> bdWd
+                        | None -> bdWd
+
+        let parsePolygonString (s: string) : (int * int)[][] =
+            let parseSegment (segment: string) =
+                segment.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                |> Array.map (fun x -> x.Trim())
+                |> Array.choose (fun x ->
+                    match System.Int32.TryParse(x) with
+                    | true, v -> Some v
+                    | false, _ -> None
+                )
+                |> fun numbers ->
+                    match numbers with
+                    | [||] -> [||]
+                    | ns when ns.Length % 2 <> 0 -> [||]
+                    | ns ->
+                        ns
+                        |> Array.chunkBySize 2
+                        |> Array.map (function
+                            | [|a; b|] -> a, b
+                            | _ -> failwith "Unexpected chunk length"
+                        )
+
+            match String.IsNullOrWhiteSpace(s) with
+            | true -> [||]
+            | false ->
+                s.Split('-', StringSplitOptions.RemoveEmptyEntries)
+                |> Array.map parseSegment
+
         // Attribute O for Outer Boundary Vertices
         let bdOu = match spcAt1 |> Map.tryFind "O" with 
                     | Some a -> Array.concat (parsePolygonString a)
@@ -1393,37 +1441,70 @@ module Parse =
                                 | false -> 
                                         let b = $"0,0,0,{bdHt},{bdWd},{bdHt},{bdWd},0"
                                         Array.concat (parsePolygonString b)
+
         // Attribute I for Island Boundary Vertices
         let bdIs = match spcAt1 |> Map.tryFind "I" with 
                     | Some a -> parsePolygonString a
                     | None -> [||]
 
-        // Attribute S for Initial Base
+        // Attribute E for Entry Hexel
         let bsHx =
-                let ref = Array.last(hxlLin seq (AV(0, 0, elv)) (AV(-10,-10,elv)))
-                match spcAt1 |> Map.tryFind "S" with
-                | Some a ->
-                    let parts = a.Split ',' |> Array.choose (fun s ->
-                        match System.Int32.TryParse(s.Trim()) with
-                        | true, v -> Some v
-                        | _ -> None
-                    )
-                    match parts with
-                    | [| x; y |] -> Array.last(hxlLin seq ref (AV(x, y, elv)))
-                    | _ -> ref
-                | None ->
-                    ref
+            match spcAt1 |> Map.tryFind "E" with
+            | Some a ->
+                let parts = a.Split ',' |> Array.choose (fun s ->
+                    match System.Int32.TryParse(s.Trim()) with
+                    | true, v -> Some v
+                    | _ -> None
+                )
+                match parts with
+                | [| x; y |] -> hxlLin seq elv (identity elv) (AV(x, y, elv))
+                                |> hxlUni 1
+                                |> Array.last
+                | _ -> identity elv
+            | None -> match bdWd = 0 with
+                        | true -> identity elv
+                        | false ->  hxlLin seq elv (identity elv) (AV(bdWd/2+2, bdHt/2+2, elv))
+                                    |> hxlUni 1
+                                    |> Array.last
+        
+        // Total Count
+        let cxlCnt = spaceSeq str 
+                    |> snd 
+                    |> Array.concat
+                    |> Array.Parallel.map (fun (_,x,_) -> x)
+                    |> Array.sum |> float
+
+        // Site Net Area
+        let ntArea = polygonWithHolesArea bdOu bdIs
+
+        // Attribute X for Count Proportion
+        let bdPr = match spcAt1 |> Map.tryFind "X" with 
+                    | Some a -> match a with
+                                | "0" -> match cxlCnt > 0 with 
+                                            | true -> ntArea / cxlCnt
+                                            | false -> 1.0
+                                | _ -> a |> float
+                    | None -> 1.0
 
         // Outer Hexels 
-        let ouHx = match (bdWd=0 || bdHt=0) with 
+        let ouHx = match bdWd=0 || bdHt=0 with 
                     | true -> [||]
-                    | false -> hxlPgn seq bdOu elv
+                    | false -> hxlPgn seq elv bdOu
 
-        let ilHx = match (bdWd=0 || bdHt=0) with 
+        let ilHx = match bdWd=0 || bdHt=0 with 
                     | true -> [||]
-                    | false -> bdIs |> Array.map (fun x -> hxlPgn seq x elv) |> Array.concat
-        
+                    | false -> bdIs |> Array.map (fun x -> hxlPgn seq elv x) |> Array.concat
+            
         let occ = Array.concat [|occ;ouHx;ilHx|]
+
+        // Parse Space String
+        let tree01 = 
+            spaceSeq str
+                |> snd
+                |> Array.Parallel.map (fun x -> 
+
+                    Array.Parallel.map(fun (a,b,c) 
+                                        -> Refid a, Count (int(float b * bdPr)), Label c)x)
 
         // Generate base coxel
         let id,ct,lb = tree01 |> Array.concat |> Array.head
@@ -1431,10 +1512,10 @@ module Parse =
                     | Count x when x>0 -> Count (x-1) 
                     | _ -> Count 0       
         let ac0 = match cti with 
-                    | Count a when a < 1 -> coxel seq ([|identity, id, cti, lb|]) occ
-                    | _ -> coxel seq ([|bsHx, id, cti, lb|]) occ
+                    | Count a when a < 1 -> coxel seq elv ([|(identity elv), id, cti, lb|]) occ
+                    | _ -> coxel seq elv ([|bsHx, id, cti, lb|]) occ
         let ac1 = [|{ac0[0] with Hxls = Array.except occ (Array.append [|ac0[0].Base|] ac0[0].Hxls)}|]
-        let oc1 = Array.concat [|occ; [|bsHx|]; (Array.head ac1).Hxls|]
+        let oc1 = (Array.concat [|occ; [|bsHx|]; (Array.head ac1).Hxls|])
 
         let cxlCxl 
             (seq : Sqn)
@@ -1460,17 +1541,18 @@ module Parse =
                                     Array.take cnt fsHx
                         | false -> Array.append 
                                     chHx 
-                                    (Array.replicate (cnt - (Array.length chHx)) identity)
+                                    (Array.replicate (cnt - (Array.length chHx)) (identity elv))
             let chPr = Array.tail tre
             let cxc1 = coxel 
                         seq
+                        elv
                         (Array.map2 (fun a (b, c, d) -> a,b,c,d) chBs chPr)
                         occ
             // Reassigning Hexel types
             let chHx1 = Array.Parallel.map (fun x -> x.Hxls) cxc1
             let chOc1 = hxlUni 2 (Array.append occ (Array.concat chHx1))
-            let chHx2 = Array.Parallel.map (fun x -> hxlChk seq chOc1 x) chHx1
-            let chHx3 = hxlChk seq chOc1 (Array.map (fun x -> x.Base) cxc1)
+            let chHx2 = Array.Parallel.map (fun x -> hxlChk seq elv chOc1 x) chHx1
+            let chHx3 = hxlChk seq elv chOc1 (Array.map (fun x -> x.Base) cxc1)
             let cxc2 = Array.map3 (fun x y z -> {x with Cxl.Hxls = y; Cxl.Base = z}) cxc1 chHx2 chHx3
             cxc2
             
@@ -1492,10 +1574,9 @@ module Parse =
                         | None -> acc
             a
 
-        match Array.length (Array.concat tree01) < 2 with 
+        match (Array.length (Array.concat tree01) < 2) with 
         | true -> ac1
         | false -> cxCxCx seq tree01 oc1 ac1
-    
 
 // Test Zone
 open Hexel
@@ -1503,25 +1584,18 @@ open Coxel
 open Geometry
 open Parse
 open System
-let sq = VRCCNE
+let sq = VRCCEE
 // Sample Format
-//let spcStr = "(#/W=10/H=10/S=0),(1/7/Foyer),(2/12/Living),(3/8/Dining),(1.1/9/Study),(2.1/12/Staircase),(3.1/14/Kitchen),(3.2/14/Bed-1),(3.3/18/Bed-2),(3.4/18/Bed-3),(3.1.1/6/Utility),(3.2.1/8/Bath-1),(3.3.1/10/Closet-2),(3.4.1/10/Closet-3),(3.4.2/10/Bath-3),(3.3.1.1/10/Bath-2)"
-//let spcStr1 = "(0/W=10/H=10/S=0),(1/25/Dock),(1.1/25/Logistics),(1.2/25/Lab),(1.3/25/Habitation),(1.4/25/Power)"
-//let spcStr1 = "(0/Q=VRCCNE/L=0/W=100/H=100/X=0/O=0,0,0,100,100,100,100,0/I=/S=18,10),(1/24/Dock), (1.1/24/Logistics), (1.2/24/Lab), (1.3/24/Habitation), (1.4/24/Power)"
-hxlLin sq (AV(0,0,0)) (AV(5,5,0))
-let spcStr1 = "(0/Q=VRCCNE/L=0/W=50/H=50/X=0/S=10,10),(1/300/Dock)"
+//let spcStr = "(#/W=10/H=10/X=0),(1/7/Foyer),(2/12/Living),(3/8/Dining),(1.1/9/Study),(2.1/12/Staircase),(3.1/14/Kitchen),(3.2/14/Bed-1),(3.3/18/Bed-2),(3.4/18/Bed-3),(3.1.1/6/Utility),(3.2.1/8/Bath-1),(3.3.1/10/Closet-2),(3.4.1/10/Closet-3),(3.4.2/10/Bath-3),(3.3.1.1/10/Bath-2)"
+//let spcStr1 = "(0/Q=VRCCNE/W=10/L=1),(1/25/Dock),(1.1/25/Logistics),(1.2/25/Lab),(1.3/25/Habitation),(1.4/25/Power)"
+//let spcStr1 = "(0/Q=VRCCNE/L=0/W=100/H=100/X=0/O=0,0,0,100,100,100,100,0/I=/E=18,10),(1/24/Dock), (1.1/24/Logistics), (1.2/24/Lab), (1.3/24/Habitation), (1.4/24/Power)"
+let spcStr1 = "(0/Q=VRCCNE),(1/24/Dock), (1.1/24/Logistics), (1.2/24/Lab), (1.3/24/Habitation), (1.4/24/Power)"
 //let spcStr2 = "(1/5/Start),(2/15/End)"
 
-let oc1 = hxlPgn sq [|0,0;0,10;10,10;10,0|] 0
+//let oc1 = hxlPgn sq [|0,0;0,10;10,10;10,0|] 1
 let cx1 = spaceCxl [||] spcStr1
 
-let cxlPrm
-    (cxl : Cxl) =
-    hxlOfs cxl.Seqn cxl.Hxls 
-    |> Array.map (fun x -> hxlCrd x) 
-    |> Array.map (fun (x,y,_) -> (x,y))
-
-//cxlPrm cx1.[0]    
+Array.last (hxlUni 1 (hxlLin sq 1 (identity 1) (AV(5, 5, 1))))
 //let hx1 = cx1[0].Hxls
 //let sq11 = VRCWEE
 
@@ -1543,7 +1617,7 @@ let hx11 = [|RV (0, 0, 0);RV (2, 0, 0); RV (1, -2, 0); RV (-1, -2, 0); RV (-2, 0
             AV (3, -2, 0), Refid "3", Count 10, Label "C";
             |]) hx11 
 *)
-
+hxlPgn sq [|0,0;0,6;6,6;6,0|] 0
 //let st = hxlVld sq (AV(0,0,0))
 //let en = hxlVld sq (AV(20,0,0))                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
 
