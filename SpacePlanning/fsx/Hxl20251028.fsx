@@ -1165,6 +1165,68 @@ module Geometry =
 
     ///
 
+    let removeSawtooth (sqn : Sqn) (arr : (int*int)[]) : (int*int)[] =
+        // Determine primary axis
+        let vert =
+            match sqn with
+            | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW
+            | VRCWNW | VRCCNW | VRCWNE | VRCCNE -> true
+            | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS
+            | HRCWSW | HRCCSW | HRCWNW | HRCCNW -> false
+
+        let primary = if vert then snd else fst
+        let secondary = if vert then fst else snd
+
+        // Split array by Δ=2 along primary axis
+        let splitByDelta2 (arr: (int*int)[]) : (int*int)[][] =
+            match arr with
+            | [||] -> [||]
+            | _ ->
+                let folder (groups, currGroup) p =
+                    match currGroup with
+                    | [||] -> (groups, [|p|])
+                    | _ ->
+                        let last = currGroup.[currGroup.Length - 1]
+                        match abs (primary p - primary last) with
+                        | 2 -> (groups, Array.append currGroup [|p|])
+                        | _ -> (Array.append groups [|currGroup|], [|p|])
+                let groups, lastGroup = Array.fold folder ([||], [||]) arr
+                Array.append groups [|lastGroup|]
+
+        // Check secondary-axis oscillation using recursion + pattern matching
+        let rec oscillates (values: int[]) idx =
+            match idx >= values.Length - 2 with
+            | true -> true
+            | false ->
+                match abs (values.[idx+1] - values.[idx]), abs (values.[idx+2] - values.[idx+1]) with
+                | 1, 1 -> oscillates values (idx + 1)
+                | _ -> false
+
+        // Post-process subarrays for oscillation
+        let processOscillation (subarrays: (int*int)[][]) : (int*int)[][] =
+            subarrays
+            |> Array.map (fun arr ->
+                match arr.Length with
+                | n when n <= 2 -> arr
+                | _ ->
+                    let values = arr |> Array.map secondary
+                    match oscillates values 0 with
+                    | true ->
+                        let first = arr.[0]
+                        let last  = arr.[arr.Length - 1]
+                        let low = min (secondary first) (secondary last)
+                        match vert with
+                        | true  -> [| (low, snd first); (low, snd last) |]
+                        | false -> [| (fst first, low); (fst last, low) |]
+                    | false -> arr
+            )
+
+        // --- Pipeline ---
+        arr
+        |> splitByDelta2
+        |> processOscillation
+        |> Array.collect id 
+
     /// <summary> Hexel Polygon </summary>
     /// <param name="sqn"> Sequence to follow. </param>
     /// <param name="vtx"> Integer coordinates of polygon vertices. </param> 
@@ -1624,118 +1686,6 @@ let hx11 = [|RV (0, 0, 0);RV (2, 0, 0); RV (1, -2, 0); RV (-1, -2, 0); RV (-2, 0
 
 let pg1 =[|(6,4); (7,6); (5,10); (6,12); (5,14); (6,16); (5,18); (9,26); (7,30); (3,30); (1,26); (2,24); (1,22); (2,20); (1,18); (2,16); (0,12); (1,10); (0,8); (1,6); (0,4); (2,0); (6,0); (7,2)|]
 
-let groupPoints (sqn : Sqn) (arr : (int * int)[]) =
-    let useY = match sqn with
-                | VRCWEE | VRCCEE | VRCWSE | VRCCSE | VRCWSW | VRCCSW | VRCWWW | VRCCWW | VRCWNW | VRCCNW | VRCWNE | VRCCNE -> true
-                | HRCWNN | HRCCNN | HRCWNE | HRCCNE | HRCWSE | HRCCSE | HRCWSS | HRCCSS | HRCWSW | HRCCSW | HRCWNW | HRCCNW -> false
-
-    let points = Array.toList arr
-
-    let diff a b = abs (a - b)
-
-    let is1 d =
-        match d with
-        | 1 -> true
-        | _ -> false
-
-    let is2 d =
-        match d with
-        | 2 -> true
-        | _ -> false
-
-    let primaryAxis =
-        match useY with
-        | true  -> fun (_,y) -> y
-        | false -> fun (x,_) -> x
-
-    let secondaryAxis =
-        match useY with
-        | true  -> fun (x,_) -> x
-        | false -> fun (_,y) -> y
-
-
-    // -------- SPLITTING BY Δ=2 (PRIMARY AXIS) ----------
-    let splitByPrimary pts =
-        let rec split pts curr acc =
-            match pts, curr with
-            | [], _ -> List.rev (curr :: acc)
-            | p :: rest, last :: _ ->
-                match is2 (diff (primaryAxis p) (primaryAxis last)) with
-                | true  -> split rest (p :: curr) acc
-                | false -> split rest [p] (curr :: acc)
-            | p :: rest, [] -> split rest [p] acc
-
-        match pts with
-        | [] -> []
-        | p :: rest -> split rest [p] [] |> List.map List.rev
-
-
-    // -------- SECONDARY OSCILLATION GROUPING Δ=1 ----------
-    // Return inner subgroups in original order
-    let oscillation group =
-        match group with
-        | [] -> []
-        | [_] -> [group]
-        | h :: t ->
-            let rec aux pts curr acc =
-                match pts, curr with
-                | [], _ -> List.rev (curr :: acc)
-                | p :: rest, last :: _ ->
-                    match is1 (diff (secondaryAxis p) (secondaryAxis last)) with
-                    | true  -> aux rest (p :: curr) acc
-                    | false -> aux rest [p] (curr :: acc)
-                | p :: rest, [] -> aux rest [p] acc
-            aux t [h] [] |> List.map List.rev
-
-
-    // -------- helper: take first and last and adjust by min axis -----------
-    let adjustFirstLast subgroup =
-        // subgroup is in original order
-        match subgroup with
-        | [] -> []
-        | [single] -> [single]
-        | first :: middle when List.isEmpty middle -> [first] // defensive (shouldn't happen)
-        | first :: rest ->
-            // find last by pattern matching (safer than List.last)
-            let rec getLast xs =
-                match xs with
-                | [x] -> x
-                | _ :: xs' -> getLast xs'
-                | [] -> failwith "unreachable"
-            let last = getLast rest
-
-            let (fx, fy) = first
-            let (lx, ly) = last
-
-            match useY with
-            | false ->
-                // primary = X  => assign min Y to both tuples
-                let lowY = if fy <= ly then fy else ly
-                [ (fx, lowY); (lx, lowY) ]
-            | true ->
-                // primary = Y  => assign min X to both tuples
-                let lowX = if fx <= lx then fx else lx
-                [ (lowX, fy); (lowX, ly) ]
-
-
-    // -------- NEW RULE: only apply adjustFirstLast if oscillation actually split ----------
-    let postProcessAll oscillationGroups =
-        match oscillationGroups with
-        | [] -> []
-        | [onlyGroup] ->
-            // No oscillation splitting -> return entire original group unchanged
-            onlyGroup
-        | groups ->
-            // Oscillation happened -> apply adjustFirstLast to each subgroup and flatten
-            groups |> List.collect adjustFirstLast
-
-
-    // ---------- FINAL PIPELINE ----------
-    splitByPrimary points
-    |> List.collect (fun grp -> grp |> oscillation |> postProcessAll)
-    |> List.toArray
-
-
-groupPoints VRCCEE pg1
+removeSawtooth VRCCEE pg1
 
 
