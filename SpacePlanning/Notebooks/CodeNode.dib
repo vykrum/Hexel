@@ -65,7 +65,7 @@ let preprocessCode (code: string) : string =
                 $"({line})"
         )
 
-    // Return reconstructed string
+    // Return reconstructed strings
     String.Join(",", updatedLines)
 
 /// Parses the processed input into a tree structure
