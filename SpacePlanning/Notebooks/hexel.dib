@@ -58,28 +58,6 @@ let prmMin (hxl : Lbl list list) (ocp : Lbl list list) (min : int) =
     List.except hx2 hx1 |> List.take min
 
 
-
-
-(* let hxlSng (cnt : int list) (hst : Lbl list list) (ocp : Lbl list list) = 
-    //Perimeter Lblels
-    let prm = hxlPrm hst
-    // Branch count
-    let brnCnt = List.length cnt
-    // Ensure minimum host hexel count
-    let hxHst = match prm with 
-                | [] when List.length ocp > 0 -> 
-                    List.take brnCnt ocp
-                | [] when List.length ocp = 0 -> 
-                    List.take brnCnt [[];[A];[B];[C];[D];[E];[F]]
-                | a when List.length prm < List.length cnt -> 
-                    a @ hxlAvl (List.head a) (ocp @ a) 
-                    |> List.distinct
-                    |> hxlPrm
-                    |> List.take brnCnt
-                | _ -> prm 
-                    |> List.take brnCnt
-    hxHst *)
-
 //hxlPrm [[];[A];[B];[C];[D];[E];[F]]
 //hxlAvl [A;B] [[A;A];[B];[A;F]] |> hxl_ID
 //let a = hxlSng [90;5;8] [[A];[B];[C];[D]] [] |> List.map hxl_ID 
