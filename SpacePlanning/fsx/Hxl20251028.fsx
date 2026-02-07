@@ -152,7 +152,7 @@ module Hexel =
             let x1,y1,z1 = validate sqn crx cry crz
             // Revalidate changed coordinates
             let vld = validate sqn x1 y1 z1
-            // Hexels with validated coordinates
+            // Hexels with validated coordinates.
             match hxl with
             | AV(_) -> AV(vld)
             | RV(_) -> RV(vld)
