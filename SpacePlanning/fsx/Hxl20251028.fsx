@@ -1666,14 +1666,14 @@ Array.last (hxlUni 1 (hxlLin sq 1 (identity 1) (AV(5, 5, 1))))
 //cx1[1].Hxls |> Array.map(fun x -> x.IsAV)
 
 
-(* let hx0 =[|AV(0,0,0); AV(-1,2,0); AV(1,2,0); AV(0,4,0); AV(-1,6,0); AV(1,6,0)|]
+let hx0 =[|AV(0,0,0); AV(-1,2,0); AV(1,2,0); AV(0,4,0); AV(-1,6,0); AV(1,6,0)|]
 let hx11 = [|RV (0, 0, 0);RV (2, 0, 0); RV (1, -2, 0); RV (-1, -2, 0); RV (-2, 0, 0);
          RV (-1, 2, 0); RV (1, 2, 0); AV (4, 0, 0); AV (3, 2, 0);
          AV (3, -2, 0); AV (2, -4, 0); AV (0, -4, 0); AV (-2, -4, 0);
          AV (-3, -2, 0); AV (-4, 0, 0); AV (-3, 2, 0); AV (-2, 4, 0);
          AV (0, 4, 0); AV (2, 4, 0); AV (6, 0, 0)|] 
 
-let cxx1 = coxel sq ([| 
+(*let cxx1 = coxel sq ([| 
             AV (3, -2, 0), Refid "1", Count 10, Label "A"; 
             AV (2, 4, 0), Refid "2", Count 10, Label "B";
             AV (3, -2, 0), Refid "3", Count 10, Label "C";
