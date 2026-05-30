@@ -1658,7 +1658,7 @@ let spcStr1 = "(0/Q=VRCCNE),(1/24/Dock), (1.1/24/Logistics), (1.2/24/Lab), (1.3/
 let cx1 = spaceCxl [||] spcStr1
 
 Array.last (hxlUni 1 (hxlLin sq 1 (identity 1) (AV(5, 5, 1))))
-//let hx1 = cx1[0].Hxls
+(*//let hx1 = cx1[0].Hxls
 //let sq11 = VRCWEE
 
 //let ctg = hxlCtg hx1 sq1 
@@ -1666,7 +1666,7 @@ Array.last (hxlUni 1 (hxlLin sq 1 (identity 1) (AV(5, 5, 1))))
 //cx1[1].Hxls |> Array.map(fun x -> x.IsAV)
 
 
-(*let hx0 =[|AV(0,0,0); AV(-1,2,0); AV(1,2,0); AV(0,4,0); AV(-1,6,0); AV(1,6,0)|]
+let hx0 =[|AV(0,0,0); AV(-1,2,0); AV(1,2,0); AV(0,4,0); AV(-1,6,0); AV(1,6,0)|]
 let hx11 = [|RV (0, 0, 0);RV (2, 0, 0); RV (1, -2, 0); RV (-1, -2, 0); RV (-2, 0, 0);
          RV (-1, 2, 0); RV (1, 2, 0); AV (4, 0, 0); AV (3, 2, 0);
          AV (3, -2, 0); AV (2, -4, 0); AV (0, -4, 0); AV (-2, -4, 0);
