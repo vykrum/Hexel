@@ -1566,7 +1566,7 @@ let cxx1 = coxel sq 0 ([|
             |]) hx11 
 
 let st = hxlVld sq (AV(0,0,0))
-//let en = hxlVld sq (AV(20,0,0))
+let en = hxlVld sq (AV(20,0,0))
 
 // Create parsing for levels
 
