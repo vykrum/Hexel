@@ -1564,8 +1564,7 @@ let cxx1 = coxel sq 0 ([|
             AV (2, 4, 0), Refid "2", Count 10, Label "B";
             AV (3, -2, 0), Refid "3", Count 10, Label "C";
             |]) hx11 
-
-let st = hxlVld sq (AV(0,0,0))
+//let st = hxlVld sq (AV(0,0,0))
 //let en = hxlVld sq (AV(20,0,0))
 
 // Create parsing for levels
